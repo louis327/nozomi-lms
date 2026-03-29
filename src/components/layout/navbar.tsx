@@ -12,16 +12,21 @@ export function Navbar() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user ?? null)
       if (data.user) {
-        setIsAdmin(data.user.user_metadata?.role === 'admin')
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
+        setIsAdmin(profile?.role === 'admin')
       }
     })
   }, [])
 
   const navLinks = [
-    { href: '/courses', label: 'Courses' },
+    { href: '/#courses', label: 'Courses' },
     ...(user ? [{ href: '/dashboard', label: 'Dashboard' }] : []),
     ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
