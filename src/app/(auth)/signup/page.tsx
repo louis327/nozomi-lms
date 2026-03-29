@@ -1,18 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-export default function SignupPage() {
+function SignupForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? '/dashboard'
+
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,7 +25,7 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient()
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -36,37 +40,20 @@ export default function SignupPage() {
         return
       }
 
-      setSuccess(true)
+      // Auto-confirm is on — session is returned immediately
+      if (data.session) {
+        router.push(redirectTo)
+        router.refresh()
+        return
+      }
+
+      // Fallback: if email confirmation is required
+      router.push('/login?message=Check your email to confirm your account')
     } catch {
       setError('An unexpected error occurred.')
     } finally {
       setLoading(false)
     }
-  }
-
-  if (success) {
-    return (
-      <div className="text-center">
-        <div className="mx-auto mb-5 w-14 h-14 rounded-full bg-nz-sakura/10 flex items-center justify-center">
-          <svg className="w-7 h-7 text-nz-sakura" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-          </svg>
-        </div>
-        <h2 className="font-heading text-xl font-bold text-nz-text-primary mb-2">
-          Check your email
-        </h2>
-        <p className="text-sm text-nz-text-secondary mb-6">
-          We sent a confirmation link to <span className="text-nz-text-primary font-medium">{email}</span>.
-          Click the link to activate your account.
-        </p>
-        <Link
-          href="/login"
-          className="text-sm text-nz-sakura hover:text-nz-sakura-deep transition-colors font-medium"
-        >
-          Back to login
-        </Link>
-      </div>
-    )
   }
 
   return (
@@ -136,5 +123,22 @@ export default function SignupPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-5 animate-pulse">
+        <div className="h-8 w-48 bg-nz-bg-tertiary rounded-lg" />
+        <div className="h-4 w-56 bg-nz-bg-tertiary rounded-lg" />
+        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
+        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
+        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
+        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
+      </div>
+    }>
+      <SignupForm />
+    </Suspense>
   )
 }

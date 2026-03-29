@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Course, Module, Section } from '@/lib/types'
+import { EnrollButton } from '@/components/course/enroll-button'
 
 export default async function CourseOverviewPage({
   params,
@@ -12,6 +13,8 @@ export default async function CourseOverviewPage({
 }) {
   const { courseId } = await params
   const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: course } = await supabase
     .from('courses')
@@ -79,15 +82,11 @@ export default async function CourseOverviewPage({
             </div>
 
             {/* CTA */}
-            <Link
-              href={firstSection ? `/signup?redirect=/dashboard` : '/signup'}
-              className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-nz-bg-primary rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow"
-            >
-              Enroll &amp; Start Learning
-              <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
+            <EnrollButton
+              courseId={courseId}
+              firstSectionId={firstSection?.id ?? null}
+              isLoggedIn={!!user}
+            />
           </div>
 
           {/* Cover image */}
