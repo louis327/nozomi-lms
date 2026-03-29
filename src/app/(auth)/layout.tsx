@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { SakuraPetals } from '@/components/layout/sakura-petals'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-nz-bg-primary flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-nz-bg-primary flex flex-col items-center justify-center px-4 py-12 relative">
+      <SakuraPetals count={20} />
       {/* Logo */}
       <Link
         href="/"
@@ -12,7 +14,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </Link>
 
       {/* Auth card */}
-      <div className="w-full max-w-md rounded-2xl bg-nz-bg-card/80 backdrop-blur-xl border border-nz-border p-8">
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-nz-bg-card/80 backdrop-blur-xl border border-nz-border p-8">
         {children}
       </div>
 
