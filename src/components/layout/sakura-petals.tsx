@@ -25,7 +25,7 @@ const PETAL_COLORS = [
   { r: 255, g: 200, b: 210 },
 ]
 
-export function SakuraPetals({ count = 25 }: { count?: number }) {
+export function SakuraPetals({ count = 12 }: { count?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petalsRef = useRef<PetalData[]>([])
   const animRef = useRef<number>(0)
@@ -57,7 +57,7 @@ export function SakuraPetals({ count = 25 }: { count?: number }) {
         wobbleSpeed: Math.random() * 0.02 + 0.01,
         wobbleAmp: Math.random() * 1.5 + 0.5,
         color: c,
-        opacity: Math.random() * 0.4 + 0.15,
+        opacity: Math.random() * 0.25 + 0.08,
         scale: Math.random() * 0.5 + 0.5,
       }
     }

@@ -101,7 +101,7 @@ export default async function DashboardPage() {
           <p className="text-nz-text-secondary mb-6 max-w-md mx-auto">
             Browse our catalog and enroll in a course to start your learning journey.
           </p>
-          <Link href="/courses">
+          <Link href="/">
             <Button size="lg">Browse Courses</Button>
           </Link>
         </Card>

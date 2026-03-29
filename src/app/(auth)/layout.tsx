@@ -4,7 +4,7 @@ import { SakuraPetals } from '@/components/layout/sakura-petals'
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-nz-bg-primary flex flex-col items-center justify-center px-4 py-12 relative">
-      <SakuraPetals count={20} />
+      <SakuraPetals count={8} />
       {/* Logo */}
       <Link
         href="/"

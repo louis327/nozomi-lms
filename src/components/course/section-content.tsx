@@ -33,6 +33,7 @@ export function SectionContent({
   )
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(sectionProgress?.completed ?? false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const blocks = [...(section.content_blocks ?? [])].sort(
     (a, b) => a.sort_order - b.sort_order
@@ -42,13 +43,14 @@ export function SectionContent({
 
   const handleSubmit = useCallback(async () => {
     setSaving(true)
+    setSaveError(null)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
       const mergedData = { ...workbookData, _checklists: checklistData }
 
-      await supabase.from('section_progress').upsert(
+      const { error } = await supabase.from('section_progress').upsert(
         {
           user_id: user.id,
           section_id: section.id,
@@ -59,17 +61,21 @@ export function SectionContent({
         { onConflict: 'user_id,section_id' }
       )
 
+      if (error) {
+        setSaveError('Failed to save your progress. Please try again.')
+        return
+      }
+
       setSaved(true)
       router.refresh()
 
-      // Navigate to next section after a brief pause
       if (nextSectionId) {
         setTimeout(() => {
           router.push(`/courses/${courseId}/learn/${nextSectionId}`)
         }, 600)
       }
-    } catch (err) {
-      console.error('Failed to save progress:', err)
+    } catch {
+      setSaveError('Something went wrong. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -248,7 +254,7 @@ export function SectionContent({
                 </p>
               </div>
             </div>
-            {nextSectionId && (
+            {nextSectionId ? (
               <Button
                 onClick={() => router.push(`/courses/${courseId}/learn/${nextSectionId}`)}
                 size="md"
@@ -258,22 +264,37 @@ export function SectionContent({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Button>
+            ) : (
+              <Button
+                onClick={() => router.push('/dashboard')}
+                variant="secondary"
+                size="md"
+              >
+                Back to Dashboard
+              </Button>
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <p className="text-sm text-nz-text-muted">
-              {hasWorkbookPrompts
-                ? 'Fill in your responses above, then submit to complete this section.'
-                : 'Mark this section as complete to continue.'}
-            </p>
-            <Button
-              onClick={handleSubmit}
-              loading={saving}
-              size="md"
-            >
-              {hasWorkbookPrompts ? 'Submit & Complete Section' : 'Complete Section'}
-            </Button>
+          <div className="space-y-3">
+            {saveError && (
+              <div className="px-4 py-3 rounded-xl bg-nz-error/10 border border-nz-error/20 text-sm text-nz-error">
+                {saveError}
+              </div>
+            )}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <p className="text-sm text-nz-text-muted">
+                {hasWorkbookPrompts
+                  ? 'Fill in your responses above, then submit to complete this section.'
+                  : 'Mark this section as complete to continue.'}
+              </p>
+              <Button
+                onClick={handleSubmit}
+                loading={saving}
+                size="md"
+              >
+                {hasWorkbookPrompts ? 'Submit & Complete Section' : 'Complete Section'}
+              </Button>
+            </div>
           </div>
         )}
       </div>
