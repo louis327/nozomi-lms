@@ -15,7 +15,7 @@ import {
 
 interface ContentBlock {
   id: string
-  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file'
+  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file' | 'video'
   content: Record<string, unknown>
   sort_order: number
 }
@@ -131,7 +131,15 @@ function TableBlock({ block, onChange }: { block: ContentBlock; onChange: (c: Re
         <table className="w-full">
           <tbody>
             {rows.map((row, ri) => (
-              <tr key={ri} className={ri === 0 ? 'bg-nz-bg-elevated/50' : ''}>
+              <tr key={ri} className={ri === 0 ? 'bg-nz-bg-elevated' : ''}>
+                {ri === 0 && (
+                  <td className="border border-nz-border/50 p-0 w-0">
+                    <span className="block px-2 py-2 text-[10px] uppercase tracking-wider text-nz-text-muted font-semibold whitespace-nowrap">Header Row</span>
+                  </td>
+                )}
+                {ri !== 0 && (
+                  <td className="border border-nz-border/50 p-0 w-0" />
+                )}
                 {row.map((cell, ci) => (
                   <td key={ci} className="border border-nz-border/50 p-0">
                     <input
@@ -195,8 +203,25 @@ function ChecklistBlock({ block, onChange }: { block: ContentBlock; onChange: (c
     onChange({ ...block.content, items: items.filter((_, i) => i !== idx) })
   }
 
+  const title = (block.content.title as string) || ''
+  const description = (block.content.description as string) || ''
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => onChange({ ...block.content, title: e.target.value })}
+        placeholder="Checklist title (e.g., 'Module Deliverables')"
+        className="w-full px-4 py-2 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm font-heading font-semibold text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+      />
+      <input
+        type="text"
+        value={description}
+        onChange={(e) => onChange({ ...block.content, description: e.target.value })}
+        placeholder="Description (optional)"
+        className="w-full px-3 py-1.5 rounded-lg bg-transparent border-none text-xs text-nz-text-tertiary placeholder:text-nz-text-muted focus:outline-none"
+      />
       <p className="text-xs text-nz-text-muted">These become module deliverables that students check off.</p>
       {items.map((item, idx) => (
         <div key={idx} className="flex items-center gap-2">
@@ -283,6 +308,25 @@ function FileUploadBlock({ block, onChange }: { block: ContentBlock; onChange: (
   )
 }
 
+function VideoBlock({ block, onChange }: { block: ContentBlock; onChange: (c: Record<string, unknown>) => void }) {
+  const url = (block.content.url as string) || ''
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="url"
+        value={url}
+        onChange={(e) => onChange({ ...block.content, url: e.target.value })}
+        placeholder="https://www.youtube.com/watch?v=... or Vimeo URL"
+        className="w-full px-4 py-3 rounded-xl bg-nz-bg-tertiary border border-nz-border text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+      />
+      {url && (
+        <p className="text-xs text-nz-text-muted truncate">Current: {url}</p>
+      )}
+    </div>
+  )
+}
+
 const blockTypeLabels: Record<string, string> = {
   rich_text: 'Rich Text',
   callout: 'Callout',
@@ -290,6 +334,7 @@ const blockTypeLabels: Record<string, string> = {
   workbook_prompt: 'Workbook Prompt',
   checklist: 'Checklist',
   file: 'File Upload',
+  video: 'Video',
 }
 
 export function BlockEditor({ block, onChange, onDelete, dragHandleProps }: BlockEditorProps) {
@@ -307,6 +352,8 @@ export function BlockEditor({ block, onChange, onDelete, dragHandleProps }: Bloc
         return <ChecklistBlock block={block} onChange={onChange} />
       case 'file':
         return <FileUploadBlock block={block} onChange={onChange} />
+      case 'video':
+        return <VideoBlock block={block} onChange={onChange} />
       default:
         return <p className="text-sm text-nz-text-tertiary">Unknown block type</p>
     }

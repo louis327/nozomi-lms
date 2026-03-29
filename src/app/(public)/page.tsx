@@ -23,9 +23,9 @@ export default async function HomePage() {
       {/* Hero Section */}
       <section className="relative px-4 sm:px-6 lg:px-8 pt-16 pb-24 sm:pt-24 sm:pb-32">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-nz-text-primary tracking-tight leading-tight">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-nz-text-primary tracking-tight leading-tight" style={{ letterSpacing: '-0.035em' }}>
             Master Web3{' '}
-            <span className="text-nz-sakura">Fundraising</span>
+            <span className="text-sakura-gradient">Fundraising</span>
           </h1>
 
           {/* Sakura gradient accent line */}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Callout } from '@/components/ui/callout'
+import { VideoEmbed } from '@/components/course/video-embed'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
 type SectionContentProps = {
@@ -96,34 +97,25 @@ export function SectionContent({
           </Callout>
         )
 
-      case 'table':
+      case 'table': {
+        const rows = (block.content.rows as string[][] ?? [])
+        const headers = rows[0] ?? []
+        const bodyRows = rows.slice(1)
         return (
           <div key={block.id} className="my-6 overflow-x-auto rounded-xl border border-nz-border">
             <table className="w-full text-sm">
-              {block.content.headers && (
-                <thead>
-                  <tr className="bg-nz-bg-tertiary">
-                    {(block.content.headers as string[]).map((h: string, i: number) => (
-                      <th
-                        key={i}
-                        className="px-4 py-3 text-left font-heading font-semibold text-nz-text-primary border-b border-nz-border"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-              )}
+              <thead>
+                <tr className="bg-nz-bg-elevated">
+                  {headers.map((h: string, i: number) => (
+                    <th key={i} className="px-5 py-3.5 text-left font-heading font-semibold text-nz-text-primary border-b border-nz-border text-xs uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
-                {(block.content.rows as string[][] ?? []).map((row: string[], ri: number) => (
-                  <tr
-                    key={ri}
-                    className="border-b border-nz-border last:border-0 hover:bg-nz-bg-tertiary/30 transition-colors"
-                  >
+                {bodyRows.map((row: string[], ri: number) => (
+                  <tr key={ri} className={`border-b border-nz-border/50 last:border-0 ${ri % 2 === 0 ? 'bg-nz-bg-card' : 'bg-nz-bg-tertiary/30'}`}>
                     {row.map((cell: string, ci: number) => (
-                      <td key={ci} className="px-4 py-3 text-nz-text-secondary">
-                        {cell}
-                      </td>
+                      <td key={ci} className="px-5 py-3.5 text-nz-text-secondary">{cell}</td>
                     ))}
                   </tr>
                 ))}
@@ -131,6 +123,7 @@ export function SectionContent({
             </table>
           </div>
         )
+      }
 
       case 'workbook_prompt':
         return (
@@ -157,12 +150,16 @@ export function SectionContent({
 
       case 'checklist':
         return (
-          <div key={block.id} className="my-6 space-y-2">
+          <div key={block.id} className="my-6 p-5 rounded-xl bg-nz-bg-tertiary/30 border border-nz-border">
             {block.content.title && (
-              <p className="font-heading font-semibold text-sm text-nz-text-primary mb-3">
-                {block.content.title}
-              </p>
+              <h3 className="font-heading font-semibold text-base text-nz-text-primary mb-1">
+                {block.content.title as string}
+              </h3>
             )}
+            {block.content.description && (
+              <p className="text-sm text-nz-text-tertiary mb-4">{block.content.description as string}</p>
+            )}
+            <div className="space-y-1">
             {(block.content.items as string[] ?? []).map((item: string, i: number) => {
               const key = `${block.id}_${i}`
               return (
@@ -185,6 +182,7 @@ export function SectionContent({
                 </label>
               )
             })}
+            </div>
           </div>
         )
 
@@ -212,6 +210,13 @@ export function SectionContent({
           </div>
         )
 
+      case 'video':
+        return (
+          <div key={block.id} className="my-6">
+            {block.content.url && <VideoEmbed url={block.content.url as string} />}
+          </div>
+        )
+
       default:
         return null
     }
@@ -220,7 +225,7 @@ export function SectionContent({
   return (
     <div>
       {/* Content blocks */}
-      <div className="space-y-2">
+      <div className="space-y-6">
         {blocks.map(renderBlock)}
       </div>
 

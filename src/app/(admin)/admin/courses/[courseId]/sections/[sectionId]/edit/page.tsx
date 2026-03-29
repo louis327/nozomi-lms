@@ -17,6 +17,7 @@ import {
   CheckSquare,
   FileUp,
   ChevronDown,
+  Video,
 } from 'lucide-react'
 import {
   DndContext,
@@ -37,7 +38,7 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface ContentBlock {
   id: string
-  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file'
+  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file' | 'video'
   content: Record<string, unknown>
   sort_order: number
 }
@@ -49,6 +50,7 @@ const blockTypes = [
   { type: 'workbook_prompt', label: 'Workbook Prompt', icon: PenTool },
   { type: 'checklist', label: 'Checklist', icon: CheckSquare },
   { type: 'file', label: 'File Upload', icon: FileUp },
+  { type: 'video', label: 'Video', icon: Video },
 ] as const
 
 function SortableBlock({
@@ -81,6 +83,38 @@ function SortableBlock({
   )
 }
 
+function InsertBlockButton({ onInsert }: { onInsert: (type: ContentBlock['type']) => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative flex items-center justify-center py-1 group">
+      <div className="absolute inset-x-0 top-1/2 h-px bg-nz-border/30 group-hover:bg-nz-sakura/20 transition-colors" />
+      <button
+        onClick={() => setOpen(!open)}
+        className="relative z-10 w-6 h-6 rounded-full bg-nz-bg-elevated border border-nz-border hover:border-nz-sakura/40 hover:bg-nz-sakura/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+      >
+        <Plus className="w-3 h-3 text-nz-text-muted group-hover:text-nz-sakura" />
+      </button>
+      {open && (
+        <div className="absolute top-full mt-1 bg-nz-bg-elevated border border-nz-border rounded-xl overflow-hidden shadow-xl z-30 w-48">
+          {blockTypes.map((bt) => {
+            const Icon = bt.icon
+            return (
+              <button
+                key={bt.type}
+                onClick={() => { onInsert(bt.type); setOpen(false) }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-nz-text-secondary hover:text-nz-text-primary hover:bg-nz-bg-tertiary transition-colors cursor-pointer"
+              >
+                <Icon className="w-3.5 h-3.5 text-nz-sakura" />
+                {bt.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function EditSectionPage() {
   const params = useParams<{ courseId: string; sectionId: string }>()
   const courseId = params.courseId
@@ -89,7 +123,6 @@ export default function EditSectionPage() {
   const supabase = createClient()
 
   const [title, setTitle] = useState('')
-  const [videoUrl, setVideoUrl] = useState('')
   const [blocks, setBlocks] = useState<ContentBlock[]>([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -115,7 +148,6 @@ export default function EditSectionPage() {
     }
 
     setTitle(section.title)
-    setVideoUrl(section.video_url || '')
 
     const { data: contentBlocks } = await supabase
       .from('content_blocks')
@@ -123,7 +155,28 @@ export default function EditSectionPage() {
       .eq('section_id', sectionId)
       .order('sort_order')
 
-    setBlocks(contentBlocks ?? [])
+    // If section has a video_url but no video block, create one at the top
+    const loadedBlocks: ContentBlock[] = contentBlocks ?? []
+    const hasVideoBlock = loadedBlocks.some((b) => b.type === 'video')
+    if (section.video_url && !hasVideoBlock) {
+      // Insert a synthetic video block at the beginning (will be saved on next save)
+      const { data: newBlock } = await supabase
+        .from('content_blocks')
+        .insert({
+          section_id: sectionId,
+          type: 'video',
+          content: { url: section.video_url },
+          sort_order: -1,
+        })
+        .select()
+        .single()
+
+      if (newBlock) {
+        loadedBlocks.unshift(newBlock)
+      }
+    }
+
+    setBlocks(loadedBlocks)
     setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId, courseId])
@@ -135,10 +188,14 @@ export default function EditSectionPage() {
   const handleSave = async () => {
     setSaving(true)
 
+    // Extract video_url from the first video block for backward compat
+    const firstVideoBlock = blocks.find((b) => b.type === 'video')
+    const videoUrl = firstVideoBlock ? (firstVideoBlock.content.url as string) || null : null
+
     // Save section
     await supabase
       .from('sections')
-      .update({ title, video_url: videoUrl || null })
+      .update({ title, video_url: videoUrl })
       .eq('id', sectionId)
 
     // Save all blocks
@@ -153,7 +210,7 @@ export default function EditSectionPage() {
     setSaving(false)
   }
 
-  const handleAddBlock = async (type: ContentBlock['type']) => {
+  const handleAddBlock = async (type: ContentBlock['type'], insertAtIndex?: number) => {
     const defaultContent: Record<string, unknown> = {}
     if (type === 'rich_text') defaultContent.html = ''
     if (type === 'callout') {
@@ -172,6 +229,11 @@ export default function EditSectionPage() {
       defaultContent.label = ''
       defaultContent.fileName = ''
     }
+    if (type === 'video') {
+      defaultContent.url = ''
+    }
+
+    const insertIndex = insertAtIndex !== undefined ? insertAtIndex : blocks.length
 
     const { data } = await supabase
       .from('content_blocks')
@@ -179,13 +241,15 @@ export default function EditSectionPage() {
         section_id: sectionId,
         type,
         content: defaultContent,
-        sort_order: blocks.length,
+        sort_order: insertIndex,
       })
       .select()
       .single()
 
     if (data) {
-      setBlocks([...blocks, data])
+      const newBlocks = [...blocks]
+      newBlocks.splice(insertIndex, 0, data)
+      setBlocks(newBlocks)
     }
     setShowBlockMenu(false)
   }
@@ -221,47 +285,35 @@ export default function EditSectionPage() {
   }
 
   return (
-    <div className="max-w-4xl">
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Link
-            href={`/admin/courses/${courseId}/edit`}
-            className="p-2 rounded-lg text-nz-text-tertiary hover:text-nz-text-primary hover:bg-nz-bg-elevated transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="text-xl font-heading font-bold text-nz-text-primary bg-transparent focus:outline-none border-b-2 border-transparent focus:border-nz-sakura/40 transition-colors"
-          />
+    <div className="max-w-5xl">
+      {/* Floating save bar */}
+      <div className="sticky top-0 z-40 bg-nz-bg-primary/80 backdrop-blur-md border-b border-nz-border/50 -mx-4 px-4 py-3 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/admin/courses/${courseId}/edit`}
+              className="p-2 rounded-lg text-nz-text-tertiary hover:text-nz-text-primary hover:bg-nz-bg-elevated transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-xl font-heading font-bold text-nz-text-primary bg-transparent focus:outline-none border-b-2 border-transparent focus:border-nz-sakura/40 transition-colors"
+            />
+          </div>
+
+          <Button onClick={handleSave} loading={saving} size="sm">
+            <Save className="w-4 h-4" />
+            Save
+          </Button>
         </div>
-
-        <Button onClick={handleSave} loading={saving} size="sm">
-          <Save className="w-4 h-4" />
-          Save
-        </Button>
-      </div>
-
-      {/* Video URL */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-nz-text-secondary mb-2">
-          Video URL
-        </label>
-        <input
-          type="url"
-          value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
-          placeholder="https://www.youtube.com/watch?v=... or Vimeo URL"
-          className="w-full px-4 py-3 rounded-xl bg-nz-bg-tertiary border border-nz-border text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
-        />
       </div>
 
       {/* Content blocks */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-0">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="font-heading text-lg font-semibold text-nz-text-primary">
             Content Blocks
           </h2>
@@ -269,16 +321,27 @@ export default function EditSectionPage() {
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-            {blocks.map((block) => (
-              <SortableBlock
-                key={block.id}
-                block={block}
-                onChange={(content) => handleBlockChange(block.id, content)}
-                onDelete={() => handleDeleteBlock(block.id)}
-              />
+            {blocks.map((block, index) => (
+              <div key={block.id}>
+                <InsertBlockButton
+                  onInsert={(type) => handleAddBlock(type, index)}
+                />
+                <SortableBlock
+                  block={block}
+                  onChange={(content) => handleBlockChange(block.id, content)}
+                  onDelete={() => handleDeleteBlock(block.id)}
+                />
+              </div>
             ))}
           </SortableContext>
         </DndContext>
+
+        {/* Insert button after last block */}
+        {blocks.length > 0 && (
+          <InsertBlockButton
+            onInsert={(type) => handleAddBlock(type, blocks.length)}
+          />
+        )}
 
         {blocks.length === 0 && (
           <div className="py-12 text-center bg-nz-bg-card border border-nz-border rounded-2xl">
@@ -289,7 +352,7 @@ export default function EditSectionPage() {
         )}
 
         {/* Add block dropdown */}
-        <div className="relative">
+        <div className="relative mt-4">
           <button
             onClick={() => setShowBlockMenu(!showBlockMenu)}
             className="flex items-center gap-2 w-full px-5 py-4 rounded-2xl text-sm font-semibold text-nz-sakura/70 hover:text-nz-sakura hover:bg-nz-sakura/5 border-2 border-dashed border-nz-sakura/20 hover:border-nz-sakura/40 transition-colors cursor-pointer"

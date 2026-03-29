@@ -36,7 +36,7 @@ export interface Section {
 export interface ContentBlock {
   id: string
   section_id: string
-  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file'
+  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file' | 'video'
   content: Record<string, any>
   sort_order: number
   created_at: string
