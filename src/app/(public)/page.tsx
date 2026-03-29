@@ -92,7 +92,7 @@ export default async function HomePage() {
                     {/* Content */}
                     <div className="flex flex-col flex-1 p-5">
                       <div className="flex items-start justify-between gap-3 mb-2">
-                        <h3 className="font-heading font-semibold text-lg text-nz-text-primary group-hover:text-nz-sakura transition-colors leading-snug">
+                        <h3 className="font-heading font-semibold text-lg text-nz-text-primary group-hover:text-nz-sakura transition-colors leading-snug line-clamp-2">
                           {course.title}
                         </h3>
                         <Badge variant="sakura">{course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}</Badge>

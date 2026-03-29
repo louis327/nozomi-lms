@@ -24,6 +24,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+  const ALLOWED_EXTENSIONS = new Set([
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg',
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'mp4', 'mov',
+  ])
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -32,11 +39,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
+    }
+
+    const ext = (file.name.split('.').pop() || '').toLowerCase()
+    if (!ext || !ALLOWED_EXTENSIONS.has(ext)) {
+      return NextResponse.json(
+        { error: `File type ".${ext}" is not allowed. Allowed: images (jpg, png, gif, webp, svg), documents (pdf, doc, docx, xls, xlsx, ppt, pptx), video (mp4, mov).` },
+        { status: 400 }
+      )
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-
-    // Generate unique filename
-    const ext = file.name.split('.').pop() || 'bin'
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
     const filePath = `uploads/${fileName}`
 

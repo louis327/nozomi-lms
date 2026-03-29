@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/toast'
 import { BlockEditor } from '@/components/admin/block-editor'
 import {
   ArrowLeft,
@@ -122,6 +123,7 @@ export default function EditSectionPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const { addToast } = useToast()
   const [title, setTitle] = useState('')
   const [blocks, setBlocks] = useState<ContentBlock[]>([])
   const [saving, setSaving] = useState(false)
@@ -188,26 +190,37 @@ export default function EditSectionPage() {
   const handleSave = async () => {
     setSaving(true)
 
-    // Extract video_url from the first video block for backward compat
-    const firstVideoBlock = blocks.find((b) => b.type === 'video')
-    const videoUrl = firstVideoBlock ? (firstVideoBlock.content.url as string) || null : null
+    try {
+      // Extract video_url from the first video block for backward compat
+      const firstVideoBlock = blocks.find((b) => b.type === 'video')
+      const videoUrl = firstVideoBlock ? (firstVideoBlock.content.url as string) || null : null
 
-    // Save section
-    await supabase
-      .from('sections')
-      .update({ title, video_url: videoUrl })
-      .eq('id', sectionId)
+      // Save section
+      const { error: sectionError } = await supabase
+        .from('sections')
+        .update({ title, video_url: videoUrl })
+        .eq('id', sectionId)
 
-    // Save all blocks
-    for (let i = 0; i < blocks.length; i++) {
-      const block = blocks[i]
-      await supabase
-        .from('content_blocks')
-        .update({ content: block.content, sort_order: i })
-        .eq('id', block.id)
+      if (sectionError) throw sectionError
+
+      // Save all blocks
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i]
+        const { error: blockError } = await supabase
+          .from('content_blocks')
+          .update({ content: block.content, sort_order: i })
+          .eq('id', block.id)
+
+        if (blockError) throw blockError
+      }
+
+      addToast('Section saved successfully', 'success')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save section'
+      addToast(message, 'error')
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
   }
 
   const handleAddBlock = async (type: ContentBlock['type'], insertAtIndex?: number) => {
@@ -256,8 +269,13 @@ export default function EditSectionPage() {
 
   const handleDeleteBlock = async (blockId: string) => {
     if (!confirm('Delete this content block?')) return
-    await supabase.from('content_blocks').delete().eq('id', blockId)
+    const { error } = await supabase.from('content_blocks').delete().eq('id', blockId)
+    if (error) {
+      addToast('Failed to delete block', 'error')
+      return
+    }
     setBlocks(blocks.filter((b) => b.id !== blockId))
+    addToast('Block deleted', 'success')
   }
 
   const handleBlockChange = (blockId: string, content: Record<string, unknown>) => {

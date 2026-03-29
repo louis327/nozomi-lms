@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/toast'
 import {
   ArrowLeft,
   Save,
@@ -208,6 +209,7 @@ export default function EditCoursePage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const { addToast } = useToast()
   const [title, setTitle] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [modules, setModules] = useState<Module[]>([])
@@ -282,34 +284,47 @@ export default function EditCoursePage() {
   const handleSave = async () => {
     setSaving(true)
 
-    // Save course
-    await supabase
-      .from('courses')
-      .update({ title, status, description: description || null, cover_image: coverImage })
-      .eq('id', courseId)
+    try {
+      // Save course
+      const { error: courseError } = await supabase
+        .from('courses')
+        .update({ title, status, description: description || null, cover_image: coverImage })
+        .eq('id', courseId)
 
-    // Save modules
-    for (let i = 0; i < modules.length; i++) {
-      const mod = modules[i]
-      await supabase
-        .from('modules')
-        .update({
-          title: mod.title,
-          description: mod.description,
-          sort_order: i,
-        })
-        .eq('id', mod.id)
+      if (courseError) throw courseError
 
-      // Save section sort orders
-      for (let j = 0; j < mod.sections.length; j++) {
-        await supabase
-          .from('sections')
-          .update({ sort_order: j })
-          .eq('id', mod.sections[j].id)
+      // Save modules
+      for (let i = 0; i < modules.length; i++) {
+        const mod = modules[i]
+        const { error: modError } = await supabase
+          .from('modules')
+          .update({
+            title: mod.title,
+            description: mod.description,
+            sort_order: i,
+          })
+          .eq('id', mod.id)
+
+        if (modError) throw modError
+
+        // Save section sort orders
+        for (let j = 0; j < mod.sections.length; j++) {
+          const { error: secError } = await supabase
+            .from('sections')
+            .update({ sort_order: j })
+            .eq('id', mod.sections[j].id)
+
+          if (secError) throw secError
+        }
       }
-    }
 
-    setSaving(false)
+      addToast('Course saved successfully', 'success')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save course'
+      addToast(message, 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleAddModule = async () => {
@@ -332,8 +347,13 @@ export default function EditCoursePage() {
 
   const handleDeleteModule = async (moduleId: string) => {
     if (!confirm('Delete this module and all its sections?')) return
-    await supabase.from('modules').delete().eq('id', moduleId)
+    const { error } = await supabase.from('modules').delete().eq('id', moduleId)
+    if (error) {
+      addToast('Failed to delete module', 'error')
+      return
+    }
     setModules(modules.filter((m) => m.id !== moduleId))
+    addToast('Module deleted', 'success')
   }
 
   const handleAddSection = async (moduleId: string) => {
@@ -361,7 +381,11 @@ export default function EditCoursePage() {
 
   const handleDeleteSection = async (moduleId: string, sectionId: string) => {
     if (!confirm('Delete this section and all its content?')) return
-    await supabase.from('sections').delete().eq('id', sectionId)
+    const { error } = await supabase.from('sections').delete().eq('id', sectionId)
+    if (error) {
+      addToast('Failed to delete section', 'error')
+      return
+    }
     setModules(
       modules.map((m) =>
         m.id === moduleId
@@ -369,6 +393,7 @@ export default function EditCoursePage() {
           : m
       )
     )
+    addToast('Section deleted', 'success')
   }
 
   const handleModuleDragEnd = (event: DragEndEvent) => {
@@ -409,8 +434,8 @@ export default function EditCoursePage() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setCoverImage(data.url)
-    } catch {
-      // Silently fail for now
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to upload image', 'error')
     } finally {
       setUploading(false)
     }

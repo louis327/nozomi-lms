@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -16,6 +17,8 @@ import {
   Link as LinkIcon,
   Undo,
   Redo,
+  Check,
+  X,
 } from 'lucide-react'
 
 interface RichTextEditorProps {
@@ -25,6 +28,9 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ content, onChange, placeholder = 'Start writing...' }: RichTextEditorProps) {
+  const [showLinkInput, setShowLinkInput] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -55,10 +61,22 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
       editor.chain().focus().unsetLink().run()
       return
     }
-    const url = prompt('Enter URL:')
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run()
+    setLinkUrl('')
+    setShowLinkInput(true)
+  }
+
+  const applyLink = () => {
+    if (linkUrl) {
+      editor.chain().focus().setLink({ href: linkUrl }).run()
     }
+    setShowLinkInput(false)
+    setLinkUrl('')
+  }
+
+  const cancelLink = () => {
+    setShowLinkInput(false)
+    setLinkUrl('')
+    editor.chain().focus().run()
   }
 
   const ToolbarButton = ({
@@ -128,6 +146,39 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           <Redo className="w-4 h-4" />
         </ToolbarButton>
       </div>
+
+      {/* Link input bar */}
+      {showLinkInput && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-nz-border bg-nz-bg-elevated/50">
+          <LinkIcon className="w-3.5 h-3.5 text-nz-text-tertiary shrink-0" />
+          <input
+            type="url"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyLink()
+              if (e.key === 'Escape') cancelLink()
+            }}
+            placeholder="https://example.com"
+            autoFocus
+            className="flex-1 bg-transparent text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={applyLink}
+            className="p-1 rounded-md text-nz-success hover:bg-nz-success/10 transition-colors cursor-pointer"
+          >
+            <Check className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={cancelLink}
+            className="p-1 rounded-md text-nz-text-tertiary hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Editor */}
       <EditorContent editor={editor} />

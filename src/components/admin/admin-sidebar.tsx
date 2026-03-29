@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -8,6 +9,8 @@ import {
   Users,
   Settings,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -22,6 +25,7 @@ const navItems = [
 export function AdminSidebar({ adminName }: { adminName: string }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -30,13 +34,36 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
   }
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-60 bg-nz-bg-secondary border-r border-nz-border flex flex-col z-40">
+    <>
+      {/* Mobile hamburger */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-4 left-4 z-50 p-2 rounded-xl bg-nz-bg-elevated border border-nz-border text-nz-text-secondary hover:text-nz-text-primary lg:hidden cursor-pointer"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+    <aside className={`fixed top-0 left-0 h-screen w-60 bg-nz-bg-secondary border-r border-nz-border flex-col z-50 transition-transform duration-200 ${mobileOpen ? 'flex translate-x-0' : 'hidden lg:flex'}`}>
       {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-nz-border">
+      <div className="h-16 flex items-center justify-between px-6 border-b border-nz-border">
         <Link href="/admin" className="font-heading font-bold text-lg text-nz-text-primary tracking-tight">
           NOZOMI<span className="text-nz-sakura">.</span>
           <span className="text-nz-text-tertiary text-xs ml-2 font-sans font-normal">ADMIN</span>
         </Link>
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="p-1.5 rounded-lg text-nz-text-tertiary hover:text-nz-text-primary lg:hidden cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -52,6 +79,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setMobileOpen(false)}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                 ${
@@ -88,5 +116,6 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
         </button>
       </div>
     </aside>
+    </>
   )
 }

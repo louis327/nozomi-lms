@@ -102,12 +102,12 @@ export function SectionContent({
         const headers = rows[0] ?? []
         const bodyRows = rows.slice(1)
         return (
-          <div key={block.id} className="my-6 overflow-x-auto rounded-xl border border-nz-border">
-            <table className="w-full text-sm">
+          <div key={block.id} className="my-6 overflow-x-auto rounded-xl border border-nz-border/60">
+            <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr className="bg-nz-bg-elevated">
                   {headers.map((h: string, i: number) => (
-                    <th key={i} className="px-5 py-3.5 text-left font-heading font-semibold text-nz-text-primary border-b border-nz-border text-xs uppercase tracking-wider">{h}</th>
+                    <th key={i} className="px-5 py-3.5 text-left font-heading font-semibold text-nz-text-primary border-b border-nz-border/60 border-r border-nz-border/30 last:border-r-0 text-xs uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -115,7 +115,7 @@ export function SectionContent({
                 {bodyRows.map((row: string[], ri: number) => (
                   <tr key={ri} className={`border-b border-nz-border/50 last:border-0 ${ri % 2 === 0 ? 'bg-nz-bg-card' : 'bg-nz-bg-tertiary/30'}`}>
                     {row.map((cell: string, ci: number) => (
-                      <td key={ci} className="px-5 py-3.5 text-nz-text-secondary">{cell}</td>
+                      <td key={ci} className="px-5 py-3.5 text-nz-text-secondary border-r border-nz-border/30 last:border-r-0">{cell}</td>
                     ))}
                   </tr>
                 ))}
@@ -159,7 +159,7 @@ export function SectionContent({
             {block.content.description && (
               <p className="text-sm text-nz-text-tertiary mb-4">{block.content.description as string}</p>
             )}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
             {(block.content.items as string[] ?? []).map((item: string, i: number) => {
               const key = `${block.id}_${i}`
               return (
@@ -190,7 +190,7 @@ export function SectionContent({
         return (
           <div key={block.id} className="my-4">
             <a
-              href={block.content.url}
+              href={block.content.fileUrl ?? block.content.url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-nz-bg-tertiary/50 border border-nz-border hover:border-nz-border-hover transition-colors group"
@@ -200,7 +200,7 @@ export function SectionContent({
               </svg>
               <div>
                 <p className="text-sm font-medium text-nz-text-primary group-hover:text-nz-sakura transition-colors">
-                  {block.content.filename ?? 'Download File'}
+                  {block.content.label ?? block.content.fileName ?? block.content.filename ?? 'Download File'}
                 </p>
                 {block.content.description && (
                   <p className="text-xs text-nz-text-muted">{block.content.description}</p>

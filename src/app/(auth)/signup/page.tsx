@@ -17,6 +17,7 @@ function SignupForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,13 +48,46 @@ function SignupForm() {
         return
       }
 
-      // Fallback: if email confirmation is required
-      router.push('/login?message=Check your email to confirm your account')
+      // Email confirmation required — show confirmation screen
+      setConfirmationSent(true)
     } catch {
       setError('An unexpected error occurred.')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (confirmationSent) {
+    return (
+      <div className="text-center">
+        <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-nz-sakura/10 flex items-center justify-center">
+          <svg className="w-8 h-8 text-nz-sakura" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+          </svg>
+        </div>
+        <h1 className="font-heading text-2xl font-bold text-nz-text-primary mb-2">
+          Check your email
+        </h1>
+        <p className="text-sm text-nz-text-secondary mb-2 leading-relaxed">
+          We sent a confirmation link to
+        </p>
+        <p className="text-sm font-medium text-nz-text-primary mb-6">
+          {email}
+        </p>
+        <p className="text-sm text-nz-text-muted mb-8 leading-relaxed">
+          Click the link in your email to activate your account. If you don&apos;t see it, check your spam folder.
+        </p>
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 text-sm font-medium text-nz-sakura hover:text-nz-sakura-deep transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to login
+        </Link>
+      </div>
+    )
   }
 
   return (
@@ -92,16 +126,19 @@ function SignupForm() {
           autoComplete="email"
         />
 
-        <Input
-          label="Password"
-          type="password"
-          placeholder="At least 6 characters"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-          autoComplete="new-password"
-        />
+        <div>
+          <Input
+            label="Password"
+            type="password"
+            placeholder="At least 6 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            autoComplete="new-password"
+          />
+          <p className="mt-1.5 text-xs text-nz-text-muted">Must be at least 6 characters</p>
+        </div>
 
         <Button
           type="submit"

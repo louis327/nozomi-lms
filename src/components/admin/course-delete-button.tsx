@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/components/ui/toast'
 import { Trash2 } from 'lucide-react'
 
 export function CourseDeleteButton({
@@ -15,11 +16,18 @@ export function CourseDeleteButton({
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { addToast } = useToast()
 
   const handleDelete = async () => {
     setLoading(true)
     const supabase = createClient()
-    await supabase.from('courses').delete().eq('id', courseId)
+    const { error } = await supabase.from('courses').delete().eq('id', courseId)
+    if (error) {
+      addToast('Failed to delete course: ' + error.message, 'error')
+      setLoading(false)
+      return
+    }
+    addToast('Course deleted', 'success')
     router.refresh()
     setConfirming(false)
     setLoading(false)

@@ -34,6 +34,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={`
           inline-flex items-center justify-center font-heading font-semibold
           transition-all duration-200 cursor-pointer
+          focus:ring-2 focus:ring-nz-sakura/30 focus:ring-offset-2 focus:ring-offset-nz-bg-primary
           ${variants[variant]}
           ${sizes[size]}
           ${isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}

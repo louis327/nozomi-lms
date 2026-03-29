@@ -33,7 +33,7 @@ export function VideoEmbed({ url }: VideoEmbedProps) {
 
   const embedUrl =
     provider === 'youtube'
-      ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&color=white`
+      ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`
       : `https://player.vimeo.com/video/${id}?byline=0&portrait=0`
 
   return (

@@ -29,7 +29,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             w-full px-4 py-2.5 rounded-xl
             bg-nz-bg-tertiary border border-nz-border
             text-nz-text-primary placeholder:text-nz-text-muted
-            focus:outline-none focus:border-nz-sakura/40 focus:ring-1 focus:ring-nz-sakura/20
+            focus:outline-none focus:border-nz-sakura/40 focus:ring-1 focus:ring-nz-sakura/40
             transition-all duration-200
             ${mono ? 'font-mono text-sm' : 'font-sans'}
             ${error ? 'border-nz-error/50 focus:border-nz-error/70 focus:ring-nz-error/20' : ''}

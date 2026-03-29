@@ -3,7 +3,7 @@ import { ReactNode } from 'react'
 const calloutConfig = {
   tip: {
     bg: 'bg-nz-sakura/5',
-    border: 'border-nz-sakura/20',
+    border: 'border-nz-sakura/40',
     iconColor: 'text-nz-sakura',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -13,7 +13,7 @@ const calloutConfig = {
   },
   warning: {
     bg: 'bg-nz-warning/5',
-    border: 'border-nz-warning/20',
+    border: 'border-nz-warning/40',
     iconColor: 'text-nz-warning',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -23,7 +23,7 @@ const calloutConfig = {
   },
   formula: {
     bg: 'bg-nz-info/5',
-    border: 'border-nz-info/20',
+    border: 'border-nz-info/40',
     iconColor: 'text-nz-info',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -33,7 +33,7 @@ const calloutConfig = {
   },
   'key-insight': {
     bg: 'bg-nz-success/5',
-    border: 'border-nz-success/20',
+    border: 'border-nz-success/40',
     iconColor: 'text-nz-success',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -54,7 +54,7 @@ export function Callout({ type, title, children }: CalloutProps) {
   const config = calloutConfig[type]
 
   return (
-    <div className={`rounded-xl ${config.bg} border ${config.border} p-4 my-4`}>
+    <div className={`rounded-xl ${config.bg} border ${config.border} p-5 my-4`}>
       <div className="flex gap-3">
         <div className={`shrink-0 mt-0.5 ${config.iconColor}`}>
           {config.icon}
