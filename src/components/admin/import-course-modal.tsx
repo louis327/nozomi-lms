@@ -60,6 +60,13 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<string>('')
   const importingRef = useRef(false)
+  const phaseRef = useRef<ImportPhase>('idle')
+  const pendingFinishRef = useRef<ImportResult | null>(null)
+
+  const setPhaseSync = useCallback((p: ImportPhase) => {
+    phaseRef.current = p
+    setPhase(p)
+  }, [])
 
   const stopAll = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -100,7 +107,8 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
 
     const supabase = createClient()
     importingRef.current = true
-    setPhase('sending')
+    pendingFinishRef.current = null
+    setPhaseSync('sending')
     setResult(null)
     setElapsed(0)
     setProgress({ modules: 0, sections: 0, blocks: 0 })
@@ -126,11 +134,11 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).then(async (res) => {
-      // If we get a response back (fast imports), use it directly
       try {
         const data: ImportResult = await res.json()
         if (data.success && importingRef.current) {
-          finishSuccess(data)
+          // Don't finish immediately — store it so polling can show progress first
+          pendingFinishRef.current = data
         }
       } catch {
         // Response parse failed, polling will handle it
@@ -142,7 +150,7 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
     // After 2 seconds, switch to waiting phase and start polling
     setTimeout(() => {
       if (!importingRef.current) return
-      setPhase('waiting')
+      setPhaseSync('waiting')
       startPolling(supabase)
     }, 2000)
 
@@ -150,7 +158,7 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
     setTimeout(() => {
       if (!importingRef.current) return
       stopAll()
-      setPhase('error')
+      setPhaseSync('error')
       setResult({
         success: false,
         error: 'Import timed out after 10 minutes. The course may still be building — check your courses list in a moment.',
@@ -174,13 +182,21 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
           .order('created_at', { ascending: false })
           .limit(1)
 
-        if (!courses || courses.length === 0) return
+        if (!courses || courses.length === 0) {
+          // No course yet — if n8n already responded with success, use that
+          if (pendingFinishRef.current) {
+            finishSuccess(pendingFinishRef.current)
+          }
+          return
+        }
 
         const course = courses[0]
         setProgress((p) => ({ ...p, courseId: course.id, courseTitle: course.title }))
 
-        if (phase === 'waiting' || phase === 'sending') {
-          setPhase('course-found')
+        // Use ref to check current phase (avoids stale closure)
+        const currentPhase = phaseRef.current
+        if (currentPhase === 'waiting' || currentPhase === 'sending') {
+          setPhaseSync('course-found')
         }
 
         // Count modules
@@ -230,14 +246,16 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
           blocks: blockCount,
         })
 
-        if ((moduleCount || 0) > 0) {
-          setPhase('building')
+        if ((moduleCount || 0) > 0 && phaseRef.current === 'course-found') {
+          setPhaseSync('building')
         }
 
-        // Detect completion: block count stops changing for 3 consecutive polls (9 seconds)
+        // Detect completion: either n8n responded OR block count stable for 3 polls
+        const n8nDone = !!pendingFinishRef.current
         if (blockCount > 0 && blockCount === lastBlockCount) {
           stableCount++
-          if (stableCount >= 3) {
+          // Finish faster if n8n already confirmed success, or wait 3 stable polls
+          if (n8nDone || stableCount >= 3) {
             finishSuccess({
               success: true,
               courseId: course.id,
@@ -261,7 +279,7 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
   const finishSuccess = (data: ImportResult) => {
     if (!importingRef.current) return
     stopAll()
-    setPhase('done')
+    setPhaseSync('done')
     setResult(data)
     setTimeout(() => {
       onSuccess()
