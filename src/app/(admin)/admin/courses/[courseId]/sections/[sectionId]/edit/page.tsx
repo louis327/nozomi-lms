@@ -7,6 +7,9 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 import { BlockEditor } from '@/components/admin/block-editor'
+import { Breadcrumbs } from '@/components/admin/breadcrumbs'
+import { SaveIndicator } from '@/components/admin/save-indicator'
+import { useAutoSave } from '@/hooks/useAutoSave'
 import {
   ArrowLeft,
   Save,
@@ -129,6 +132,8 @@ export default function EditSectionPage() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showBlockMenu, setShowBlockMenu] = useState(false)
+  const [courseName, setCourseName] = useState('')
+  const [moduleName, setModuleName] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -150,6 +155,21 @@ export default function EditSectionPage() {
     }
 
     setTitle(section.title)
+
+    // Load breadcrumb data
+    const { data: moduleData } = await supabase
+      .from('modules')
+      .select('title')
+      .eq('id', section.module_id)
+      .single()
+    if (moduleData) setModuleName(moduleData.title)
+
+    const { data: courseData } = await supabase
+      .from('courses')
+      .select('title')
+      .eq('id', courseId)
+      .single()
+    if (courseData) setCourseName(courseData.title)
 
     const { data: contentBlocks } = await supabase
       .from('content_blocks')
@@ -222,6 +242,34 @@ export default function EditSectionPage() {
       setSaving(false)
     }
   }
+
+  const autoSaveFn = useCallback(async () => {
+    // Extract video_url from the first video block for backward compat
+    const firstVideoBlock = blocks.find((b) => b.type === 'video')
+    const videoUrl = firstVideoBlock ? (firstVideoBlock.content.url as string) || null : null
+
+    const { error: sectionError } = await supabase
+      .from('sections')
+      .update({ title, video_url: videoUrl })
+      .eq('id', sectionId)
+    if (sectionError) throw sectionError
+
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i]
+      const { error: blockError } = await supabase
+        .from('content_blocks')
+        .update({ content: block.content, sort_order: i })
+        .eq('id', block.id)
+      if (blockError) throw blockError
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, blocks, sectionId])
+
+  const { status: autoSaveStatus } = useAutoSave(
+    autoSaveFn,
+    [title, blocks],
+    { delay: 3000, enabled: !loading }
+  )
 
   const handleAddBlock = async (type: ContentBlock['type'], insertAtIndex?: number) => {
     const defaultContent: Record<string, unknown> = {}
@@ -304,6 +352,16 @@ export default function EditSectionPage() {
 
   return (
     <div className="max-w-5xl">
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        items={[
+          { label: 'Courses', href: '/admin/courses' },
+          { label: courseName || 'Course', href: `/admin/courses/${courseId}/edit` },
+          { label: moduleName || 'Module' },
+          { label: title || 'Section' },
+        ]}
+      />
+
       {/* Floating save bar */}
       <div className="sticky top-0 z-40 bg-nz-bg-primary/80 backdrop-blur-md border-b border-nz-border/50 -mx-4 px-4 py-3 mb-6">
         <div className="flex items-center justify-between">
@@ -322,10 +380,13 @@ export default function EditSectionPage() {
             />
           </div>
 
-          <Button onClick={handleSave} loading={saving} size="sm">
-            <Save className="w-4 h-4" />
-            Save
-          </Button>
+          <div className="flex items-center gap-3">
+            <SaveIndicator status={autoSaveStatus} />
+            <Button onClick={handleSave} loading={saving} size="sm" variant="secondary">
+              <Save className="w-4 h-4" />
+              Save
+            </Button>
+          </div>
         </div>
       </div>
 

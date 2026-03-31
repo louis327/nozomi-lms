@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
+import { Breadcrumbs } from '@/components/admin/breadcrumbs'
+import { SaveIndicator } from '@/components/admin/save-indicator'
+import { useAutoSave } from '@/hooks/useAutoSave'
 import {
   ArrowLeft,
   Save,
@@ -327,6 +330,38 @@ export default function EditCoursePage() {
     }
   }
 
+  const autoSaveFn = useCallback(async () => {
+    const { error: courseError } = await supabase
+      .from('courses')
+      .update({ title, status, description: description || null, cover_image: coverImage })
+      .eq('id', courseId)
+    if (courseError) throw courseError
+
+    for (let i = 0; i < modules.length; i++) {
+      const mod = modules[i]
+      const { error: modError } = await supabase
+        .from('modules')
+        .update({ title: mod.title, description: mod.description, sort_order: i })
+        .eq('id', mod.id)
+      if (modError) throw modError
+
+      for (let j = 0; j < mod.sections.length; j++) {
+        const { error: secError } = await supabase
+          .from('sections')
+          .update({ sort_order: j })
+          .eq('id', mod.sections[j].id)
+        if (secError) throw secError
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, status, description, coverImage, modules, courseId])
+
+  const { status: autoSaveStatus } = useAutoSave(
+    autoSaveFn,
+    [title, status, description, coverImage, modules],
+    { delay: 3000, enabled: !loading }
+  )
+
   const handleAddModule = async () => {
     const { data } = await supabase
       .from('modules')
@@ -451,6 +486,14 @@ export default function EditCoursePage() {
 
   return (
     <div>
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        items={[
+          { label: 'Courses', href: '/admin/courses' },
+          { label: title || 'Course' },
+        ]}
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -469,6 +512,8 @@ export default function EditCoursePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <SaveIndicator status={autoSaveStatus} />
+
           {/* Status toggle */}
           <div className="flex gap-1 bg-nz-bg-tertiary rounded-xl p-1 border border-nz-border">
             <button
@@ -493,7 +538,7 @@ export default function EditCoursePage() {
             </button>
           </div>
 
-          <Button onClick={handleSave} loading={saving} size="sm">
+          <Button onClick={handleSave} loading={saving} size="sm" variant="secondary">
             <Save className="w-4 h-4" />
             Save
           </Button>

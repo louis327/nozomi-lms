@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AdminProviders } from '@/components/admin/admin-providers'
+import { AiChat } from '@/components/admin/ai-chat'
 
 export default async function AdminLayout({
   children,
@@ -39,6 +40,8 @@ export default async function AdminLayout({
         <main className="lg:ml-60 min-h-screen">
           <div className="p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
+
+        <AiChat />
       </div>
     </AdminProviders>
   )
