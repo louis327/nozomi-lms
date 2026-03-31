@@ -96,10 +96,10 @@ export function SectionContent({
         return (
           <Callout
             key={block.id}
-            type={block.content.callout_type ?? 'tip'}
+            type={block.content.calloutType ?? block.content.callout_type ?? 'tip'}
             title={block.content.title}
           >
-            <div dangerouslySetInnerHTML={{ __html: block.content.html ?? block.content.text ?? '' }} />
+            <div dangerouslySetInnerHTML={{ __html: block.content.body ?? block.content.html ?? block.content.text ?? '' }} />
           </Callout>
         )
 
@@ -139,12 +139,12 @@ export function SectionContent({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               <p className="text-sm font-heading font-semibold text-nz-text-primary">
-                {block.content.prompt ?? 'Your response'}
+                {block.content.label ?? block.content.prompt ?? 'Your response'}
               </p>
             </div>
             <textarea
               className="w-full min-h-[120px] bg-nz-bg-primary border border-nz-border rounded-xl px-4 py-3 text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors resize-y"
-              placeholder="Type your response here..."
+              placeholder={block.content.placeholder as string || 'Type your response here...'}
               value={workbookData[block.id] ?? ''}
               onChange={(e) =>
                 setWorkbookData((prev) => ({ ...prev, [block.id]: e.target.value }))
