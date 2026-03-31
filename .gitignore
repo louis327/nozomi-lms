@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# scripts with secrets
+scripts/gen-n8n-workflow.py
+scripts/n8n-import-workflow-active.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
