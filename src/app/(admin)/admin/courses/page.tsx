@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Plus } from 'lucide-react'
 import { CourseDeleteButton } from '@/components/admin/course-delete-button'
+import { CoursesHeader } from '@/components/admin/courses-header'
 
 export default async function AdminCoursesPage() {
   const supabase = createAdminClient()
@@ -31,18 +32,7 @@ export default async function AdminCoursesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-heading text-2xl font-bold text-nz-text-primary">
-          Courses
-        </h1>
-        <Link
-          href="/admin/courses/new"
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-heading font-semibold rounded-xl bg-nz-sakura text-nz-bg-primary hover:bg-nz-sakura-deep transition-colors sakura-glow"
-        >
-          <Plus className="w-4 h-4" />
-          Create Course
-        </Link>
-      </div>
+      <CoursesHeader />
 
       {(courses ?? []).length === 0 ? (
         <div className="bg-nz-bg-card border border-nz-border rounded-2xl p-12 text-center">
