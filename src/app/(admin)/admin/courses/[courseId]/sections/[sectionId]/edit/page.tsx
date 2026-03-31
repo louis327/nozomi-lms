@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useToast } from '@/components/ui/toast'
 import { BlockEditor } from '@/components/admin/block-editor'
 import { Breadcrumbs } from '@/components/admin/breadcrumbs'
@@ -48,23 +49,25 @@ interface ContentBlock {
 }
 
 const blockTypes = [
-  { type: 'rich_text', label: 'Rich Text', icon: Type },
-  { type: 'callout', label: 'Callout', icon: AlertTriangle },
-  { type: 'table', label: 'Table', icon: Table2 },
-  { type: 'workbook_prompt', label: 'Workbook Prompt', icon: PenTool },
-  { type: 'checklist', label: 'Checklist', icon: CheckSquare },
-  { type: 'file', label: 'File Upload', icon: FileUp },
-  { type: 'video', label: 'Video', icon: Video },
+  { type: 'rich_text', label: 'Rich Text', icon: Type, desc: 'Paragraphs, headings, lists' },
+  { type: 'callout', label: 'Callout', icon: AlertTriangle, desc: 'Tips, warnings, key insights' },
+  { type: 'table', label: 'Table', icon: Table2, desc: 'Structured data in rows & cols' },
+  { type: 'workbook_prompt', label: 'Workbook Prompt', icon: PenTool, desc: 'Student exercise / reflection' },
+  { type: 'checklist', label: 'Checklist', icon: CheckSquare, desc: 'Action items & deliverables' },
+  { type: 'file', label: 'File Upload', icon: FileUp, desc: 'Downloadable resources' },
+  { type: 'video', label: 'Video', icon: Video, desc: 'YouTube or Vimeo embed' },
 ] as const
 
 function SortableBlock({
   block,
   onChange,
   onDelete,
+  onDuplicate,
 }: {
   block: ContentBlock
   onChange: (content: Record<string, unknown>) => void
   onDelete: () => void
+  onDuplicate: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: block.id,
@@ -81,6 +84,7 @@ function SortableBlock({
         block={block}
         onChange={onChange}
         onDelete={onDelete}
+        onDuplicate={onDuplicate}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -99,17 +103,20 @@ function InsertBlockButton({ onInsert }: { onInsert: (type: ContentBlock['type']
         <Plus className="w-3 h-3 text-nz-text-muted group-hover:text-nz-sakura" />
       </button>
       {open && (
-        <div className="absolute top-full mt-1 bg-nz-bg-elevated border border-nz-border rounded-xl overflow-hidden shadow-xl z-30 w-48">
+        <div className="absolute top-full mt-1 bg-nz-bg-elevated border border-nz-border rounded-xl overflow-hidden shadow-xl z-30 w-56">
           {blockTypes.map((bt) => {
             const Icon = bt.icon
             return (
               <button
                 key={bt.type}
                 onClick={() => { onInsert(bt.type); setOpen(false) }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-nz-text-secondary hover:text-nz-text-primary hover:bg-nz-bg-tertiary transition-colors cursor-pointer"
+                className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-nz-bg-tertiary transition-colors cursor-pointer"
               >
-                <Icon className="w-3.5 h-3.5 text-nz-sakura" />
-                {bt.label}
+                <Icon className="w-4 h-4 text-nz-sakura flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-nz-text-primary">{bt.label}</p>
+                  <p className="text-[10px] text-nz-text-muted">{bt.desc}</p>
+                </div>
               </button>
             )
           })}
@@ -134,6 +141,14 @@ export default function EditSectionPage() {
   const [showBlockMenu, setShowBlockMenu] = useState(false)
   const [courseName, setCourseName] = useState('')
   const [moduleName, setModuleName] = useState('')
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+  }>({ open: false, title: '', message: '', onConfirm: () => {} })
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -181,7 +196,6 @@ export default function EditSectionPage() {
     const loadedBlocks: ContentBlock[] = contentBlocks ?? []
     const hasVideoBlock = loadedBlocks.some((b) => b.type === 'video')
     if (section.video_url && !hasVideoBlock) {
-      // Insert a synthetic video block at the beginning (will be saved on next save)
       const { data: newBlock } = await supabase
         .from('content_blocks')
         .insert({
@@ -244,7 +258,6 @@ export default function EditSectionPage() {
   }
 
   const autoSaveFn = useCallback(async () => {
-    // Extract video_url from the first video block for backward compat
     const firstVideoBlock = blocks.find((b) => b.type === 'video')
     const videoUrl = firstVideoBlock ? (firstVideoBlock.content.url as string) || null : null
 
@@ -315,15 +328,49 @@ export default function EditSectionPage() {
     setShowBlockMenu(false)
   }
 
-  const handleDeleteBlock = async (blockId: string) => {
-    if (!confirm('Delete this content block?')) return
-    const { error } = await supabase.from('content_blocks').delete().eq('id', blockId)
-    if (error) {
-      addToast('Failed to delete block', 'error')
-      return
+  const handleDeleteBlock = (blockId: string) => {
+    const block = blocks.find((b) => b.id === blockId)
+    const blockLabel = block ? block.type.replace(/_/g, ' ') : 'block'
+    setConfirmModal({
+      open: true,
+      title: 'Delete Block',
+      message: `Delete this ${blockLabel}? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmModal((p) => ({ ...p, open: false }))
+        const { error } = await supabase.from('content_blocks').delete().eq('id', blockId)
+        if (error) {
+          addToast('Failed to delete block', 'error')
+          return
+        }
+        setBlocks(blocks.filter((b) => b.id !== blockId))
+        addToast('Block deleted', 'success')
+      },
+    })
+  }
+
+  const handleDuplicateBlock = async (blockId: string) => {
+    const block = blocks.find((b) => b.id === blockId)
+    if (!block) return
+
+    const blockIndex = blocks.findIndex((b) => b.id === blockId)
+
+    const { data } = await supabase
+      .from('content_blocks')
+      .insert({
+        section_id: sectionId,
+        type: block.type,
+        content: block.content,
+        sort_order: blockIndex + 1,
+      })
+      .select()
+      .single()
+
+    if (data) {
+      const newBlocks = [...blocks]
+      newBlocks.splice(blockIndex + 1, 0, data)
+      setBlocks(newBlocks)
+      addToast('Block duplicated', 'success')
     }
-    setBlocks(blocks.filter((b) => b.id !== blockId))
-    addToast('Block deleted', 'success')
   }
 
   const handleBlockChange = (blockId: string, content: Record<string, unknown>) => {
@@ -352,6 +399,15 @@ export default function EditSectionPage() {
 
   return (
     <div className="max-w-5xl">
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((p) => ({ ...p, open: false }))}
+      />
+
       {/* Breadcrumbs */}
       <Breadcrumbs
         items={[
@@ -381,6 +437,7 @@ export default function EditSectionPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <span className="text-xs text-nz-text-muted">{blocks.length} blocks</span>
             <SaveIndicator status={autoSaveStatus} />
             <Button onClick={handleSave} loading={saving} size="sm" variant="secondary">
               <Save className="w-4 h-4" />
@@ -409,6 +466,7 @@ export default function EditSectionPage() {
                   block={block}
                   onChange={(content) => handleBlockChange(block.id, content)}
                   onDelete={() => handleDeleteBlock(block.id)}
+                  onDuplicate={() => handleDuplicateBlock(block.id)}
                 />
               </div>
             ))}
@@ -442,17 +500,20 @@ export default function EditSectionPage() {
           </button>
 
           {showBlockMenu && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-nz-bg-elevated border border-nz-border rounded-xl overflow-hidden shadow-xl z-20">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-nz-bg-elevated border border-nz-border rounded-xl overflow-hidden shadow-xl z-20 grid grid-cols-2 gap-0">
               {blockTypes.map((bt) => {
                 const Icon = bt.icon
                 return (
                   <button
                     key={bt.type}
                     onClick={() => handleAddBlock(bt.type)}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-nz-text-secondary hover:text-nz-text-primary hover:bg-nz-bg-tertiary transition-colors cursor-pointer"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-nz-bg-tertiary transition-colors cursor-pointer border-b border-r border-nz-border/30"
                   >
-                    <Icon className="w-4 h-4 text-nz-sakura" />
-                    {bt.label}
+                    <Icon className="w-4 h-4 text-nz-sakura flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-nz-text-primary">{bt.label}</p>
+                      <p className="text-xs text-nz-text-muted">{bt.desc}</p>
+                    </div>
                   </button>
                 )
               })}

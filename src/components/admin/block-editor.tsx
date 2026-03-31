@@ -11,6 +11,7 @@ import {
   KeyRound,
   Plus,
   Minus,
+  Copy,
 } from 'lucide-react'
 
 interface ContentBlock {
@@ -24,6 +25,7 @@ interface BlockEditorProps {
   block: ContentBlock
   onChange: (content: Record<string, unknown>) => void
   onDelete: () => void
+  onDuplicate?: () => void
   dragHandleProps?: Record<string, unknown>
 }
 
@@ -337,7 +339,7 @@ const blockTypeLabels: Record<string, string> = {
   video: 'Video',
 }
 
-export function BlockEditor({ block, onChange, onDelete, dragHandleProps }: BlockEditorProps) {
+export function BlockEditor({ block, onChange, onDelete, onDuplicate, dragHandleProps }: BlockEditorProps) {
   const renderEditor = () => {
     switch (block.type) {
       case 'rich_text':
@@ -370,6 +372,15 @@ export function BlockEditor({ block, onChange, onDelete, dragHandleProps }: Bloc
           {blockTypeLabels[block.type] || block.type}
         </span>
         <div className="flex-1" />
+        {onDuplicate && (
+          <button
+            onClick={onDuplicate}
+            className="p-1.5 rounded-lg text-nz-text-muted hover:text-nz-sakura hover:bg-nz-sakura/10 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+            title="Duplicate block"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+        )}
         <button
           onClick={onDelete}
           className="p-1.5 rounded-lg text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useToast } from '@/components/ui/toast'
 import { Breadcrumbs } from '@/components/admin/breadcrumbs'
 import { SaveIndicator } from '@/components/admin/save-indicator'
@@ -18,6 +19,10 @@ import {
   ChevronRight,
   Pencil,
   Trash2,
+  Copy,
+  Layers,
+  FileText,
+  Eye,
 } from 'lucide-react'
 import {
   DndContext,
@@ -49,6 +54,7 @@ interface Section {
   module_id: string
   title: string
   sort_order: number
+  block_count?: number
 }
 
 function SortableModule({
@@ -58,8 +64,10 @@ function SortableModule({
   onTitleChange,
   onDescriptionChange,
   onDeleteModule,
+  onDuplicateModule,
   onAddSection,
   onDeleteSection,
+  onDuplicateSection,
   courseId,
 }: {
   module: Module
@@ -68,8 +76,10 @@ function SortableModule({
   onTitleChange: (title: string) => void
   onDescriptionChange: (desc: string) => void
   onDeleteModule: () => void
+  onDuplicateModule: () => void
   onAddSection: () => void
   onDeleteSection: (sectionId: string) => void
+  onDuplicateSection: (sectionId: string) => void
   courseId: string
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -80,6 +90,8 @@ function SortableModule({
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  const totalBlocks = module.sections.reduce((sum, s) => sum + (s.block_count || 0), 0)
 
   return (
     <div
@@ -101,6 +113,24 @@ function SortableModule({
           onChange={(e) => onTitleChange(e.target.value)}
           className="flex-1 bg-transparent text-nz-text-primary font-heading font-semibold text-sm focus:outline-none border-b border-transparent focus:border-nz-sakura/40 transition-colors"
         />
+        {/* Module stats */}
+        <div className="flex items-center gap-3 mr-2">
+          <span className="flex items-center gap-1 text-xs text-nz-text-muted" title={`${module.sections.length} sections`}>
+            <Layers className="w-3 h-3" />
+            {module.sections.length}
+          </span>
+          <span className="flex items-center gap-1 text-xs text-nz-text-muted" title={`${totalBlocks} content blocks`}>
+            <FileText className="w-3 h-3" />
+            {totalBlocks}
+          </span>
+        </div>
+        <button
+          onClick={onDuplicateModule}
+          className="p-1.5 rounded-lg text-nz-text-muted hover:text-nz-sakura hover:bg-nz-sakura/10 transition-colors cursor-pointer"
+          title="Duplicate module"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
         <button
           onClick={onDeleteModule}
           className="p-1.5 rounded-lg text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer"
@@ -142,6 +172,7 @@ function SortableModule({
                       section={section}
                       courseId={courseId}
                       onDelete={() => onDeleteSection(section.id)}
+                      onDuplicate={() => onDuplicateSection(section.id)}
                     />
                   ))}
               </SortableContext>
@@ -164,10 +195,12 @@ function SortableSection({
   section,
   courseId,
   onDelete,
+  onDuplicate,
 }: {
   section: Section
   courseId: string
   onDelete: () => void
+  onDuplicate: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: section.id,
@@ -177,6 +210,8 @@ function SortableSection({
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  const blockCount = section.block_count || 0
 
   return (
     <div
@@ -188,6 +223,10 @@ function SortableSection({
         <GripVertical className="w-3.5 h-3.5" />
       </button>
       <span className="flex-1 text-sm text-nz-text-secondary">{section.title}</span>
+      {/* Block count badge */}
+      <span className={`text-xs px-1.5 py-0.5 rounded-md ${blockCount > 0 ? 'bg-nz-bg-elevated text-nz-text-muted' : 'bg-nz-warning/10 text-nz-warning'}`}>
+        {blockCount > 0 ? `${blockCount} blocks` : 'empty'}
+      </span>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Link
           href={`/admin/courses/${courseId}/sections/${section.id}/edit`}
@@ -195,6 +234,13 @@ function SortableSection({
         >
           <Pencil className="w-3.5 h-3.5" />
         </Link>
+        <button
+          onClick={onDuplicate}
+          className="p-1.5 rounded-lg text-nz-text-tertiary hover:text-nz-sakura hover:bg-nz-sakura/10 transition-colors cursor-pointer"
+          title="Duplicate section"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
         <button
           onClick={onDelete}
           className="p-1.5 rounded-lg text-nz-text-tertiary hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer"
@@ -223,6 +269,15 @@ export default function EditCoursePage() {
   const [description, setDescription] = useState('')
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+  }>({ open: false, title: '', message: '', onConfirm: () => {} })
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -263,10 +318,22 @@ export default function EditCoursePage() {
       .in('module_id', moduleIds.length ? moduleIds : [''])
       .order('sort_order')
 
+    // Fetch block counts per section
+    const sectionIds = (secs ?? []).map((s) => s.id)
+    const { data: blockCounts } = await supabase
+      .from('content_blocks')
+      .select('section_id')
+      .in('section_id', sectionIds.length ? sectionIds : [''])
+
+    const blockCountMap: Record<string, number> = {}
+    ;(blockCounts ?? []).forEach((b) => {
+      blockCountMap[b.section_id] = (blockCountMap[b.section_id] || 0) + 1
+    })
+
     const sectionsByModule: Record<string, Section[]> = {}
     ;(secs ?? []).forEach((s) => {
       if (!sectionsByModule[s.module_id]) sectionsByModule[s.module_id] = []
-      sectionsByModule[s.module_id].push(s)
+      sectionsByModule[s.module_id].push({ ...s, block_count: blockCountMap[s.id] || 0 })
     })
 
     setModules(
@@ -380,15 +447,83 @@ export default function EditCoursePage() {
     }
   }
 
-  const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm('Delete this module and all its sections?')) return
-    const { error } = await supabase.from('modules').delete().eq('id', moduleId)
-    if (error) {
-      addToast('Failed to delete module', 'error')
+  const handleDeleteModule = (moduleId: string) => {
+    const mod = modules.find((m) => m.id === moduleId)
+    setConfirmModal({
+      open: true,
+      title: 'Delete Module',
+      message: `Delete "${mod?.title || 'this module'}" and all its sections? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmModal((p) => ({ ...p, open: false }))
+        const { error } = await supabase.from('modules').delete().eq('id', moduleId)
+        if (error) {
+          addToast('Failed to delete module', 'error')
+          return
+        }
+        setModules(modules.filter((m) => m.id !== moduleId))
+        addToast('Module deleted', 'success')
+      },
+    })
+  }
+
+  const handleDuplicateModule = async (moduleId: string) => {
+    const mod = modules.find((m) => m.id === moduleId)
+    if (!mod) return
+
+    addToast('Duplicating module...', 'success')
+
+    // Create the module copy
+    const { data: newMod } = await supabase
+      .from('modules')
+      .insert({
+        course_id: courseId,
+        title: mod.title + ' (Copy)',
+        description: mod.description,
+        sort_order: modules.length,
+      })
+      .select()
+      .single()
+
+    if (!newMod) {
+      addToast('Failed to duplicate module', 'error')
       return
     }
-    setModules(modules.filter((m) => m.id !== moduleId))
-    addToast('Module deleted', 'success')
+
+    // Duplicate all sections and their blocks
+    const newSections: Section[] = []
+    for (const sec of mod.sections) {
+      const { data: newSec } = await supabase
+        .from('sections')
+        .insert({
+          module_id: newMod.id,
+          title: sec.title,
+          sort_order: sec.sort_order,
+        })
+        .select()
+        .single()
+
+      if (!newSec) continue
+
+      // Copy blocks
+      const { data: blocks } = await supabase
+        .from('content_blocks')
+        .select('type, content, sort_order')
+        .eq('section_id', sec.id)
+        .order('sort_order')
+
+      if (blocks && blocks.length > 0) {
+        await supabase
+          .from('content_blocks')
+          .insert(blocks.map((b) => ({ ...b, section_id: newSec.id })))
+      }
+
+      newSections.push({ ...newSec, block_count: blocks?.length || 0 })
+    }
+
+    const newModule: Module = { ...newMod, sections: newSections }
+    setModules([...modules, newModule])
+    setExpandedModules((prev) => new Set([...prev, newMod.id]))
+    addToast('Module duplicated', 'success')
   }
 
   const handleAddSection = async (moduleId: string) => {
@@ -408,27 +543,79 @@ export default function EditCoursePage() {
     if (data) {
       setModules(
         modules.map((m) =>
-          m.id === moduleId ? { ...m, sections: [...m.sections, data] } : m
+          m.id === moduleId ? { ...m, sections: [...m.sections, { ...data, block_count: 0 }] } : m
         )
       )
     }
   }
 
-  const handleDeleteSection = async (moduleId: string, sectionId: string) => {
-    if (!confirm('Delete this section and all its content?')) return
-    const { error } = await supabase.from('sections').delete().eq('id', sectionId)
-    if (error) {
-      addToast('Failed to delete section', 'error')
+  const handleDeleteSection = (moduleId: string, sectionId: string) => {
+    const mod = modules.find((m) => m.id === moduleId)
+    const sec = mod?.sections.find((s) => s.id === sectionId)
+    setConfirmModal({
+      open: true,
+      title: 'Delete Section',
+      message: `Delete "${sec?.title || 'this section'}" and all its content blocks? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmModal((p) => ({ ...p, open: false }))
+        const { error } = await supabase.from('sections').delete().eq('id', sectionId)
+        if (error) {
+          addToast('Failed to delete section', 'error')
+          return
+        }
+        setModules(
+          modules.map((m) =>
+            m.id === moduleId
+              ? { ...m, sections: m.sections.filter((s) => s.id !== sectionId) }
+              : m
+          )
+        )
+        addToast('Section deleted', 'success')
+      },
+    })
+  }
+
+  const handleDuplicateSection = async (moduleId: string, sectionId: string) => {
+    const mod = modules.find((m) => m.id === moduleId)
+    const sec = mod?.sections.find((s) => s.id === sectionId)
+    if (!mod || !sec) return
+
+    const { data: newSec } = await supabase
+      .from('sections')
+      .insert({
+        module_id: moduleId,
+        title: sec.title + ' (Copy)',
+        sort_order: mod.sections.length,
+      })
+      .select()
+      .single()
+
+    if (!newSec) {
+      addToast('Failed to duplicate section', 'error')
       return
     }
+
+    // Copy blocks
+    const { data: blocks } = await supabase
+      .from('content_blocks')
+      .select('type, content, sort_order')
+      .eq('section_id', sectionId)
+      .order('sort_order')
+
+    if (blocks && blocks.length > 0) {
+      await supabase
+        .from('content_blocks')
+        .insert(blocks.map((b) => ({ ...b, section_id: newSec.id })))
+    }
+
     setModules(
       modules.map((m) =>
         m.id === moduleId
-          ? { ...m, sections: m.sections.filter((s) => s.id !== sectionId) }
+          ? { ...m, sections: [...m.sections, { ...newSec, block_count: blocks?.length || 0 }] }
           : m
       )
     )
-    addToast('Section deleted', 'success')
+    addToast('Section duplicated', 'success')
   }
 
   const handleModuleDragEnd = (event: DragEndEvent) => {
@@ -476,6 +663,12 @@ export default function EditCoursePage() {
     }
   }
 
+  // Course overview stats
+  const totalModules = modules.length
+  const totalSections = modules.reduce((sum, m) => sum + m.sections.length, 0)
+  const totalBlocks = modules.reduce((sum, m) => sum + m.sections.reduce((s, sec) => s + (sec.block_count || 0), 0), 0)
+  const emptySections = modules.reduce((sum, m) => sum + m.sections.filter((s) => !s.block_count).length, 0)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -486,6 +679,15 @@ export default function EditCoursePage() {
 
   return (
     <div>
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((p) => ({ ...p, open: false }))}
+      />
+
       {/* Breadcrumbs */}
       <Breadcrumbs
         items={[
@@ -538,10 +740,41 @@ export default function EditCoursePage() {
             </button>
           </div>
 
+          <Link
+            href={`/courses/${courseId}`}
+            target="_blank"
+            className="p-2 rounded-lg text-nz-text-tertiary hover:text-nz-sakura hover:bg-nz-sakura/10 transition-colors"
+            title="Preview as student"
+          >
+            <Eye className="w-4 h-4" />
+          </Link>
+
           <Button onClick={handleSave} loading={saving} size="sm" variant="secondary">
             <Save className="w-4 h-4" />
             Save
           </Button>
+        </div>
+      </div>
+
+      {/* Course Overview Stats */}
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="bg-nz-bg-card border border-nz-border rounded-xl px-4 py-3">
+          <p className="text-xs text-nz-text-muted">Modules</p>
+          <p className="text-lg font-heading font-bold text-nz-text-primary">{totalModules}</p>
+        </div>
+        <div className="bg-nz-bg-card border border-nz-border rounded-xl px-4 py-3">
+          <p className="text-xs text-nz-text-muted">Sections</p>
+          <p className="text-lg font-heading font-bold text-nz-text-primary">{totalSections}</p>
+        </div>
+        <div className="bg-nz-bg-card border border-nz-border rounded-xl px-4 py-3">
+          <p className="text-xs text-nz-text-muted">Content Blocks</p>
+          <p className="text-lg font-heading font-bold text-nz-text-primary">{totalBlocks}</p>
+        </div>
+        <div className={`border rounded-xl px-4 py-3 ${emptySections > 0 ? 'bg-nz-warning/5 border-nz-warning/20' : 'bg-nz-success/5 border-nz-success/20'}`}>
+          <p className="text-xs text-nz-text-muted">Health</p>
+          <p className={`text-sm font-heading font-bold ${emptySections > 0 ? 'text-nz-warning' : 'text-nz-success'}`}>
+            {emptySections > 0 ? `${emptySections} empty sections` : 'All sections filled'}
+          </p>
         </div>
       </div>
 
@@ -605,8 +838,10 @@ export default function EditCoursePage() {
                       setModules(modules.map((m) => (m.id === mod.id ? { ...m, description: d } : m)))
                     }
                     onDeleteModule={() => handleDeleteModule(mod.id)}
+                    onDuplicateModule={() => handleDuplicateModule(mod.id)}
                     onAddSection={() => handleAddSection(mod.id)}
                     onDeleteSection={(sId) => handleDeleteSection(mod.id, sId)}
+                    onDuplicateSection={(sId) => handleDuplicateSection(mod.id, sId)}
                     courseId={courseId}
                   />
                 </DndContext>
