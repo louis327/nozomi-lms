@@ -222,7 +222,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
         <button
           onClick={onToggleCollapse}
           onMouseEnter={handleHoverEnter}
-          className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 items-center justify-center rounded-full bg-white border border-[#e8e8e8] text-[#bbb] hover:text-[#111] hover:border-[#ccc] shadow-sm transition-colors cursor-pointer z-10"
+          className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 items-center justify-center rounded-full bg-nz-sakura border border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
           title={collapsed ? 'Pin sidebar' : 'Hide sidebar'}
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -235,12 +235,20 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
         </button>
       </aside>
 
+      {/* Invisible hover zone on left edge when collapsed */}
+      {collapsed && !hoverOpen && (
+        <div
+          onMouseEnter={handleHoverEnter}
+          className="fixed top-0 left-0 w-4 h-screen z-40 hidden lg:block"
+        />
+      )}
+
       {/* When fully collapsed (no hover), show a small expand chevron at left edge */}
       {collapsed && !hoverOpen && (
         <button
           onClick={onToggleCollapse}
           onMouseEnter={handleHoverEnter}
-          className="hidden lg:flex fixed top-5 left-0 z-40 w-6 h-6 items-center justify-center rounded-r-full bg-white border border-l-0 border-[#e8e8e8] text-[#bbb] hover:text-[#111] shadow-sm transition-colors cursor-pointer"
+          className="hidden lg:flex fixed top-5 left-0 z-40 w-6 h-6 items-center justify-center rounded-r-full bg-nz-sakura border border-l-0 border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer hover:scale-110"
           title="Show sidebar"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
