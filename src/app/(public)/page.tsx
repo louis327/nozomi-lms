@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -6,6 +7,10 @@ import type { Course } from '@/lib/types'
 
 export default async function HomePage() {
   const supabase = await createClient()
+
+  // Logged-in users go straight to dashboard
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
 
   const { data: courses } = await supabase
     .from('courses')
@@ -21,7 +26,7 @@ export default async function HomePage() {
   return (
     <div className="relative">
       {/* Hero Section */}
-      <section className="relative px-4 sm:px-6 lg:px-8 pt-16 pb-24 sm:pt-24 sm:pb-32">
+      <section className="relative px-4 sm:px-6 lg:px-8 pt-12 pb-16 sm:pt-16 sm:pb-20">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-nz-text-primary tracking-tight leading-tight" style={{ letterSpacing: '-0.035em' }}>
             Master Web3{' '}
@@ -51,9 +56,9 @@ export default async function HomePage() {
       </section>
 
       {/* Course Grid */}
-      <section id="courses" className="px-4 sm:px-6 lg:px-8 pb-24">
+      <section id="courses" className="px-4 sm:px-6 lg:px-8 pb-16">
         <div className="max-w-6xl mx-auto">
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-nz-text-primary mb-10">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-nz-text-primary mb-8">
             Available Courses
           </h2>
 
@@ -64,10 +69,10 @@ export default async function HomePage() {
               </p>
             </Card>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {coursesWithCount.map((course) => (
                 <Link key={course.id} href={`/courses/${course.id}`} className="group">
-                  <Card hoverable className="flex flex-col h-full overflow-hidden">
+                  <Card hoverable className="flex flex-col h-full overflow-hidden hover:-translate-y-0.5 transition-all">
                     {/* Cover image or gradient placeholder */}
                     <div className="relative h-44 bg-nz-bg-tertiary overflow-hidden">
                       {course.cover_image ? (

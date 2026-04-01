@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ProgressBar } from '@/components/ui/progress-bar'
 import type { Course, Module, Section } from '@/lib/types'
 
 type CourseSidebarProps = {
@@ -11,13 +10,16 @@ type CourseSidebarProps = {
   progress: Record<string, boolean>
   currentSectionId: string
   courseId: string
+  collapsed: boolean
+  onToggleCollapse: () => void
 }
 
-export function CourseSidebar({ course, progress, currentSectionId: initialSectionId, courseId }: CourseSidebarProps) {
+export function CourseSidebar({ course, progress, currentSectionId: initialSectionId, courseId, collapsed, onToggleCollapse }: CourseSidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [hoverOpen, setHoverOpen] = useState(false)
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Derive currentSectionId from the URL path so it updates on navigation
   const pathSegments = pathname.split('/')
   const learnIdx = pathSegments.indexOf('learn')
   const currentSectionId = (learnIdx >= 0 && pathSegments[learnIdx + 1]) ? pathSegments[learnIdx + 1] : initialSectionId
@@ -28,7 +30,6 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
   const completedSections = allSections.filter((s) => progress[s.id]).length
   const pct = totalSections > 0 ? Math.round((completedSections / totalSections) * 100) : 0
 
-  // Track which modules are expanded - default expand the one containing current section
   const currentModuleId = modules.find((m) =>
     m.sections?.some((s) => s.id === currentSectionId)
   )?.id
@@ -39,7 +40,6 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
     return initial
   })
 
-  // Auto-expand the module containing the current section on navigation
   useEffect(() => {
     if (currentModuleId && !expandedModules.has(currentModuleId)) {
       setExpandedModules((prev) => new Set(prev).add(currentModuleId))
@@ -49,32 +49,63 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
   function toggleModule(moduleId: string) {
     setExpandedModules((prev) => {
       const next = new Set(prev)
-      if (next.has(moduleId)) {
-        next.delete(moduleId)
-      } else {
-        next.add(moduleId)
-      }
+      if (next.has(moduleId)) next.delete(moduleId)
+      else next.add(moduleId)
       return next
     })
   }
 
+  const handleHoverEnter = () => {
+    if (!collapsed) return
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    setHoverOpen(true)
+  }
+
+  const handleHoverLeave = () => {
+    if (!collapsed) return
+    hoverTimeoutRef.current = setTimeout(() => setHoverOpen(false), 300)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    }
+  }, [])
+
+  const isDesktopVisible = !collapsed || hoverOpen
+
   const sidebarContent = (
     <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-5 pt-4 pb-2">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#aaa] hover:text-[#111] transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Dashboard
+        </Link>
+      </div>
+
       {/* Course title + progress */}
-      <div className="p-5 border-b border-nz-border">
+      <div className="px-5 pb-4 border-b border-[#eee]">
         <Link
           href={`/courses/${courseId}/learn`}
-          className="font-heading font-semibold text-sm text-nz-text-primary hover:text-nz-sakura transition-colors line-clamp-2"
+          className="font-heading font-semibold text-[13px] text-[#111] hover:text-nz-sakura transition-colors line-clamp-2"
         >
           {course.title}
         </Link>
         <div className="mt-3">
-          <ProgressBar value={pct} />
-          <p className="text-xs text-nz-text-muted mt-1.5">{pct}% complete</p>
+          <div className="w-full h-1.5 rounded-full bg-[#f0f0f0] overflow-hidden">
+            <div className="h-full rounded-full bg-nz-sakura transition-all duration-700" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-[11px] text-[#aaa] mt-1.5">{pct}% complete</p>
         </div>
       </div>
 
-      {/* Module list */}
+      {/* Modules */}
       <div className="flex-1 overflow-y-auto py-2">
         {modules.map((mod, modIdx) => {
           const sections = [...(mod.sections ?? [])].sort((a, b) => a.sort_order - b.sort_order)
@@ -82,40 +113,34 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
           const isExpanded = expandedModules.has(mod.id)
 
           return (
-            <div key={mod.id} className="mb-1">
-              {/* Module header */}
+            <div key={mod.id} className="mb-0.5">
               <button
                 onClick={() => toggleModule(mod.id)}
-                className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-nz-bg-tertiary/50 transition-colors cursor-pointer group"
+                className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-[#f9f9f9] transition-colors cursor-pointer group"
               >
-                {/* Expand chevron */}
                 <svg
-                  className={`w-4 h-4 text-nz-text-muted transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+                  className={`w-3.5 h-3.5 text-[#ccc] transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-nz-text-muted font-medium uppercase tracking-wider mb-0.5">
+                  <p className="text-[10px] text-[#bbb] font-bold uppercase tracking-[0.08em] mb-0.5">
                     Module {modIdx + 1}
                   </p>
-                  <p className="text-sm text-nz-text-primary font-medium truncate group-hover:text-nz-sakura transition-colors">
+                  <p className="text-[13px] text-[#111] font-medium truncate group-hover:text-nz-sakura transition-colors" title={mod.title}>
                     {mod.title}
                   </p>
                 </div>
 
                 {modCompleted && (
-                  <svg className="w-4 h-4 text-nz-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-4 h-4 text-[#22c55e] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
               </button>
 
-              {/* Sections */}
               {isExpanded && (
                 <div className="pb-2">
                   {sections.map((section) => {
@@ -126,25 +151,24 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                       <Link
                         key={section.id}
                         href={`/courses/${courseId}/learn/${section.id}`}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={() => { setMobileOpen(false); setHoverOpen(false) }}
                         className={`
-                          flex items-center gap-3 pl-12 pr-5 py-2.5 text-sm transition-colors
+                          flex items-center gap-3 pl-12 pr-5 py-2.5 text-[13px] transition-colors min-w-0
                           ${isCurrent
-                            ? 'bg-nz-sakura/10 text-nz-sakura border-r-2 border-nz-sakura'
-                            : 'text-nz-text-secondary hover:text-nz-text-primary hover:bg-nz-bg-tertiary/30'
+                            ? 'bg-[#111] text-white font-medium'
+                            : 'text-[#666] hover:text-[#111] hover:bg-[#f9f9f9]'
                           }
                         `}
                       >
-                        {/* Completion indicator */}
                         {isCompleted ? (
-                          <svg className="w-4 h-4 text-nz-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <svg className="w-4 h-4 shrink-0 text-[#22c55e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         ) : (
-                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 ${isCurrent ? 'border-nz-sakura' : 'border-nz-text-muted'}`} />
+                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 ${isCurrent ? 'border-white' : 'border-[#ddd]'}`} />
                         )}
 
-                        <span className="truncate">{section.title}</span>
+                        <span className="truncate" title={section.title}>{section.title}</span>
                       </Link>
                     )
                   })}
@@ -155,18 +179,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
         })}
       </div>
 
-      {/* Back to dashboard */}
-      <div className="p-4 border-t border-nz-border">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 text-sm text-nz-text-muted hover:text-nz-text-secondary transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Dashboard
-        </Link>
-      </div>
+      <div className="p-3" />
     </div>
   )
 
@@ -175,7 +188,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-[72px] left-4 z-50 p-2 rounded-xl bg-nz-bg-elevated border border-nz-border text-nz-text-secondary hover:text-nz-text-primary transition-colors cursor-pointer"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white border border-[#e8e8e8] text-[#666] hover:text-[#111] transition-colors cursor-pointer shadow-sm"
         aria-label="Toggle sidebar"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -187,25 +200,54 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
         </svg>
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/30"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/40" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside
+        onMouseEnter={handleHoverEnter}
+        onMouseLeave={handleHoverLeave}
         className={`
-          fixed top-16 left-0 bottom-0 w-[280px] bg-nz-bg-secondary border-r border-nz-border z-40
+          fixed top-0 left-0 bottom-0 w-[280px] bg-white border-r border-[#eee] z-40
           transition-transform duration-300
-          lg:translate-x-0
+          ${isDesktopVisible ? 'lg:translate-x-0' : 'lg:-translate-x-full'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${collapsed && hoverOpen ? 'lg:shadow-xl' : ''}
         `}
       >
         {sidebarContent}
+
+        {/* Chevron toggle — pinned to sidebar edge, always visible on desktop */}
+        <button
+          onClick={onToggleCollapse}
+          onMouseEnter={handleHoverEnter}
+          className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 items-center justify-center rounded-full bg-white border border-[#e8e8e8] text-[#bbb] hover:text-[#111] hover:border-[#ccc] shadow-sm transition-colors cursor-pointer z-10"
+          title={collapsed ? 'Pin sidebar' : 'Hide sidebar'}
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            {collapsed ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            )}
+          </svg>
+        </button>
       </aside>
+
+      {/* When fully collapsed (no hover), show a small expand chevron at left edge */}
+      {collapsed && !hoverOpen && (
+        <button
+          onClick={onToggleCollapse}
+          onMouseEnter={handleHoverEnter}
+          className="hidden lg:flex fixed top-5 left-0 z-40 w-6 h-6 items-center justify-center rounded-r-full bg-white border border-l-0 border-[#e8e8e8] text-[#bbb] hover:text-[#111] shadow-sm transition-colors cursor-pointer"
+          title="Show sidebar"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
     </>
   )
 }

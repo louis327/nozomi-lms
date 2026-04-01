@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { CourseSidebar } from '@/components/course/course-sidebar'
+import { CourseLearnShell } from '@/components/course/course-learn-shell'
 
 export default async function CourseLearnLayout({
   children,
@@ -61,20 +61,13 @@ export default async function CourseLearnLayout({
     }
   }
 
-  // Determine current section from the URL - we pass empty string and the sidebar handles it
-  // The actual currentSectionId will come from the child route
-
   return (
-    <div className="flex min-h-screen">
-      <CourseSidebar
-        course={course as any}
-        progress={progressMap}
-        currentSectionId=""
-        courseId={courseId}
-      />
-      <div className="flex-1 lg:ml-[280px]">
-        {children}
-      </div>
-    </div>
+    <CourseLearnShell
+      course={course as any}
+      progress={progressMap}
+      courseId={courseId}
+    >
+      {children}
+    </CourseLearnShell>
   )
 }

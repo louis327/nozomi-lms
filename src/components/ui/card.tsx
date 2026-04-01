@@ -10,11 +10,10 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={`
-          rounded-2xl
-          bg-nz-bg-card
-          border border-nz-border
-          shadow-sm
-          ${hoverable ? 'transition-all duration-300 hover:border-nz-border-hover hover:shadow-md' : ''}
+          rounded-xl
+          bg-white
+          border border-[#e8e8e8]
+          ${hoverable ? 'transition-all duration-200 hover:border-[#d4d4d4] hover:shadow-sm' : ''}
           ${className}
         `}
         {...props}

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionContent } from '@/components/course/section-content'
 import { ModuleChecklist } from '@/components/course/module-checklist'
+import { SectionNotes } from '@/components/course/section-notes'
 
 export default async function SectionPage({
   params,
@@ -75,6 +76,14 @@ export default async function SectionPage({
     }
   }
 
+  // Fetch user's notes for this section
+  const { data: sectionNote } = await supabase
+    .from('section_notes')
+    .select('content')
+    .eq('user_id', user.id)
+    .eq('section_id', sectionId)
+    .single()
+
   // Check if this is the last section of the module (for module deliverable checklist)
   const { data: allModuleSections } = await supabase
     .from('sections')
@@ -119,7 +128,7 @@ export default async function SectionPage({
       )}
 
       {/* Section title */}
-      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-nz-text-primary mb-8">
+      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#111] tracking-[-0.02em] mb-8">
         {section.title}
       </h1>
 
@@ -130,6 +139,14 @@ export default async function SectionPage({
         courseId={courseId}
         nextSectionId={nextSectionId}
       />
+
+      {/* Section Notes */}
+      <div className="mt-10">
+        <SectionNotes
+          sectionId={sectionId}
+          initialContent={sectionNote?.content ?? ''}
+        />
+      </div>
 
       {/* Module checklist (if last section and has deliverables) */}
       {isLastSectionInModule && moduleDeliverables.length > 0 && (

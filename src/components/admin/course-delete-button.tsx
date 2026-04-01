@@ -36,17 +36,17 @@ export function CourseDeleteButton({
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-nz-error">Delete &quot;{courseTitle}&quot;?</span>
+        <span className="text-[12px] text-[#ef4444]">Delete &quot;{courseTitle}&quot;?</span>
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nz-error/20 text-nz-error border border-nz-error/30 hover:bg-nz-error/30 transition-colors disabled:opacity-50 cursor-pointer"
+          className="px-3 py-1.5 text-[12px] font-semibold rounded-lg bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors disabled:opacity-50 cursor-pointer"
         >
           {loading ? 'Deleting...' : 'Confirm'}
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nz-bg-elevated text-nz-text-secondary hover:text-nz-text-primary border border-nz-border transition-colors cursor-pointer"
+          className="px-3 py-1.5 text-[12px] font-semibold rounded-lg bg-white text-[#666] hover:text-[#111] border border-[#e8e8e8] transition-colors cursor-pointer"
         >
           Cancel
         </button>
@@ -57,9 +57,9 @@ export function CourseDeleteButton({
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-nz-error/10 text-nz-error/70 hover:text-nz-error hover:bg-nz-error/20 border border-nz-error/20 transition-colors cursor-pointer"
+      className="p-1.5 rounded-lg text-[#ccc] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-colors cursor-pointer"
     >
-      <Trash2 className="w-3.5 h-3.5" />
+      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
     </button>
   )
 }

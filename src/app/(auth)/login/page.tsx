@@ -47,10 +47,10 @@ function LoginForm() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold text-nz-text-primary mb-1">
+      <h1 className="font-heading text-2xl font-bold text-nz-text-primary mb-1 text-center">
         Welcome back
       </h1>
-      <p className="text-sm text-nz-text-muted mb-8">
+      <p className="text-sm text-nz-text-muted mb-8 text-center">
         Sign in to continue learning.
       </p>
 

@@ -4,17 +4,19 @@ import { ButtonHTMLAttributes, forwardRef } from 'react'
 
 const variants = {
   primary:
-    'bg-nz-sakura text-white hover:bg-nz-sakura-deep active:bg-nz-sakura-muted sakura-glow',
+    'bg-nz-sakura text-white hover:bg-nz-sakura-deep active:bg-nz-sakura-muted',
   secondary:
-    'bg-transparent border border-nz-border text-nz-text-primary hover:border-nz-border-hover hover:bg-nz-bg-elevated',
+    'bg-white border border-[#e8e8e8] text-[#111] hover:border-[#ccc] hover:bg-[#fafafa]',
+  dark:
+    'bg-[#111] text-white hover:bg-[#333]',
   danger:
-    'bg-nz-error/20 text-nz-error border border-nz-error/30 hover:bg-nz-error/30',
+    'bg-[#fef2f2] text-[#ef4444] border border-[#fecaca] hover:bg-[#fee2e2]',
 } as const
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm rounded-lg gap-1.5',
-  md: 'px-5 py-2.5 text-sm rounded-xl gap-2',
-  lg: 'px-7 py-3.5 text-base rounded-xl gap-2.5',
+  sm: 'px-3.5 py-1.5 text-[13px] rounded-lg gap-1.5',
+  md: 'px-5 py-2.5 text-[13px] rounded-lg gap-2',
+  lg: 'px-7 py-3 text-[14px] rounded-lg gap-2.5',
 } as const
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -34,7 +36,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={`
           inline-flex items-center justify-center font-heading font-semibold
           transition-all duration-200 cursor-pointer
-          focus:ring-2 focus:ring-nz-sakura/30 focus:ring-offset-2 focus:ring-offset-nz-bg-primary
+          focus-visible:ring-2 focus-visible:ring-[#111] focus-visible:ring-offset-2
           ${variants[variant]}
           ${sizes[size]}
           ${isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}

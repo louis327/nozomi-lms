@@ -85,3 +85,12 @@ export interface ModuleDeliverable {
   label: string
   sort_order: number
 }
+
+export interface SectionNote {
+  id: string
+  user_id: string
+  section_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}

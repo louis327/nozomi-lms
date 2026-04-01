@@ -15,19 +15,19 @@
   --nz-bg-card: #ffffff;
   --nz-bg-elevated: #f8f9fa;
 
-  --nz-sakura: #4f46e5;
-  --nz-sakura-deep: #4338ca;
-  --nz-sakura-pale: #6366f1;
-  --nz-sakura-muted: #3730a3;
+  --nz-sakura: #E8458B;
+  --nz-sakura-deep: #D1336F;
+  --nz-sakura-pale: #F472B6;
+  --nz-sakura-muted: #BE185D;
 
-  --nz-text-primary: #1a202c;
-  --nz-text-secondary: #4a5568;
-  --nz-text-tertiary: #718096;
-  --nz-text-muted: #a0aec0;
+  --nz-text-primary: #111111;
+  --nz-text-secondary: #4a4a4a;
+  --nz-text-tertiary: #717171;
+  --nz-text-muted: #a1a1a1;
 
-  --nz-border: #e2e8f0;
-  --nz-border-hover: #cbd5e1;
-  --nz-border-sakura: rgba(79, 70, 229, 0.2);
+  --nz-border: #e5e5e5;
+  --nz-border-hover: #d4d4d4;
+  --nz-border-sakura: rgba(232, 69, 139, 0.2);
 
   --nz-glass: rgba(255, 255, 255, 0.9);
   --nz-glass-border: rgba(226, 232, 240, 0.6);
@@ -51,10 +51,10 @@
   --color-nz-bg-card: #ffffff;
   --color-nz-bg-elevated: #f8f9fa;
 
-  --color-nz-sakura: #4f46e5;
-  --color-nz-sakura-deep: #4338ca;
-  --color-nz-sakura-pale: #6366f1;
-  --color-nz-sakura-muted: #3730a3;
+  --color-nz-sakura: #E8458B;
+  --color-nz-sakura-deep: #D1336F;
+  --color-nz-sakura-pale: #F472B6;
+  --color-nz-sakura-muted: #BE185D;
 
   --color-nz-text-primary: #1a202c;
   --color-nz-text-secondary: #4a5568;
@@ -76,7 +76,22 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(79, 70, 229, 0.2) transparent;
+  scrollbar-color: rgba(232, 69, 139, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(232, 69, 139, 0.2);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 69, 139, 0.35);
 }
 
 body {
@@ -88,7 +103,7 @@ body {
   line-height: 1.65;
 }
 
-/* Gradient accent text — indigo gradient */
+/* Gradient accent text — sakura pink gradient */
 .text-sakura-gradient {
   background: linear-gradient(135deg, var(--nz-sakura-pale), var(--nz-sakura-deep));
   -webkit-background-clip: text;
@@ -108,11 +123,11 @@ body {
 
 /* Accent glow effect for interactive elements */
 .sakura-glow {
-  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.15), 0 4px 12px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 1px 3px rgba(232, 69, 139, 0.15), 0 4px 12px rgba(232, 69, 139, 0.1);
 }
 
 .sakura-glow-strong {
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2), 0 8px 24px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 2px 8px rgba(232, 69, 139, 0.2), 0 8px 24px rgba(232, 69, 139, 0.15);
 }
 
 /* Glass card */
@@ -132,7 +147,7 @@ body {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* Prose styling for course content */
+/* Prose styling for course content — optimized for white backgrounds */
 .prose-nozomi h1, .prose-nozomi h2, .prose-nozomi h3 {
   font-family: 'Sora', sans-serif;
   color: var(--nz-text-primary);
@@ -141,18 +156,55 @@ body {
 .prose-nozomi h1 { font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 700; margin-bottom: 1rem; line-height: 1.2; }
 .prose-nozomi h2 { font-size: clamp(1.25rem, 2.5vw, 1.625rem); font-weight: 600; margin-bottom: 0.75rem; margin-top: 2.5rem; line-height: 1.3; }
 .prose-nozomi h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1.75rem; line-height: 1.4; }
-.prose-nozomi p { color: var(--nz-text-secondary); font-weight: 400; line-height: 1.75; margin-bottom: 1.25rem; font-size: 0.9375rem; }
+.prose-nozomi p { color: var(--nz-text-secondary); font-weight: 400; line-height: 1.8; margin-bottom: 1.25rem; font-size: 0.9375rem; }
 .prose-nozomi a { color: var(--nz-sakura); text-decoration: underline; text-underline-offset: 3px; }
 .prose-nozomi a:hover { color: var(--nz-sakura-deep); }
 .prose-nozomi strong { color: var(--nz-text-primary); font-weight: 600; }
-.prose-nozomi ul, .prose-nozomi ol { color: var(--nz-text-secondary); margin-bottom: 1.25rem; padding-left: 1.5rem; font-weight: 400; line-height: 1.7; }
-.prose-nozomi li { margin-bottom: 0.375rem; }
+.prose-nozomi em { font-style: italic; }
+.prose-nozomi ul, .prose-nozomi ol { color: var(--nz-text-secondary); margin-bottom: 1.25rem; padding-left: 1.5rem; font-weight: 400; line-height: 1.75; }
+.prose-nozomi ul { list-style-type: disc; }
+.prose-nozomi ol { list-style-type: decimal; }
+.prose-nozomi li { margin-bottom: 0.375rem; font-size: 0.9375rem; }
 .prose-nozomi blockquote {
   border-left: 3px solid var(--nz-sakura);
-  padding-left: 1rem;
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
   color: var(--nz-text-secondary);
   font-style: italic;
   font-weight: 400;
+  background: var(--nz-bg-tertiary);
+  border-radius: 0 8px 8px 0;
+}
+.prose-nozomi code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: var(--nz-bg-tertiary);
+  color: var(--nz-sakura);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+.prose-nozomi pre {
+  background: var(--nz-bg-tertiary);
+  border: 1px solid var(--nz-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+.prose-nozomi pre code {
+  background: none;
+  padding: 0;
+  color: var(--nz-text-primary);
+}
+.prose-nozomi hr {
+  border: none;
+  border-top: 1px solid var(--nz-border);
+  margin: 2rem 0;
+}
+.prose-nozomi img {
+  border-radius: 12px;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Tiptap editor styling */

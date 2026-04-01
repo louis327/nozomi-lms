@@ -33,12 +33,12 @@ export default async function AdminLayout({
 
   return (
     <AdminProviders>
-      <div className="min-h-screen bg-nz-bg-secondary">
+      <div className="min-h-screen bg-[#fafafa]">
         <AdminSidebar adminName={adminName} />
 
         {/* Main content */}
-        <main className="lg:ml-60 min-h-screen">
-          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <main className="lg:ml-[240px] min-h-screen">
+          <div className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8 max-w-[1200px]">{children}</div>
         </main>
 
         <AiChat />

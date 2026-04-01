@@ -38,7 +38,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-xl bg-nz-bg-card border border-nz-border text-nz-text-secondary hover:text-nz-text-primary lg:hidden cursor-pointer shadow-sm"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white border border-[#e8e8e8] text-[#666] hover:text-[#111] lg:hidden cursor-pointer shadow-sm"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -46,76 +46,80 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-    <aside className={`fixed top-0 left-0 h-screen w-60 bg-nz-bg-secondary border-r border-nz-border flex-col z-50 transition-transform duration-200 ${mobileOpen ? 'flex translate-x-0' : 'hidden lg:flex'}`}>
-      {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-6 border-b border-nz-border">
-        <Link href="/admin" className="font-heading font-bold text-lg text-nz-text-primary tracking-tight">
-          NOZOMI<span className="text-nz-sakura">.</span>
-          <span className="text-nz-text-muted text-xs ml-2 font-sans font-normal">ADMIN</span>
-        </Link>
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="p-1.5 rounded-lg text-nz-text-tertiary hover:text-nz-text-primary lg:hidden cursor-pointer"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+      <aside className={`fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-[#eee] flex-col z-50 transition-transform duration-200 ${mobileOpen ? 'flex translate-x-0' : 'hidden lg:flex'}`}>
+        {/* Logo */}
+        <div className="h-[60px] flex items-center justify-between px-5 border-b border-[#eee]">
+          <Link href="/admin" className="flex items-center gap-0">
+            <span className="font-heading font-bold text-[17px] text-[#111] tracking-[-0.02em]">NOZOMI</span>
+            <span className="font-heading font-bold text-[17px] text-nz-sakura tracking-[-0.02em]">.</span>
+            <span className="font-heading font-medium text-[11px] text-[#aaa] uppercase tracking-[0.06em] ml-2">Admin</span>
+          </Link>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="p-1.5 rounded-lg text-[#999] hover:text-[#111] lg:hidden cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === '/admin'
-              ? pathname === '/admin'
-              : pathname.startsWith(item.href)
-          const Icon = item.icon
+        {/* Navigation */}
+        <nav className="flex-1 py-3 px-3">
+          <p className="text-[10px] font-bold text-[#bbb] uppercase tracking-[0.1em] px-3 mb-2">Menu</p>
+          <div className="space-y-0.5">
+            {navItems.map((item) => {
+              const isActive =
+                item.href === '/admin'
+                  ? pathname === '/admin'
+                  : pathname.startsWith(item.href)
+              const Icon = item.icon
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                ${
-                  isActive
-                    ? 'bg-nz-sakura/10 text-nz-sakura border border-nz-sakura/20'
-                    : 'text-nz-text-secondary hover:bg-nz-bg-tertiary hover:text-nz-text-primary border border-transparent'
-                }
-              `}
-            >
-              <Icon className="w-4.5 h-4.5 shrink-0" />
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
-
-      {/* User info & sign out */}
-      <div className="p-4 border-t border-nz-border">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-nz-sakura/10 flex items-center justify-center text-nz-sakura text-sm font-heading font-semibold">
-            {adminName?.charAt(0)?.toUpperCase() || 'A'}
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`
+                    relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150
+                    ${
+                      isActive
+                        ? 'bg-[#111] text-white'
+                        : 'text-[#666] hover:bg-[#f5f5f5] hover:text-[#111]'
+                    }
+                  `}
+                >
+                  <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
+                  {item.label}
+                </Link>
+              )
+            })}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-nz-text-primary truncate">{adminName || 'Admin'}</p>
-            <p className="text-xs text-nz-text-tertiary">Administrator</p>
+        </nav>
+
+        {/* User section */}
+        <div className="p-3 border-t border-[#eee]">
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#111] flex items-center justify-center text-white text-[13px] font-heading font-bold">
+              {adminName?.charAt(0)?.toUpperCase() || 'A'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-medium text-[#111] truncate">{adminName || 'Admin'}</p>
+              <p className="text-[11px] text-[#aaa]">Administrator</p>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="p-1.5 rounded-lg text-[#ccc] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-colors cursor-pointer"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-nz-text-tertiary hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </button>
-      </div>
-    </aside>
+      </aside>
     </>
   )
 }

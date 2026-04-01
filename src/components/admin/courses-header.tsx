@@ -12,23 +12,24 @@ export function CoursesHeader() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-heading text-2xl font-bold text-nz-text-primary">
-          Courses
-        </h1>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-heading text-[22px] font-bold text-[#111] tracking-[-0.02em]">Courses</h1>
+          <p className="text-[13px] text-[#888] mt-1">Manage your course catalog</p>
+        </div>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-heading font-semibold rounded-xl bg-transparent border border-nz-border text-nz-text-primary hover:border-nz-border-hover hover:bg-nz-bg-elevated transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-heading font-semibold rounded-lg bg-white border border-[#e8e8e8] text-[#111] hover:border-[#ccc] hover:bg-[#fafafa] transition-colors cursor-pointer"
           >
-            <Upload className="w-4 h-4" />
-            Import Course
+            <Upload className="w-4 h-4" strokeWidth={1.5} />
+            Import
           </button>
           <Link
             href="/admin/courses/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-heading font-semibold rounded-xl bg-nz-sakura text-white hover:bg-nz-sakura-deep transition-colors sakura-glow"
+            className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-heading font-semibold rounded-lg bg-[#111] text-white hover:bg-[#333] transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" strokeWidth={1.5} />
             Create Course
           </Link>
         </div>
