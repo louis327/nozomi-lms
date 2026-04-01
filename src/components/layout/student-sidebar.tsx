@@ -74,6 +74,14 @@ export function StudentSidebar({
         />
       )}
 
+      {/* Invisible hover zone on left edge when collapsed */}
+      {collapsed && !hoverExpanded && (
+        <div
+          onMouseEnter={handleMouseEnter}
+          className="fixed top-0 left-0 w-[60px] h-screen z-40 hidden lg:block"
+        />
+      )}
+
       <aside
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -174,7 +182,7 @@ export function StudentSidebar({
         {/* Collapse/expand toggle — sits on the sidebar edge */}
         <button
           onClick={() => { onToggleCollapse(); setHoverExpanded(false) }}
-          className="hidden lg:flex absolute top-[72px] -right-3.5 w-7 h-7 items-center justify-center rounded-full bg-white border border-[#e0e0e0] text-[#999] hover:text-[#111] hover:border-[#bbb] shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
+          className="hidden lg:flex absolute top-[72px] -right-3.5 w-7 h-7 items-center justify-center rounded-full bg-nz-sakura border border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
           title={collapsed ? 'Expand' : 'Collapse'}
         >
           {collapsed ? (
