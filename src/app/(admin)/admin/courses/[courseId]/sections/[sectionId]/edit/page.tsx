@@ -23,6 +23,7 @@ import {
   FileUp,
   ChevronDown,
   Video,
+  ListOrdered,
 } from 'lucide-react'
 import {
   DndContext,
@@ -43,7 +44,7 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface ContentBlock {
   id: string
-  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file' | 'video'
+  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file' | 'video' | 'structured_prompt' | 'fillable_table'
   content: Record<string, unknown>
   sort_order: number
 }
@@ -56,6 +57,8 @@ const blockTypes = [
   { type: 'checklist', label: 'Checklist', icon: CheckSquare, desc: 'Action items & deliverables' },
   { type: 'file', label: 'File Upload', icon: FileUp, desc: 'Downloadable resources' },
   { type: 'video', label: 'Video', icon: Video, desc: 'YouTube or Vimeo embed' },
+  { type: 'structured_prompt', label: 'Structured Prompt', icon: ListOrdered, desc: 'Individual labeled input fields' },
+  { type: 'fillable_table', label: 'Fillable Table', icon: Table2, desc: 'Table with editable cells for students' },
 ] as const
 
 function SortableBlock({
@@ -138,6 +141,7 @@ export default function EditSectionPage() {
   const [blocks, setBlocks] = useState<ContentBlock[]>([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showBlockMenu, setShowBlockMenu] = useState(false)
   const [courseName, setCourseName] = useState('')
   const [moduleName, setModuleName] = useState('')
@@ -157,63 +161,82 @@ export default function EditSectionPage() {
 
   const loadSection = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
 
-    const { data: section } = await supabase
-      .from('sections')
-      .select('*')
-      .eq('id', sectionId)
-      .single()
-
-    if (!section) {
-      router.push(`/admin/courses/${courseId}/edit`)
-      return
-    }
-
-    setTitle(section.title)
-
-    // Load breadcrumb data
-    const { data: moduleData } = await supabase
-      .from('modules')
-      .select('title')
-      .eq('id', section.module_id)
-      .single()
-    if (moduleData) setModuleName(moduleData.title)
-
-    const { data: courseData } = await supabase
-      .from('courses')
-      .select('title')
-      .eq('id', courseId)
-      .single()
-    if (courseData) setCourseName(courseData.title)
-
-    const { data: contentBlocks } = await supabase
-      .from('content_blocks')
-      .select('*')
-      .eq('section_id', sectionId)
-      .order('sort_order')
-
-    // If section has a video_url but no video block, create one at the top
-    const loadedBlocks: ContentBlock[] = contentBlocks ?? []
-    const hasVideoBlock = loadedBlocks.some((b) => b.type === 'video')
-    if (section.video_url && !hasVideoBlock) {
-      const { data: newBlock } = await supabase
-        .from('content_blocks')
-        .insert({
-          section_id: sectionId,
-          type: 'video',
-          content: { url: section.video_url },
-          sort_order: -1,
-        })
-        .select()
+    try {
+      const { data: section, error: sectionError } = await supabase
+        .from('sections')
+        .select('*')
+        .eq('id', sectionId)
         .single()
 
-      if (newBlock) {
-        loadedBlocks.unshift(newBlock)
+      if (sectionError) {
+        setLoadError(`Failed to load section: ${sectionError.message}`)
+        setLoading(false)
+        return
       }
-    }
 
-    setBlocks(loadedBlocks)
-    setLoading(false)
+      if (!section) {
+        setLoadError('Section not found.')
+        setLoading(false)
+        return
+      }
+
+      setTitle(section.title)
+
+      // Load breadcrumb data
+      const { data: moduleData } = await supabase
+        .from('modules')
+        .select('title')
+        .eq('id', section.module_id)
+        .single()
+      if (moduleData) setModuleName(moduleData.title)
+
+      const { data: courseData } = await supabase
+        .from('courses')
+        .select('title')
+        .eq('id', courseId)
+        .single()
+      if (courseData) setCourseName(courseData.title)
+
+      const { data: contentBlocks, error: blocksError } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .eq('section_id', sectionId)
+        .order('sort_order')
+
+      if (blocksError) {
+        setLoadError(`Failed to load content blocks: ${blocksError.message}`)
+        setLoading(false)
+        return
+      }
+
+      // If section has a video_url but no video block, create one at the top
+      const loadedBlocks: ContentBlock[] = contentBlocks ?? []
+      const hasVideoBlock = loadedBlocks.some((b) => b.type === 'video')
+      if (section.video_url && !hasVideoBlock) {
+        const { data: newBlock } = await supabase
+          .from('content_blocks')
+          .insert({
+            section_id: sectionId,
+            type: 'video',
+            content: { url: section.video_url },
+            sort_order: -1,
+          })
+          .select()
+          .single()
+
+        if (newBlock) {
+          loadedBlocks.unshift(newBlock)
+        }
+      }
+
+      setBlocks(loadedBlocks)
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'An unexpected error occurred.')
+    } finally {
+      setLoading(false)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId, courseId])
 
@@ -306,6 +329,17 @@ export default function EditSectionPage() {
     if (type === 'video') {
       defaultContent.url = ''
     }
+    if (type === 'structured_prompt') {
+      defaultContent.label = ''
+      defaultContent.fields = [{ key: 'field_1', label: '', prefix: '', type: 'text' }]
+    }
+    if (type === 'fillable_table') {
+      defaultContent.label = ''
+      defaultContent.columns = ['Label', 'Value']
+      defaultContent.rows = [
+        { cells: [{ value: '', editable: false }, { value: '', editable: true }] }
+      ]
+    }
 
     const insertIndex = insertAtIndex !== undefined ? insertAtIndex : blocks.length
 
@@ -397,6 +431,28 @@ export default function EditSectionPage() {
     )
   }
 
+  if (loadError) {
+    return (
+      <div className="max-w-lg mx-auto py-20 text-center">
+        <div className="bg-nz-error/10 border border-nz-error/20 rounded-2xl p-8">
+          <p className="text-sm font-semibold text-nz-error mb-2">Failed to load section</p>
+          <p className="text-sm text-nz-text-secondary mb-6">{loadError}</p>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={loadSection} size="sm" variant="secondary">
+              Retry
+            </Button>
+            <Link
+              href={`/admin/courses/${courseId}/edit`}
+              className="px-4 py-2 text-sm font-semibold rounded-xl text-nz-text-tertiary hover:text-nz-text-primary transition-colors"
+            >
+              Back to Course
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-5xl">
       {/* Confirm Modal */}
@@ -419,7 +475,7 @@ export default function EditSectionPage() {
       />
 
       {/* Floating save bar */}
-      <div className="sticky top-0 z-40 bg-nz-bg-primary/80 backdrop-blur-md border-b border-nz-border/50 -mx-4 px-4 py-3 mb-6">
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-nz-border -mx-4 px-4 py-3 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link

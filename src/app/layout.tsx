@@ -36,7 +36,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${dmSans.variable} ${sora.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-nz-bg-primary text-nz-text-primary font-sans antialiased">
+      <body className="min-h-screen bg-nz-bg-secondary text-nz-text-primary font-sans antialiased">
         {children}
       </body>
     </html>

@@ -32,7 +32,7 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-nz-bg-primary/60 backdrop-blur-2xl border-b border-nz-border">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-nz-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -58,11 +58,11 @@ export function Navbar() {
             {user ? (
               <div className="relative group">
                 <button className="flex items-center gap-2 text-sm text-nz-text-secondary hover:text-nz-text-primary transition-colors cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-nz-sakura/20 flex items-center justify-center text-nz-sakura text-xs font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-nz-sakura/10 flex items-center justify-center text-nz-sakura text-xs font-semibold">
                     {(user.email?.[0] ?? 'U').toUpperCase()}
                   </div>
                 </button>
-                <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-nz-bg-elevated border border-nz-border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-nz-bg-card border border-nz-border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="px-4 py-2 text-xs text-nz-text-muted truncate border-b border-nz-border">
                     {user.email}
                   </div>
@@ -94,7 +94,7 @@ export function Navbar() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="px-4 py-2 text-sm font-heading font-semibold bg-nz-sakura text-nz-bg-primary rounded-xl hover:bg-nz-sakura-deep transition-colors"
+                  className="px-4 py-2 text-sm font-heading font-semibold bg-nz-sakura text-white rounded-xl hover:bg-nz-sakura-deep transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -121,7 +121,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-nz-border bg-nz-bg-primary/95 backdrop-blur-xl">
+        <div className="md:hidden border-t border-nz-border bg-white/95 backdrop-blur-xl">
           <div className="px-4 py-4 space-y-2">
             {navLinks.map((link) => (
               <Link

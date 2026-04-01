@@ -21,7 +21,7 @@ export function EnrollButton({
     return (
       <Link
         href={`/signup?redirect=/courses/${courseId}`}
-        className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-nz-bg-primary rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow"
+        className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-white rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow"
       >
         Enroll &amp; Start Learning
         <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -61,7 +61,7 @@ export function EnrollButton({
     <button
       onClick={handleEnroll}
       disabled={loading}
-      className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-nz-bg-primary rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow cursor-pointer disabled:opacity-50"
+      className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-white rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow cursor-pointer disabled:opacity-50"
     >
       {loading ? 'Enrolling...' : 'Start Learning'}
       <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

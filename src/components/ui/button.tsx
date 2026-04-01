@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, forwardRef } from 'react'
 
 const variants = {
   primary:
-    'bg-nz-sakura text-nz-bg-primary hover:bg-nz-sakura-deep active:bg-nz-sakura-muted sakura-glow',
+    'bg-nz-sakura text-white hover:bg-nz-sakura-deep active:bg-nz-sakura-muted sakura-glow',
   secondary:
     'bg-transparent border border-nz-border text-nz-text-primary hover:border-nz-border-hover hover:bg-nz-bg-elevated',
   danger:

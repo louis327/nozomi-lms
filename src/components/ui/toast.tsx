@@ -25,10 +25,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`px-5 py-3 rounded-xl text-sm font-medium shadow-xl backdrop-blur-xl border animate-fade-in ${
-              toast.type === 'success' ? 'bg-nz-success/10 border-nz-success/30 text-nz-success' :
-              toast.type === 'error' ? 'bg-nz-error/10 border-nz-error/30 text-nz-error' :
-              'bg-nz-bg-elevated border-nz-border text-nz-text-primary'
+            className={`px-5 py-3 rounded-xl text-sm font-medium shadow-lg border animate-fade-in ${
+              toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-nz-success' :
+              toast.type === 'error' ? 'bg-red-50 border-red-200 text-nz-error' :
+              'bg-nz-bg-card border-nz-border text-nz-text-primary shadow-md'
             }`}
           >
             {toast.message}

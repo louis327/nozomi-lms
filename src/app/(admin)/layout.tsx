@@ -33,7 +33,7 @@ export default async function AdminLayout({
 
   return (
     <AdminProviders>
-      <div className="min-h-screen bg-nz-bg-primary">
+      <div className="min-h-screen bg-nz-bg-secondary">
         <AdminSidebar adminName={adminName} />
 
         {/* Main content */}

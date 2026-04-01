@@ -49,7 +49,7 @@ CREATE TABLE public.sections (
 CREATE TABLE public.content_blocks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   section_id UUID NOT NULL REFERENCES public.sections(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('rich_text', 'callout', 'table', 'workbook_prompt', 'checklist', 'file')),
+  type TEXT NOT NULL CHECK (type IN ('rich_text', 'callout', 'table', 'workbook_prompt', 'checklist', 'file', 'video', 'structured_prompt', 'fillable_table')),
   content JSONB NOT NULL DEFAULT '{}',
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -107,6 +107,29 @@ CREATE INDEX idx_section_progress_user ON public.section_progress(user_id);
 CREATE INDEX idx_section_progress_section ON public.section_progress(section_id);
 CREATE INDEX idx_module_progress_user ON public.module_progress(user_id);
 
+-- Helper function for admin checks (SECURITY DEFINER bypasses RLS)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+-- Auto-update updated_at on modifications
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_updated_at_courses BEFORE UPDATE ON courses FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER set_updated_at_modules BEFORE UPDATE ON modules FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER set_updated_at_sections BEFORE UPDATE ON sections FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER set_updated_at_content_blocks BEFORE UPDATE ON content_blocks FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
@@ -127,26 +150,16 @@ CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING
 
 -- Courses policies
 CREATE POLICY "Anyone can read published courses" ON public.courses FOR SELECT USING (status = 'published');
-CREATE POLICY "Admins can read all courses" ON public.courses FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Admins can insert courses" ON public.courses FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Admins can update courses" ON public.courses FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
-CREATE POLICY "Admins can delete courses" ON public.courses FOR DELETE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Admins can read all courses" ON public.courses FOR SELECT USING (is_admin());
+CREATE POLICY "Admins can insert courses" ON public.courses FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "Admins can update courses" ON public.courses FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Admins can delete courses" ON public.courses FOR DELETE USING (is_admin());
 
 -- Modules policies
 CREATE POLICY "Anyone can read modules of published courses" ON public.modules FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.courses WHERE id = course_id AND status = 'published')
 );
-CREATE POLICY "Admins can manage modules" ON public.modules FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Admins can manage modules" ON public.modules FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- Sections policies
 CREATE POLICY "Anyone can read sections of published courses" ON public.sections FOR SELECT USING (
@@ -156,9 +169,7 @@ CREATE POLICY "Anyone can read sections of published courses" ON public.sections
     WHERE m.id = module_id AND c.status = 'published'
   )
 );
-CREATE POLICY "Admins can manage sections" ON public.sections FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Admins can manage sections" ON public.sections FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- Content blocks policies
 CREATE POLICY "Anyone can read content of published courses" ON public.content_blocks FOR SELECT USING (
@@ -169,9 +180,7 @@ CREATE POLICY "Anyone can read content of published courses" ON public.content_b
     WHERE s.id = section_id AND c.status = 'published'
   )
 );
-CREATE POLICY "Admins can manage content blocks" ON public.content_blocks FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "Admins can manage content blocks" ON public.content_blocks FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- Enrollments policies
 CREATE POLICY "Users can read own enrollments" ON public.enrollments FOR SELECT USING (auth.uid() = user_id);

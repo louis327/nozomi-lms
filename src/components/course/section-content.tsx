@@ -39,7 +39,7 @@ export function SectionContent({
     (a, b) => a.sort_order - b.sort_order
   )
 
-  const hasWorkbookPrompts = blocks.some((b) => b.type === 'workbook_prompt')
+  const hasWorkbookPrompts = blocks.some((b) => b.type === 'workbook_prompt' || b.type === 'structured_prompt' || b.type === 'fillable_table')
 
   const handleSubmit = useCallback(async () => {
     setSaving(true)
@@ -222,6 +222,116 @@ export function SectionContent({
             {block.content.url && <VideoEmbed url={block.content.url as string} />}
           </div>
         )
+
+      case 'structured_prompt': {
+        const spFields = (block.content.fields as Array<{ key: string; label: string; prefix?: string; suffix?: string; type?: string }>) ?? []
+        return (
+          <div key={block.id} className="my-6 p-5 rounded-xl bg-nz-bg-tertiary/50 border border-nz-border">
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-5 h-5 text-nz-sakura shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <p className="text-sm font-heading font-semibold text-nz-text-primary">
+                {(block.content.label as string) || 'Your responses'}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {spFields.map((field) => {
+                const fieldKey = `${block.id}_${field.key}`
+                return (
+                  <div key={field.key} className="flex items-center gap-3">
+                    <label className="text-sm text-nz-text-secondary w-2/5 shrink-0">{field.label}</label>
+                    <div className="flex-1 flex items-center gap-0 bg-nz-bg-primary border border-nz-border rounded-xl overflow-hidden focus-within:border-nz-sakura/40 transition-colors">
+                      {field.prefix && (
+                        <span className="pl-3 pr-1 text-sm text-nz-text-muted select-none">{field.prefix}</span>
+                      )}
+                      <input
+                        type="text"
+                        className="flex-1 bg-transparent px-3 py-2.5 text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none"
+                        placeholder="..."
+                        value={workbookData[fieldKey] ?? ''}
+                        onChange={(e) => setWorkbookData((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
+                        disabled={saved}
+                      />
+                      {field.suffix && (
+                        <span className="pr-3 pl-1 text-sm text-nz-text-muted select-none">{field.suffix}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      }
+
+      case 'fillable_table': {
+        const ftColumns = (block.content.columns as string[]) ?? []
+        const ftRows = (block.content.rows as Array<{ cells: Array<{ value: string; editable: boolean; prefix?: string; suffix?: string; placeholder?: string }> }>) ?? []
+        return (
+          <div key={block.id} className="my-6">
+            {block.content.label && (
+              <div className="flex items-start gap-3 mb-3">
+                <svg className="w-5 h-5 text-nz-sakura shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <p className="text-sm font-heading font-semibold text-nz-text-primary">
+                  {block.content.label as string}
+                </p>
+              </div>
+            )}
+            <div className="overflow-x-auto rounded-xl border border-nz-border/60">
+              <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                {ftColumns.length > 0 && (
+                  <thead>
+                    <tr className="bg-nz-bg-elevated">
+                      {ftColumns.map((col, ci) => (
+                        <th key={ci} className="px-5 py-3.5 text-left font-heading font-semibold text-nz-text-primary border-b border-nz-border/60 border-r border-nz-border/30 last:border-r-0 text-xs uppercase tracking-wider">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                )}
+                <tbody>
+                  {ftRows.map((row, ri) => (
+                    <tr key={ri} className={`border-b border-nz-border/50 last:border-0 ${ri % 2 === 0 ? 'bg-nz-bg-card' : 'bg-nz-bg-tertiary/30'}`}>
+                      {row.cells.map((cell, ci) => {
+                        const cellKey = `${block.id}_r${ri}_c${ci}`
+                        if (!cell.editable) {
+                          return (
+                            <td key={ci} className="px-5 py-3.5 text-nz-text-secondary border-r border-nz-border/30 last:border-r-0 font-medium">
+                              {cell.value}
+                            </td>
+                          )
+                        }
+                        return (
+                          <td key={ci} className="px-2 py-1.5 border-r border-nz-border/30 last:border-r-0">
+                            <div className="flex items-center gap-0 bg-nz-bg-primary border border-nz-border rounded-lg overflow-hidden focus-within:border-nz-sakura/40 transition-colors">
+                              {cell.prefix && (
+                                <span className="pl-2.5 pr-0.5 text-sm text-nz-text-muted select-none">{cell.prefix}</span>
+                              )}
+                              <input
+                                type="text"
+                                className="flex-1 bg-transparent px-2 py-2 text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none min-w-[60px]"
+                                placeholder={cell.placeholder || '...'}
+                                value={workbookData[cellKey] ?? ''}
+                                onChange={(e) => setWorkbookData((prev) => ({ ...prev, [cellKey]: e.target.value }))}
+                                disabled={saved}
+                              />
+                              {cell.suffix && (
+                                <span className="pr-2.5 pl-0.5 text-sm text-nz-text-muted select-none">{cell.suffix}</span>
+                              )}
+                            </div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      }
 
       default:
         return null

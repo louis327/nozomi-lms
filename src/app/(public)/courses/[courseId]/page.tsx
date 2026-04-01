@@ -63,8 +63,8 @@ export default async function CourseOverviewPage({
               {course.title}
             </h1>
 
-            {/* Sakura accent line */}
-            <div className="h-0.5 w-16 rounded-full bg-gradient-to-r from-nz-sakura to-transparent mb-6" />
+            {/* Accent line */}
+            <div className="h-0.5 w-16 rounded-full bg-nz-sakura/40 mb-6" />
 
             {course.description && (
               <p className="text-lg text-nz-text-secondary leading-relaxed mb-6">
@@ -91,7 +91,7 @@ export default async function CourseOverviewPage({
 
           {/* Cover image */}
           <div className="lg:w-80 shrink-0">
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-nz-bg-tertiary via-nz-bg-elevated to-nz-bg-secondary aspect-video lg:aspect-[4/3]">
+            <div className="rounded-2xl overflow-hidden bg-nz-bg-tertiary aspect-video lg:aspect-[4/3] border border-nz-border">
               {course.cover_image ? (
                 <img
                   src={course.cover_image}

@@ -29,7 +29,7 @@ export default async function HomePage() {
           </h1>
 
           {/* Sakura gradient accent line */}
-          <div className="mx-auto mt-6 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-nz-sakura to-transparent" />
+          <div className="mx-auto mt-6 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-nz-sakura/50 to-transparent" />
 
           <p className="mt-6 text-lg sm:text-xl text-nz-text-secondary max-w-2xl mx-auto leading-relaxed">
             Learn from battle-tested operators who have raised and deployed capital across
@@ -39,7 +39,7 @@ export default async function HomePage() {
           <div className="mt-10">
             <a
               href="#courses"
-              className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-nz-bg-primary rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow"
+              className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-white rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow"
             >
               Explore Courses
               <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -69,7 +69,7 @@ export default async function HomePage() {
                 <Link key={course.id} href={`/courses/${course.id}`} className="group">
                   <Card hoverable className="flex flex-col h-full overflow-hidden">
                     {/* Cover image or gradient placeholder */}
-                    <div className="relative h-44 bg-gradient-to-br from-nz-bg-tertiary via-nz-bg-elevated to-nz-bg-secondary overflow-hidden">
+                    <div className="relative h-44 bg-nz-bg-tertiary overflow-hidden">
                       {course.cover_image ? (
                         <img
                           src={course.cover_image}
@@ -85,8 +85,8 @@ export default async function HomePage() {
                           </div>
                         </div>
                       )}
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-nz-bg-card/90 to-transparent" />
+                      {/* Bottom gradient overlay */}
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/80 to-transparent" />
                     </div>
 
                     {/* Content */}

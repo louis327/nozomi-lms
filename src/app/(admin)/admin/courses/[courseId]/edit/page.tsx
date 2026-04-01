@@ -265,6 +265,7 @@ export default function EditCoursePage() {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'modules' | 'settings'>('modules')
   const [description, setDescription] = useState('')
   const [coverImage, setCoverImage] = useState<string | null>(null)
@@ -286,64 +287,88 @@ export default function EditCoursePage() {
 
   const loadCourse = useCallback(async () => {
     setLoading(true)
-    const { data: course } = await supabase
-      .from('courses')
-      .select('*')
-      .eq('id', courseId)
-      .single()
+    setLoadError(null)
 
-    if (!course) {
-      router.push('/admin/courses')
-      return
+    try {
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single()
+
+      if (courseError) {
+        setLoadError(`Failed to load course: ${courseError.message}`)
+        setLoading(false)
+        return
+      }
+
+      if (!course) {
+        setLoadError('Course not found.')
+        setLoading(false)
+        return
+      }
+
+      setTitle(course.title)
+      setStatus(course.status)
+      setDescription(course.description || '')
+      setCoverImage(course.cover_image)
+
+      const { data: mods, error: modsError } = await supabase
+        .from('modules')
+        .select('id, title, description, sort_order')
+        .eq('course_id', courseId)
+        .order('sort_order')
+
+      if (modsError) {
+        setLoadError(`Failed to load modules: ${modsError.message}`)
+        setLoading(false)
+        return
+      }
+
+      const moduleList = mods ?? []
+
+      // Fetch sections for all modules
+      const moduleIds = moduleList.map((m) => m.id)
+      const { data: secs } = moduleIds.length
+        ? await supabase
+            .from('sections')
+            .select('id, module_id, title, sort_order')
+            .in('module_id', moduleIds)
+            .order('sort_order')
+        : { data: [] }
+
+      // Fetch block counts per section
+      const sectionIds = (secs ?? []).map((s) => s.id)
+      const { data: blockCounts } = sectionIds.length
+        ? await supabase
+            .from('content_blocks')
+            .select('section_id')
+            .in('section_id', sectionIds)
+        : { data: [] }
+
+      const blockCountMap: Record<string, number> = {}
+      ;(blockCounts ?? []).forEach((b) => {
+        blockCountMap[b.section_id] = (blockCountMap[b.section_id] || 0) + 1
+      })
+
+      const sectionsByModule: Record<string, Section[]> = {}
+      ;(secs ?? []).forEach((s) => {
+        if (!sectionsByModule[s.module_id]) sectionsByModule[s.module_id] = []
+        sectionsByModule[s.module_id].push({ ...s, block_count: blockCountMap[s.id] || 0 })
+      })
+
+      setModules(
+        moduleList.map((m) => ({
+          ...m,
+          sections: sectionsByModule[m.id] || [],
+        }))
+      )
+      setExpandedModules(new Set(moduleList.map((m) => m.id)))
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'An unexpected error occurred loading the course.')
+    } finally {
+      setLoading(false)
     }
-
-    setTitle(course.title)
-    setStatus(course.status)
-    setDescription(course.description || '')
-    setCoverImage(course.cover_image)
-
-    const { data: mods } = await supabase
-      .from('modules')
-      .select('id, title, description, sort_order')
-      .eq('course_id', courseId)
-      .order('sort_order')
-
-    const moduleList = mods ?? []
-
-    // Fetch sections for all modules
-    const moduleIds = moduleList.map((m) => m.id)
-    const { data: secs } = await supabase
-      .from('sections')
-      .select('id, module_id, title, sort_order')
-      .in('module_id', moduleIds.length ? moduleIds : [''])
-      .order('sort_order')
-
-    // Fetch block counts per section
-    const sectionIds = (secs ?? []).map((s) => s.id)
-    const { data: blockCounts } = await supabase
-      .from('content_blocks')
-      .select('section_id')
-      .in('section_id', sectionIds.length ? sectionIds : [''])
-
-    const blockCountMap: Record<string, number> = {}
-    ;(blockCounts ?? []).forEach((b) => {
-      blockCountMap[b.section_id] = (blockCountMap[b.section_id] || 0) + 1
-    })
-
-    const sectionsByModule: Record<string, Section[]> = {}
-    ;(secs ?? []).forEach((s) => {
-      if (!sectionsByModule[s.module_id]) sectionsByModule[s.module_id] = []
-      sectionsByModule[s.module_id].push({ ...s, block_count: blockCountMap[s.id] || 0 })
-    })
-
-    setModules(
-      moduleList.map((m) => ({
-        ...m,
-        sections: sectionsByModule[m.id] || [],
-      }))
-    )
-    setExpandedModules(new Set(moduleList.map((m) => m.id)))
-    setLoading(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId])
 
@@ -673,6 +698,28 @@ export default function EditCoursePage() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-nz-sakura/30 border-t-nz-sakura rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-lg mx-auto py-20 text-center">
+        <div className="bg-nz-error/10 border border-nz-error/20 rounded-2xl p-8">
+          <p className="text-sm font-semibold text-nz-error mb-2">Failed to load course</p>
+          <p className="text-sm text-nz-text-secondary mb-6">{loadError}</p>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={loadCourse} size="sm" variant="secondary">
+              Retry
+            </Button>
+            <Link
+              href="/admin/courses"
+              className="px-4 py-2 text-sm font-semibold rounded-xl text-nz-text-tertiary hover:text-nz-text-primary transition-colors"
+            >
+              Back to Courses
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }

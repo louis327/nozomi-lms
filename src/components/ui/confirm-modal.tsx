@@ -42,11 +42,11 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-sm bg-nz-bg-secondary border border-nz-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-sm bg-nz-bg-card border border-nz-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
         <div className="p-6 space-y-4">
           <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-xl ${variant === 'danger' ? 'bg-nz-error/10' : 'bg-nz-sakura/10'}`}>
+            <div className={`p-2 rounded-xl ${variant === 'danger' ? 'bg-red-50' : 'bg-indigo-50'}`}>
               <AlertTriangle className={`w-5 h-5 ${variant === 'danger' ? 'text-nz-error' : 'text-nz-sakura'}`} />
             </div>
             <div>
@@ -55,7 +55,7 @@ export function ConfirmModal({
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-nz-border bg-nz-bg-primary/30">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-nz-border bg-nz-bg-secondary">
           <Button ref={cancelRef} variant="secondary" size="sm" onClick={onCancel}>
             Cancel
           </Button>

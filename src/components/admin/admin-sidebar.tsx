@@ -38,7 +38,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-xl bg-nz-bg-elevated border border-nz-border text-nz-text-secondary hover:text-nz-text-primary lg:hidden cursor-pointer"
+        className="fixed top-4 left-4 z-50 p-2 rounded-xl bg-nz-bg-card border border-nz-border text-nz-text-secondary hover:text-nz-text-primary lg:hidden cursor-pointer shadow-sm"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -46,7 +46,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -56,7 +56,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
       <div className="h-16 flex items-center justify-between px-6 border-b border-nz-border">
         <Link href="/admin" className="font-heading font-bold text-lg text-nz-text-primary tracking-tight">
           NOZOMI<span className="text-nz-sakura">.</span>
-          <span className="text-nz-text-tertiary text-xs ml-2 font-sans font-normal">ADMIN</span>
+          <span className="text-nz-text-muted text-xs ml-2 font-sans font-normal">ADMIN</span>
         </Link>
         <button
           onClick={() => setMobileOpen(false)}
@@ -85,7 +85,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
                 ${
                   isActive
                     ? 'bg-nz-sakura/10 text-nz-sakura border border-nz-sakura/20'
-                    : 'text-nz-text-secondary hover:bg-nz-bg-elevated hover:text-nz-text-primary border border-transparent'
+                    : 'text-nz-text-secondary hover:bg-nz-bg-tertiary hover:text-nz-text-primary border border-transparent'
                 }
               `}
             >
@@ -99,7 +99,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
       {/* User info & sign out */}
       <div className="p-4 border-t border-nz-border">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-nz-sakura/20 flex items-center justify-center text-nz-sakura text-sm font-heading font-semibold">
+          <div className="w-8 h-8 rounded-full bg-nz-sakura/10 flex items-center justify-center text-nz-sakura text-sm font-heading font-semibold">
             {adminName?.charAt(0)?.toUpperCase() || 'A'}
           </div>
           <div className="flex-1 min-w-0">

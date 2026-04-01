@@ -291,9 +291,9 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={isImporting ? undefined : onClose} />
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={isImporting ? undefined : onClose} />
 
-      <div className="relative w-full max-w-2xl bg-nz-bg-secondary border border-nz-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-nz-bg-card border border-nz-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-nz-border">
           <div>
@@ -464,7 +464,7 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
               {/* Progress bar */}
               <div className="w-full h-1.5 bg-nz-bg-tertiary rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-nz-sakura to-nz-sakura-deep rounded-full transition-all duration-1000 ease-out"
+                  className="h-full bg-nz-sakura rounded-full transition-all duration-1000 ease-out"
                   style={{
                     width: phase === 'sending' ? '5%'
                       : phase === 'waiting' ? `${Math.min(45, 5 + (elapsed / 300) * 40)}%`
@@ -548,7 +548,7 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-nz-border bg-nz-bg-primary/30">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-nz-border bg-nz-bg-secondary">
           {!isImporting && (
             <Button variant="secondary" size="sm" onClick={onClose}>
               {result ? 'Close' : 'Cancel'}

@@ -170,7 +170,7 @@ export function AiChat() {
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 cursor-pointer ${
           open
             ? 'bg-nz-bg-elevated border border-nz-border text-nz-text-secondary hover:text-nz-text-primary'
-            : 'bg-nz-sakura text-nz-bg-primary hover:bg-nz-sakura-deep sakura-glow-strong'
+            : 'bg-nz-sakura text-white hover:bg-nz-sakura-deep sakura-glow-strong'
         }`}
       >
         {open ? <ChevronDown className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
@@ -178,7 +178,7 @@ export function AiChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-h-[70vh] flex flex-col bg-nz-bg-secondary border border-nz-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-h-[70vh] flex flex-col bg-nz-bg-card border border-nz-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-nz-border bg-nz-bg-elevated/30">
             <div className="w-8 h-8 rounded-xl bg-nz-sakura/15 flex items-center justify-center">
@@ -303,7 +303,7 @@ export function AiChat() {
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-nz-border bg-nz-bg-primary/50">
+          <div className="p-3 border-t border-nz-border bg-nz-bg-secondary">
             <div className="flex items-end gap-2 bg-nz-bg-tertiary rounded-xl border border-nz-border focus-within:border-nz-sakura/30 transition-colors">
               <textarea
                 ref={inputRef}

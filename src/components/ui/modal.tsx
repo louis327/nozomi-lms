@@ -36,7 +36,7 @@ export function Modal({ open, onClose, title, children, className = '' }: ModalP
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -45,7 +45,7 @@ export function Modal({ open, onClose, title, children, className = '' }: ModalP
         className={`
           relative w-full max-w-lg
           bg-nz-bg-card border border-nz-border
-          rounded-2xl shadow-2xl
+          rounded-2xl shadow-xl
           animate-fade-in
           ${className}
         `}

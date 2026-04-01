@@ -2,9 +2,9 @@ import { ReactNode } from 'react'
 
 const calloutConfig = {
   tip: {
-    bg: 'bg-nz-sakura/5',
-    border: 'border-nz-sakura/40',
-    iconColor: 'text-nz-sakura',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    iconColor: 'text-nz-info',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.674M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -12,8 +12,8 @@ const calloutConfig = {
     ),
   },
   warning: {
-    bg: 'bg-nz-warning/5',
-    border: 'border-nz-warning/40',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
     iconColor: 'text-nz-warning',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -22,9 +22,9 @@ const calloutConfig = {
     ),
   },
   formula: {
-    bg: 'bg-nz-info/5',
-    border: 'border-nz-info/40',
-    iconColor: 'text-nz-info',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    iconColor: 'text-nz-sakura',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -32,8 +32,8 @@ const calloutConfig = {
     ),
   },
   'key-insight': {
-    bg: 'bg-nz-success/5',
-    border: 'border-nz-success/40',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
     iconColor: 'text-nz-success',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

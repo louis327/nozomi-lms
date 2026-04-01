@@ -129,7 +129,7 @@ export function StudentList({ students }: { students: Student[] }) {
                                         {cp.title}
                                       </span>
                                       <div className="flex items-center gap-3 w-48">
-                                        <div className="flex-1 h-2 rounded-full bg-nz-bg-primary overflow-hidden">
+                                        <div className="flex-1 h-2 rounded-full bg-nz-bg-tertiary overflow-hidden">
                                           <div
                                             className="h-full rounded-full bg-nz-sakura transition-all"
                                             style={{ width: `${pct}%` }}

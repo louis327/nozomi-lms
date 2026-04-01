@@ -103,7 +103,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                   <p className="text-xs text-nz-text-muted font-medium uppercase tracking-wider mb-0.5">
                     Module {modIdx + 1}
                   </p>
-                  <p className="text-sm text-nz-text-primary font-medium truncate group-hover:text-nz-sakura-pale transition-colors">
+                  <p className="text-sm text-nz-text-primary font-medium truncate group-hover:text-nz-sakura transition-colors">
                     {mod.title}
                   </p>
                 </div>
@@ -190,7 +190,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/60"
+          className="lg:hidden fixed inset-0 z-40 bg-black/30"
           onClick={() => setMobileOpen(false)}
         />
       )}

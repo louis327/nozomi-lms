@@ -142,7 +142,7 @@ export default async function DashboardPage() {
                     </div>
                   )}
                   {/* Progress badge */}
-                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-nz-bg-primary/80 backdrop-blur text-xs font-semibold text-nz-text-primary">
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-nz-bg-card/90 backdrop-blur border border-nz-border text-xs font-semibold text-nz-text-primary shadow-sm">
                     {pct}%
                   </div>
                 </div>
