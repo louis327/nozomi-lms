@@ -182,7 +182,7 @@ export function StudentSidebar({
         {/* Collapse/expand toggle — sits on the sidebar edge */}
         <button
           onClick={() => { onToggleCollapse(); setHoverExpanded(false) }}
-          className="hidden lg:flex absolute top-[72px] -right-3.5 w-7 h-7 items-center justify-center rounded-full bg-nz-sakura border border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
+          className="hidden lg:flex absolute top-[56px] -right-3 w-6 h-6 items-center justify-center rounded-full bg-nz-sakura border border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
           title={collapsed ? 'Expand' : 'Collapse'}
         >
           {collapsed ? (
