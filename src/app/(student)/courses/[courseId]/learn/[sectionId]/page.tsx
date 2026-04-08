@@ -4,6 +4,7 @@ import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionContent } from '@/components/course/section-content'
 import { ModuleChecklist } from '@/components/course/module-checklist'
 import { SectionNotes } from '@/components/course/section-notes'
+import { InlineSectionTitle } from '@/components/course/inline-section-title'
 
 export default async function SectionPage({
   params,
@@ -128,9 +129,7 @@ export default async function SectionPage({
       )}
 
       {/* Section title */}
-      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#111] tracking-[-0.02em] mb-8">
-        {section.title}
-      </h1>
+      <InlineSectionTitle sectionId={sectionId} title={section.title} />
 
       {/* Content blocks + submit */}
       <SectionContent

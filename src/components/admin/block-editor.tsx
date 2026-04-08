@@ -49,9 +49,9 @@ function RichTextBlock({ block, onChange }: { block: ContentBlock; onChange: (c:
 }
 
 function CalloutBlock({ block, onChange }: { block: ContentBlock; onChange: (c: Record<string, unknown>) => void }) {
-  const calloutType = (block.content.calloutType as string) || 'tip'
+  const calloutType = (block.content.calloutType as string) || (block.content.callout_type as string) || 'tip'
   const title = (block.content.title as string) || ''
-  const body = (block.content.body as string) || ''
+  const body = (block.content.body as string) || (block.content.html as string) || ''
   const ct = calloutTypes.find((c) => c.value === calloutType) ?? calloutTypes[0]
 
   return (
@@ -173,8 +173,8 @@ function WorkbookPromptBlock({ block, onChange }: { block: ContentBlock; onChang
     <div className="space-y-3">
       <input
         type="text"
-        value={(block.content.label as string) || ''}
-        onChange={(e) => onChange({ ...block.content, label: e.target.value })}
+        value={(block.content.label as string) || (block.content.prompt as string) || ''}
+        onChange={(e) => onChange({ ...block.content, label: e.target.value, prompt: e.target.value })}
         placeholder="Question / prompt label..."
         className="w-full px-4 py-2 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
       />

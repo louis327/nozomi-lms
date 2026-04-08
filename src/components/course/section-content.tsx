@@ -3,10 +3,55 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useEditMode } from '@/lib/edit-mode-context'
+import { useToast } from '@/components/ui/toast'
+import { InlineBlockEditor } from '@/components/course/inline-block-editor'
+import { SortableBlocksContainer, SortableBlockWrapper } from '@/components/course/sortable-blocks'
+import { createBlock, reorderBlocks, getDefaultContent } from '@/lib/block-actions'
 import { Button } from '@/components/ui/button'
 import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
+
+const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
+  { type: 'rich_text', label: 'Rich Text' },
+  { type: 'callout', label: 'Callout' },
+  { type: 'table', label: 'Table' },
+  { type: 'workbook_prompt', label: 'Workbook Prompt' },
+  { type: 'checklist', label: 'Checklist' },
+  { type: 'file', label: 'File Upload' },
+  { type: 'video', label: 'Video' },
+]
+
+function InsertBlockButton({ onInsert }: { onInsert: (type: ContentBlock['type']) => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative flex items-center justify-center py-1 group">
+      <div className="absolute inset-x-0 top-1/2 h-px bg-[#eee] group-hover:bg-nz-sakura/20 transition-colors" />
+      <button
+        onClick={() => setOpen(!open)}
+        className="relative z-10 w-6 h-6 rounded-full bg-white border border-[#ddd] hover:border-nz-sakura/40 hover:bg-nz-sakura/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+      >
+        <svg className="w-3 h-3 text-[#aaa] group-hover:text-nz-sakura" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute top-full mt-1 bg-white border border-[#e8e8e8] rounded-xl overflow-hidden shadow-xl z-30 w-48">
+          {blockTypeOptions.map((bt) => (
+            <button
+              key={bt.type}
+              onClick={() => { onInsert(bt.type); setOpen(false) }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#666] hover:text-[#111] hover:bg-[#f9f9f9] transition-colors cursor-pointer"
+            >
+              {bt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 type SectionContentProps = {
   section: Section & { content_blocks: ContentBlock[] }
@@ -23,6 +68,8 @@ export function SectionContent({
 }: SectionContentProps) {
   const router = useRouter()
   const supabase = createClient()
+  const { editMode, isAdmin } = useEditMode()
+  const { addToast } = useToast()
 
   const existingWorkbook = sectionProgress?.workbook_data ?? {}
   const [workbookData, setWorkbookData] = useState<Record<string, string>>(
@@ -35,8 +82,8 @@ export function SectionContent({
   const [saved, setSaved] = useState(sectionProgress?.completed ?? false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const blocks = [...(section.content_blocks ?? [])].sort(
-    (a, b) => a.sort_order - b.sort_order
+  const [blocks, setBlocks] = useState<ContentBlock[]>(
+    [...(section.content_blocks ?? [])].sort((a, b) => a.sort_order - b.sort_order)
   )
 
   const hasWorkbookPrompts = blocks.some((b) => b.type === 'workbook_prompt' || b.type === 'structured_prompt' || b.type === 'fillable_table')
@@ -80,6 +127,42 @@ export function SectionContent({
       setSaving(false)
     }
   }, [workbookData, checklistData, section.id, courseId, nextSectionId, router, supabase])
+
+  // Edit mode handlers
+  const handleBlockUpdate = useCallback((updated: ContentBlock) => {
+    setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))
+  }, [])
+
+  const handleBlockDelete = useCallback((blockId: string) => {
+    setBlocks((prev) => prev.filter((b) => b.id !== blockId))
+  }, [])
+
+  const handleInsertBlock = useCallback(async (type: ContentBlock['type'], atIndex: number) => {
+    try {
+      const content = getDefaultContent(type)
+      const newBlock = await createBlock(section.id, type, content, atIndex)
+      setBlocks((prev) => {
+        const next = [...prev]
+        next.splice(atIndex, 0, newBlock)
+        return next
+      })
+      addToast('Block added', 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to add block', 'error')
+    }
+  }, [section.id, addToast])
+
+  const handleReorder = useCallback((oldIndex: number, newIndex: number) => {
+    setBlocks((prev) => {
+      const next = [...prev]
+      const [moved] = next.splice(oldIndex, 1)
+      next.splice(newIndex, 0, moved)
+      reorderBlocks(next.map((b, i) => ({ id: b.id, sort_order: i }))).catch(() => {
+        addToast('Failed to reorder', 'error')
+      })
+      return next
+    })
+  }, [addToast])
 
   function renderBlock(block: ContentBlock) {
     switch (block.type) {
@@ -346,14 +429,56 @@ export function SectionContent({
     }
   }
 
+  const renderBlocks = () => {
+    if (editMode && isAdmin) {
+      return (
+        <div className="space-y-1 pl-6">
+          <SortableBlocksContainer
+            blockIds={blocks.map((b) => b.id)}
+            onReorder={handleReorder}
+          >
+            {blocks.map((block, index) => (
+              <div key={block.id}>
+                <InsertBlockButton onInsert={(type) => handleInsertBlock(type, index)} />
+                <SortableBlockWrapper id={block.id}>
+                  <InlineBlockEditor
+                    block={block}
+                    onBlockUpdate={handleBlockUpdate}
+                    onBlockDelete={handleBlockDelete}
+                  >
+                    {renderBlock(block)}
+                  </InlineBlockEditor>
+                </SortableBlockWrapper>
+              </div>
+            ))}
+          </SortableBlocksContainer>
+          <InsertBlockButton onInsert={(type) => handleInsertBlock(type, blocks.length)} />
+
+          {blocks.length === 0 && (
+            <div className="py-12 text-center bg-[#f9f9f9] border border-[#e8e8e8] rounded-2xl">
+              <p className="text-[#888] text-sm mb-2">No content blocks yet.</p>
+              <p className="text-[#aaa] text-xs">Hover between the lines above to add your first block.</p>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-8">
+        {blocks.map((block) => (
+          <div key={block.id}>{renderBlock(block)}</div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div>
-      <div className="space-y-8">
-        {blocks.map(renderBlock)}
-      </div>
+      {renderBlocks()}
 
-      {/* Submit */}
-      <div className="mt-10">
+      {/* Submit — hide in edit mode */}
+      {!editMode && <div className="mt-10">
         <div className="rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] p-6">
           {saved ? (
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -402,7 +527,7 @@ export function SectionContent({
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

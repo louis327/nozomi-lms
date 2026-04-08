@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEditMode } from '@/lib/edit-mode-context'
+import { StructureEditorPanel } from '@/components/course/structure-editor-panel'
 import type { Course, Module, Section } from '@/lib/types'
 
 type CourseSidebarProps = {
@@ -12,12 +14,15 @@ type CourseSidebarProps = {
   courseId: string
   collapsed: boolean
   onToggleCollapse: () => void
+  isAdmin?: boolean
 }
 
-export function CourseSidebar({ course, progress, currentSectionId: initialSectionId, courseId, collapsed, onToggleCollapse }: CourseSidebarProps) {
+export function CourseSidebar({ course, progress, currentSectionId: initialSectionId, courseId, collapsed, onToggleCollapse, isAdmin }: CourseSidebarProps) {
   const pathname = usePathname()
+  const { editMode } = useEditMode()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hoverOpen, setHoverOpen] = useState(false)
+  const [structureOpen, setStructureOpen] = useState(false)
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const pathSegments = pathname.split('/')
@@ -91,12 +96,26 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
 
       {/* Course title + progress */}
       <div className="px-5 pb-4 border-b border-[#eee]">
-        <Link
-          href={`/courses/${courseId}/learn`}
-          className="font-heading font-semibold text-[13px] text-[#111] hover:text-nz-sakura transition-colors line-clamp-2"
-        >
-          {course.title}
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href={`/courses/${courseId}/learn`}
+            className="font-heading font-semibold text-[13px] text-[#111] hover:text-nz-sakura transition-colors line-clamp-2 flex-1"
+          >
+            {course.title}
+          </Link>
+          {isAdmin && editMode && (
+            <button
+              onClick={() => setStructureOpen(true)}
+              className="p-1.5 rounded-lg text-[#aaa] hover:text-nz-sakura hover:bg-nz-sakura/10 transition-colors cursor-pointer shrink-0"
+              title="Edit course structure"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="mt-3">
           <div className="w-full h-1.5 rounded-full bg-[#f0f0f0] overflow-hidden">
             <div className="h-full rounded-full bg-nz-sakura transition-all duration-700" style={{ width: `${pct}%` }} />
@@ -180,6 +199,16 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
       </div>
 
       <div className="p-3" />
+
+      {/* Structure editor panel */}
+      {isAdmin && (
+        <StructureEditorPanel
+          open={structureOpen}
+          onClose={() => setStructureOpen(false)}
+          course={course}
+          courseId={courseId}
+        />
+      )}
     </div>
   )
 
