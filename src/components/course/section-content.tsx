@@ -191,20 +191,20 @@ export function SectionContent({
         const headers = rows[0] ?? []
         const bodyRows = rows.slice(1)
         return (
-          <div key={block.id} className="my-6 overflow-x-auto rounded-xl border border-[#e8e8e8]">
-            <table className="w-full text-[13px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+          <div key={block.id} className="my-6 overflow-x-auto rounded-2xl border border-[#ececec] bg-white">
+            <table className="w-full text-[14px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
-                <tr className="bg-[#f9f9f9]">
+                <tr>
                   {headers.map((h: string, i: number) => (
-                    <th key={i} className="px-5 py-3.5 text-left font-heading font-semibold text-[#111] border-b border-[#e8e8e8] border-r border-[#f0f0f0] last:border-r-0 text-[11px] uppercase tracking-wider">{h}</th>
+                    <th key={i} className="px-6 py-4 text-left font-heading font-semibold text-[#111] border-b border-[#ececec] text-[14px]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {bodyRows.map((row: string[], ri: number) => (
-                  <tr key={ri} className={`border-b border-[#f0f0f0] last:border-0 ${ri % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}`}>
+                  <tr key={ri} className="border-b border-[#f4f4f4] last:border-0">
                     {row.map((cell: string, ci: number) => (
-                      <td key={ci} className="px-5 py-3.5 text-[#666] border-r border-[#f0f0f0] last:border-r-0">{cell}</td>
+                      <td key={ci} className={`px-6 py-4 text-[14px] leading-[1.55] ${ci === 0 ? 'text-[#111] font-medium' : 'text-[#5a5a5a]'}`}>{cell}</td>
                     ))}
                   </tr>
                 ))}
