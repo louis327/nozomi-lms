@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CourseSidebar } from './course-sidebar'
 import { EditModeWrapper } from './edit-mode-wrapper'
+import { AdminCourseBar } from './admin-course-bar'
 import type { Course, Module, Section } from '@/lib/types'
 
 const STORAGE_KEY = 'nz-course-sidebar-collapsed'
@@ -32,7 +33,7 @@ export function CourseLearnShell({ course, progress, courseId, isAdmin, children
   }
 
   return (
-    <EditModeWrapper isAdmin={isAdmin ?? false}>
+    <EditModeWrapper isAdmin={isAdmin ?? false} defaultEditMode={isAdmin ?? false}>
       <div className="flex min-h-screen bg-white">
         <CourseSidebar
           course={course as any}
@@ -44,6 +45,7 @@ export function CourseLearnShell({ course, progress, courseId, isAdmin, children
           isAdmin={isAdmin}
         />
         <div className={`flex-1 transition-all duration-300 ${collapsed ? 'lg:ml-0' : 'lg:ml-[280px]'}`}>
+          {isAdmin && <AdminCourseBar course={course} />}
           {children}
         </div>
       </div>

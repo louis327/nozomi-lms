@@ -6,13 +6,15 @@ import { ToastProvider } from '@/components/ui/toast'
 
 export function EditModeWrapper({
   isAdmin,
+  defaultEditMode = false,
   children,
 }: {
   isAdmin: boolean
+  defaultEditMode?: boolean
   children: React.ReactNode
 }) {
   return (
-    <EditModeProvider isAdmin={isAdmin}>
+    <EditModeProvider isAdmin={isAdmin} defaultEditMode={defaultEditMode}>
       <ToastProvider>
         {children}
         <EditModeToggle />
