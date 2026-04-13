@@ -87,7 +87,7 @@ export function AdminCourseBar({ course }: { course: CourseWithTree }) {
   return (
     <>
       <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-[#eee] px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between gap-4 max-w-2xl mx-auto">
+        <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/admin/courses"
