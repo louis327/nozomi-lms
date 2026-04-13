@@ -28,12 +28,14 @@ export function useEditMode() {
 
 export function EditModeProvider({
   isAdmin,
+  defaultEditMode = false,
   children,
 }: {
   isAdmin: boolean
+  defaultEditMode?: boolean
   children: React.ReactNode
 }) {
-  const [editMode, setEditMode] = useState(false)
+  const [editMode, setEditMode] = useState(defaultEditMode)
   const [dirtyBlocks, setDirtyBlocks] = useState<Set<string>>(new Set())
 
   const markDirty = useCallback((blockId: string) => {
