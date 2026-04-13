@@ -120,7 +120,7 @@ export default async function SectionPage({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Video embed — only show top-level video_url if no video block exists in content_blocks */}
       {section.video_url && !(section.content_blocks ?? []).some((b: any) => b.type === 'video') && (
         <div className="mb-8">
