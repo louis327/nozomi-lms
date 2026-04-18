@@ -65,7 +65,26 @@ export default async function CoursesPage() {
   })
 
   const enrolledCourses = coursesList.filter((c) => c.isEnrolled)
+  const inProgressCourses = enrolledCourses.filter((c) => c.sectionTotal === 0 || c.pct < 100)
+  const completedCourses = enrolledCourses.filter((c) => c.sectionTotal > 0 && c.pct === 100)
   const otherCourses = coursesList.filter((c) => !c.isEnrolled)
+
+  const summary = (() => {
+    const parts: string[] = []
+    if (inProgressCourses.length > 0) {
+      parts.push(`${inProgressCourses.length} in progress`)
+    }
+    if (completedCourses.length > 0) {
+      parts.push(`${completedCourses.length} completed`)
+    }
+    if (otherCourses.length > 0) {
+      parts.push(`${otherCourses.length} to explore`)
+    }
+    if (parts.length === 0) {
+      return `${coursesList.length} ${coursesList.length === 1 ? 'course' : 'courses'} available — pick something that calls to you.`
+    }
+    return parts.join(' · ')
+  })()
 
   return (
     <div className="px-6 lg:px-10 pb-16">
@@ -76,21 +95,17 @@ export default async function CoursesPage() {
         <h1 className="display text-[48px] md:text-[56px] mb-3 max-w-2xl">
           Your <em>courses</em>.
         </h1>
-        <p className="text-[14px] text-ink-soft max-w-lg">
-          {enrolledCourses.length > 0
-            ? `${enrolledCourses.length} active ${enrolledCourses.length === 1 ? 'course' : 'courses'} · ${otherCourses.length} more to explore`
-            : `${coursesList.length} ${coursesList.length === 1 ? 'course' : 'courses'} available — pick something that calls to you.`}
-        </p>
+        <p className="text-[14px] text-ink-soft max-w-lg">{summary}</p>
       </section>
 
-      {enrolledCourses.length > 0 && (
+      {inProgressCourses.length > 0 && (
         <section className="mb-12">
           <div className="flex items-center justify-between mb-5">
             <h2 className="eyebrow">In Progress</h2>
-            <span className="text-[12px] text-ink-muted">{enrolledCourses.length}</span>
+            <span className="text-[12px] text-ink-muted">{inProgressCourses.length}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {enrolledCourses.map((course) => (
+            {inProgressCourses.map((course) => (
               <Link
                 key={course.id}
                 href={`/courses/${course.id}`}
@@ -124,6 +139,51 @@ export default async function CoursesPage() {
                     <p className="text-[11px] text-ink-muted mt-2">
                       {course.sectionDone} / {course.sectionTotal} sections · {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}
                     </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {completedCourses.length > 0 && (
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="eyebrow">Completed</h2>
+            <span className="text-[12px] text-ink-muted">{completedCourses.length}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {completedCourses.map((course) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.id}`}
+                className="group flex flex-col bg-surface border border-line rounded-2xl overflow-hidden hover:border-line-strong transition-colors"
+              >
+                <div className="aspect-[16/9] bg-surface-muted relative overflow-hidden">
+                  {course.cover_image ? (
+                    <img src={course.cover_image} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <CourseThumb title={course.title} size="xl" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 left-3">
+                    <Badge variant="success">Complete</Badge>
+                  </div>
+                </div>
+                <div className="flex-1 p-5 flex flex-col">
+                  <h3 className="font-serif text-[18px] text-ink leading-tight mb-1 group-hover:text-accent-deep transition-colors">
+                    {course.title}
+                  </h3>
+                  {course.description && (
+                    <p className="text-[12.5px] text-ink-soft line-clamp-2 mb-4">{course.description}</p>
+                  )}
+                  <div className="mt-auto flex items-center justify-between pt-2 border-t border-line-soft">
+                    <span className="text-[11px] text-ink-muted">
+                      {course.sectionTotal} sections · {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}
+                    </span>
+                    <span className="text-[11.5px] font-medium text-accent">Review →</span>
                   </div>
                 </div>
               </Link>
