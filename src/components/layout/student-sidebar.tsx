@@ -6,13 +6,6 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   BookOpen,
-  Compass,
-  ClipboardList,
-  Calendar,
-  Users,
-  BarChart3,
-  Award,
-  FileBadge,
   LogOut,
   Menu,
   X,
@@ -23,19 +16,9 @@ import { useRouter } from 'next/navigation'
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; badge?: string }
 
-const learningItems: NavItem[] = [
+const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/courses', label: 'My Courses', icon: BookOpen },
-  { href: '/discover', label: 'Discover', icon: Compass },
-  { href: '/assignments', label: 'Assignments', icon: ClipboardList },
-  { href: '/schedule', label: 'Schedule', icon: Calendar },
-  { href: '/community', label: 'Community', icon: Users },
-]
-
-const progressItems: NavItem[] = [
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/achievements', label: 'Achievements', icon: Award },
-  { href: '/certificates', label: 'Certificates', icon: FileBadge },
+  { href: '/courses', label: 'Courses', icon: BookOpen },
 ]
 
 export function StudentSidebar({
@@ -128,15 +111,7 @@ export function StudentSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-5 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-[0.18em] px-3 mb-2">
-            Learning
-          </p>
-          <div className="space-y-0.5 mb-6">{learningItems.map(renderItem)}</div>
-
-          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-[0.18em] px-3 mb-2">
-            Progress
-          </p>
-          <div className="space-y-0.5">{progressItems.map(renderItem)}</div>
+          <div className="space-y-0.5">{navItems.map(renderItem)}</div>
         </nav>
 
         {/* User section */}

@@ -9,7 +9,7 @@ import { SectionHeatmap } from '@/components/dashboard/section-heatmap'
 import { CourseThumb } from '@/components/ui/course-thumb'
 import { buildRaiseSnapshot, type OnboardingData } from '@/lib/raise-context'
 import type { Course } from '@/lib/types'
-import { ArrowUpRight, Sparkles, Compass } from 'lucide-react'
+import { ArrowUpRight, Sparkles, BookOpen } from 'lucide-react'
 
 export const metadata = { title: 'Dashboard — Nozomi' }
 
@@ -182,11 +182,11 @@ export default async function DashboardPage() {
   if (snap.stage) stats.push({ label: 'Stage', value: snap.stage })
 
   return (
-    <div className="pb-24">
+    <div className="px-6 lg:px-10 pb-24">
       <PageTopbar breadcrumb={[{ label: 'Nozomi', href: '/dashboard' }, { label: 'Dashboard' }]} />
 
       {/* Masthead */}
-      <div className="px-6 lg:px-12 pt-8 pb-5">
+      <div className="pt-6 pb-4">
         <div className="flex items-center gap-3 text-[10.5px] font-semibold tracking-[0.32em] text-ink-muted uppercase">
           <span>{formatMasthead()}</span>
           <span className="w-[20px] h-px bg-line-strong" />
@@ -195,16 +195,16 @@ export default async function DashboardPage() {
       </div>
 
       {/* Greeting */}
-      <div className="px-6 lg:px-12 pb-8">
+      <div className="pb-6">
         <h1
           className="text-ink"
           style={{
             fontFamily: 'var(--font-sans)',
             fontWeight: 700,
             fontStyle: 'italic',
-            fontSize: 'clamp(36px, 5.2cqi, 60px)',
-            lineHeight: 0.98,
-            letterSpacing: '-0.035em',
+            fontSize: 'clamp(28px, 3.8cqi, 44px)',
+            lineHeight: 1.02,
+            letterSpacing: '-0.032em',
           }}
         >
           Good to see you, {displayName}<span className="text-accent">.</span>
@@ -212,7 +212,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Primary widget grid */}
-      <div className="px-6 lg:px-12">
+      <div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
           <div className="lg:col-span-2">
             <RaiseTimeline
@@ -326,11 +326,11 @@ export default async function DashboardPage() {
                 </h2>
               </div>
               <Link
-                href="/discover"
+                href="/courses"
                 className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-line text-[12.5px] font-semibold text-ink hover:border-accent hover:text-accent transition-colors group"
               >
-                <Compass className="w-4 h-4" strokeWidth={1.8} />
-                <span>Discover all</span>
+                <BookOpen className="w-4 h-4" strokeWidth={1.8} />
+                <span>Browse all</span>
                 <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2} />
               </Link>
             </div>
