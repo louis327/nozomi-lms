@@ -12,6 +12,15 @@ function formatShortDate(d: Date): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()
 }
 
+function startOfWeek(d: Date): Date {
+  const day = d.getDay() // 0 = Sun
+  const diff = (day + 6) % 7 // make Monday = 0
+  const out = new Date(d)
+  out.setHours(0, 0, 0, 0)
+  out.setDate(out.getDate() - diff)
+  return out
+}
+
 export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, targetValuation }: Props) {
   if (!closeDate || daysToClose === null) {
     return (
@@ -27,8 +36,28 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
   }
 
   const today = new Date()
-  const totalDays = Math.max(1, Math.ceil((closeDate.getTime() - today.getTime()) / MS_PER_DAY))
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7))
+  const todayWeek = startOfWeek(today)
+  const closeWeek = startOfWeek(closeDate)
+
+  const totalWeeks = Math.max(
+    1,
+    Math.round((closeWeek.getTime() - todayWeek.getTime()) / (7 * MS_PER_DAY)) + 1,
+  )
+  const segments = Math.min(totalWeeks, 16)
+  const weekStep = totalWeeks / segments
+
+  const weekCells = Array.from({ length: segments }, (_, i) => {
+    const wOffset = Math.round(i * weekStep)
+    const d = new Date(todayWeek.getTime() + wOffset * 7 * MS_PER_DAY)
+    return {
+      index: i,
+      date: d,
+      monthShort: d.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase(),
+      isMonthStart: d.getDate() <= 7,
+      isFirst: i === 0,
+      isLast: i === segments - 1,
+    }
+  })
 
   const headline =
     daysToClose < 0
@@ -46,22 +75,10 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
   const statusColor =
     daysToClose <= 14 ? 'text-error' : daysToClose <= 45 ? 'text-accent' : 'text-ink-soft'
 
-  const barCount = Math.min(totalWeeks, 26)
-  const barStep = totalWeeks / barCount
-
-  const bars = Array.from({ length: barCount }, (_, i) => {
-    const weekOffset = Math.round(i * barStep)
-    const date = new Date(today.getTime() + weekOffset * 7 * MS_PER_DAY)
-    const isFirst = i === 0
-    const isLast = i === barCount - 1
-    const isMonthStart = date.getDate() <= 7
-    return { weekOffset, date, isFirst, isLast, isMonthStart }
-  })
-
   const chips: { label: string; value: string }[] = []
   if (raiseAmount) chips.push({ label: 'Raising', value: raiseAmount })
   if (targetValuation) chips.push({ label: 'At', value: targetValuation })
-  chips.push({ label: '', value: `${totalDays} days left` })
+  chips.push({ label: '', value: `${Math.max(0, daysToClose)} days left` })
 
   return (
     <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
@@ -72,11 +89,9 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
 
       {/* Header */}
       <div className="relative flex items-start justify-between mb-6 gap-4">
-        <div>
-          <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase">
-            Target close &middot; {closeText ?? formatShortDate(closeDate)}
-          </p>
-        </div>
+        <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase">
+          Target close &middot; {closeText ?? formatShortDate(closeDate)}
+        </p>
         <div className={`flex items-center gap-2 text-[10px] font-semibold tracking-[0.24em] uppercase ${statusColor}`}>
           <span className="relative flex w-2 h-2">
             <span className="absolute inset-0 rounded-full bg-current animate-ping opacity-60" />
@@ -87,7 +102,7 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
       </div>
 
       {/* Headline + chips */}
-      <div className="relative mb-8">
+      <div className="relative mb-7">
         <h2
           className="text-ink mb-3"
           style={{
@@ -100,79 +115,79 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
           }}
         >
           {headline}
-          <span className="text-ink-muted font-normal not-italic text-[0.35em] align-middle ml-3 tracking-[0.14em] uppercase">
+          <span className="text-ink-muted font-normal not-italic text-[0.32em] align-middle ml-3 tracking-[0.14em] uppercase">
             to close
           </span>
         </h2>
 
-        {chips.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-            {chips.map((chip, i) => (
-              <div key={i} className="flex items-baseline gap-1.5">
-                {i > 0 && <span className="w-1 h-1 rounded-full bg-line-strong mr-3" />}
-                {chip.label && (
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
-                    {chip.label}
-                  </span>
-                )}
-                <span className="text-[13.5px] font-semibold text-ink tabular-nums">{chip.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+          {chips.map((chip, i) => (
+            <div key={i} className="flex items-baseline gap-1.5">
+              {i > 0 && <span className="w-1 h-1 rounded-full bg-line-strong mr-3 self-center" />}
+              {chip.label && (
+                <span className="text-[9.5px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
+                  {chip.label}
+                </span>
+              )}
+              <span className="text-[13px] font-semibold text-ink tabular-nums">{chip.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Bar timeline */}
+      {/* Segmented week timeline */}
       <div className="relative">
-        <div className="flex items-end gap-[3px] h-[52px]">
-          {bars.map((b, i) => {
-            const isToday = b.isFirst
-            const height = b.isFirst || b.isLast ? 48 : b.isMonthStart ? 32 : 22
+        <div className="flex gap-[3px] mb-3">
+          {weekCells.map((c) => {
+            const base =
+              'relative flex-1 rounded-sm transition-all'
+            let tone: string
+            if (c.isFirst) tone = 'bg-accent h-[14px]'
+            else if (c.isLast) tone = 'bg-ink h-[14px]'
+            else if (c.isMonthStart) tone = 'bg-line-strong h-[14px]'
+            else tone = 'bg-line h-[10px]'
             return (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end relative">
-                <div
-                  className={`w-full rounded-sm ${
-                    isToday
-                      ? 'bg-accent'
-                      : b.isLast
-                        ? 'bg-ink'
-                        : b.isMonthStart
-                          ? 'bg-ink-faint'
-                          : 'bg-line-strong'
-                  }`}
-                  style={{ height: `${height}px` }}
-                />
+              <div key={c.index} className="flex-1 flex items-center">
+                <div className={`${base} ${tone} w-full`} />
+                {c.isFirst && (
+                  <span className="absolute left-0 -top-1.5 flex w-3 h-3 items-center justify-center">
+                    <span className="absolute inset-0 rounded-full bg-accent/40 animate-ping" />
+                    <span className="relative w-3 h-3 rounded-full bg-accent ring-2 ring-surface" />
+                  </span>
+                )}
               </div>
             )
           })}
         </div>
 
-        {/* Pulsing dot on today bar */}
-        <div
-          className="absolute top-0 flex items-center justify-center"
-          style={{ left: 0, width: `${100 / barCount}%` }}
-        >
-          <span className="relative flex w-3 h-3 -mt-1">
-            <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-60" />
-            <span className="relative rounded-full bg-accent border-2 border-surface w-3 h-3 shadow-[0_0_0_2px_var(--nz-accent)]" />
-          </span>
+        {/* Month axis */}
+        <div className="relative flex gap-[3px] h-4 mb-4">
+          {weekCells.map((c) => (
+            <div key={c.index} className="flex-1 flex items-start justify-start">
+              {c.isMonthStart && !c.isFirst && !c.isLast && (
+                <span className="text-[9px] font-mono tabular-nums tracking-wider text-ink-faint uppercase">
+                  {c.monthShort}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Endpoint labels */}
-        <div className="flex items-baseline justify-between mt-3">
-          <div>
-            <p className="text-[9.5px] font-mono tabular-nums tracking-wider text-accent uppercase">
+        {/* Endpoint pill labels */}
+        <div className="flex items-end justify-between pt-1 border-t border-line-soft">
+          <div className="pt-2.5">
+            <p className="text-[10.5px] font-mono tabular-nums tracking-wider text-accent uppercase leading-none">
               {formatShortDate(today)}
             </p>
-            <p className="text-[9px] font-semibold tracking-[0.22em] text-ink-muted uppercase mt-0.5">
+            <p className="text-[9px] font-semibold tracking-[0.22em] text-ink-muted uppercase mt-1">
               Today
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-[9.5px] font-mono tabular-nums tracking-wider text-ink uppercase">
+          <div className="pt-2.5 text-right">
+            <p className="text-[10.5px] font-mono tabular-nums tracking-wider text-ink uppercase leading-none">
               {formatShortDate(closeDate)}
             </p>
-            <p className="text-[9px] font-semibold tracking-[0.22em] text-ink-muted uppercase mt-0.5">
+            <p className="text-[9px] font-semibold tracking-[0.22em] text-ink-muted uppercase mt-1">
               Close
             </p>
           </div>
