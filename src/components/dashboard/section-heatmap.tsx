@@ -17,6 +17,7 @@ type Section = {
 type Props = {
   courseId: string
   courseTitle: string
+  coverImage: string | null
   modules: Module[]
   sections: Section[]
   progress: Record<string, { completed: boolean }>
@@ -31,6 +32,7 @@ type Props = {
 export function SectionHeatmap({
   courseId,
   courseTitle,
+  coverImage,
   modules,
   sections,
   progress,
@@ -52,32 +54,56 @@ export function SectionHeatmap({
   const isComplete = !nextSectionTitle
 
   return (
-    <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
-      {/* Header: progress metric */}
-      <div className="flex items-start justify-between mb-6 gap-4">
-        <div className="min-w-0">
-          <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
+    <div className="relative rounded-2xl border border-line bg-surface overflow-hidden">
+      {/* Hero: cover image with course title overlay */}
+      <div className="relative h-40 lg:h-44 overflow-hidden">
+        {coverImage ? (
+          <img src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-accent-soft via-surface-muted to-surface" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
+        <div className="absolute inset-0 flex flex-col justify-end p-7 lg:p-8">
+          <p className="text-[10.5px] font-semibold tracking-[0.28em] text-white/80 uppercase mb-2">
             Course progress
           </p>
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <span
-              className="tabular-nums text-ink"
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 700,
-                fontStyle: 'italic',
-                fontSize: 'clamp(28px, 3.6cqi, 44px)',
-                lineHeight: 0.95,
-                letterSpacing: '-0.032em',
-              }}
-            >
-              {pct}
-              <span className="text-ink-faint text-[0.55em]">%</span>
-            </span>
-            <span className="text-[12px] text-ink-muted tabular-nums">
-              {completedCount} of {totalCount} sections &middot; {courseTitle}
-            </span>
-          </div>
+          <h2
+            className="text-white max-w-[28ch]"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontWeight: 700,
+              fontStyle: 'italic',
+              fontSize: 'clamp(22px, 2.8cqi, 32px)',
+              lineHeight: 1.04,
+              letterSpacing: '-0.025em',
+            }}
+          >
+            {courseTitle}
+          </h2>
+        </div>
+      </div>
+
+      <div className="p-7 lg:p-8">
+      {/* Metric row */}
+      <div className="flex items-baseline justify-between gap-4 mb-6">
+        <div className="flex items-baseline gap-3 flex-wrap min-w-0">
+          <span
+            className="tabular-nums text-ink"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontWeight: 700,
+              fontStyle: 'italic',
+              fontSize: 'clamp(32px, 4cqi, 48px)',
+              lineHeight: 0.95,
+              letterSpacing: '-0.032em',
+            }}
+          >
+            {pct}
+            <span className="text-ink-faint text-[0.55em]">%</span>
+          </span>
+          <span className="text-[12px] text-ink-muted tabular-nums">
+            {completedCount} of {totalCount} sections
+          </span>
         </div>
       </div>
 
@@ -177,6 +203,7 @@ export function SectionHeatmap({
           <span className="w-2.5 h-2.5 rounded-sm bg-line" />
           <span className="text-[10px] font-semibold tracking-[0.18em] text-ink-muted uppercase">Remaining</span>
         </div>
+      </div>
       </div>
     </div>
   )

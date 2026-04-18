@@ -2,8 +2,6 @@ type Props = {
   closeDate: Date | null
   closeText: string | null
   daysToClose: number | null
-  raiseAmount: string | null
-  targetValuation: string | null
 }
 
 const MS_PER_DAY = 86400000
@@ -21,7 +19,7 @@ function startOfWeek(d: Date): Date {
   return out
 }
 
-export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, targetValuation }: Props) {
+export function RaiseTimeline({ closeDate, closeText, daysToClose }: Props) {
   if (!closeDate || daysToClose === null) {
     return (
       <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
@@ -75,11 +73,6 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
   const statusColor =
     daysToClose <= 14 ? 'text-error' : daysToClose <= 45 ? 'text-accent' : 'text-ink-soft'
 
-  const chips: { label: string; value: string }[] = []
-  if (raiseAmount) chips.push({ label: 'Raising', value: raiseAmount })
-  if (targetValuation) chips.push({ label: 'At', value: targetValuation })
-  chips.push({ label: '', value: `${Math.max(0, daysToClose)} days left` })
-
   return (
     <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
       <div
@@ -101,10 +94,10 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
         </div>
       </div>
 
-      {/* Headline + chips */}
+      {/* Headline */}
       <div className="relative mb-7">
         <h2
-          className="text-ink mb-3"
+          className="text-ink"
           style={{
             fontFamily: 'var(--font-sans)',
             fontWeight: 700,
@@ -119,20 +112,6 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
             to close
           </span>
         </h2>
-
-        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-          {chips.map((chip, i) => (
-            <div key={i} className="flex items-baseline gap-1.5">
-              {i > 0 && <span className="w-1 h-1 rounded-full bg-line-strong mr-3 self-center" />}
-              {chip.label && (
-                <span className="text-[9.5px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
-                  {chip.label}
-                </span>
-              )}
-              <span className="text-[13px] font-semibold text-ink tabular-nums">{chip.value}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Segmented week timeline */}
@@ -147,12 +126,12 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, 
             else if (c.isMonthStart) tone = 'bg-line-strong h-[14px]'
             else tone = 'bg-line h-[10px]'
             return (
-              <div key={c.index} className="flex-1 flex items-center">
+              <div key={c.index} className="relative flex-1 flex items-center">
                 <div className={`${base} ${tone} w-full`} />
                 {c.isFirst && (
-                  <span className="absolute left-0 -top-1.5 flex w-3 h-3 items-center justify-center">
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none">
                     <span className="absolute inset-0 rounded-full bg-accent/40 animate-ping" />
-                    <span className="relative w-3 h-3 rounded-full bg-accent ring-2 ring-surface" />
+                    <span className="absolute inset-0 rounded-full bg-accent ring-2 ring-surface" />
                   </span>
                 )}
               </div>

@@ -5,6 +5,7 @@ import { PageTopbar } from '@/components/layout/page-topbar'
 import { AiCoach } from '@/components/dashboard/ai-coach'
 import { RaiseTimeline } from '@/components/dashboard/raise-timeline'
 import { RaiseFunnel } from '@/components/dashboard/raise-funnel'
+import { RaiseStats } from '@/components/dashboard/raise-stats'
 import { SectionHeatmap } from '@/components/dashboard/section-heatmap'
 import { CourseThumb } from '@/components/ui/course-thumb'
 import { buildRaiseSnapshot, type OnboardingData } from '@/lib/raise-context'
@@ -175,20 +176,19 @@ export default async function DashboardPage() {
       </div>
 
       {/* Hero grid: left stack (Timeline + Continue/Explore), right tall Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5 items-start">
         <div className="lg:col-span-2 flex flex-col gap-5">
           <RaiseTimeline
             closeDate={snap.targetCloseDate}
             closeText={snap.targetCloseText}
             daysToClose={snap.daysToClose}
-            raiseAmount={snap.raiseAmount}
-            targetValuation={snap.targetValuation}
           />
 
           {hasEnrollment && primaryCourse && moduleRows.length > 0 ? (
             <SectionHeatmap
               courseId={primaryCourse.id}
               courseTitle={primaryCourse.title}
+              coverImage={primaryCourse.cover_image}
               modules={moduleRows}
               sections={sectionRows}
               progress={sectionProgress}
@@ -274,8 +274,13 @@ export default async function DashboardPage() {
           ) : null}
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 flex flex-col gap-5">
           <RaiseFunnel raiseStatus={snap.raiseStatus} raiseAmount={snap.raiseAmount} />
+          <RaiseStats
+            raiseAmount={snap.raiseAmount}
+            targetValuation={snap.targetValuation}
+            daysToClose={snap.daysToClose}
+          />
         </div>
       </div>
 
