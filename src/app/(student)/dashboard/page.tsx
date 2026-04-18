@@ -6,7 +6,6 @@ import { AiCoach } from '@/components/dashboard/ai-coach'
 import { RaiseTimeline } from '@/components/dashboard/raise-timeline'
 import { RaiseFunnel } from '@/components/dashboard/raise-funnel'
 import { SectionHeatmap } from '@/components/dashboard/section-heatmap'
-import { ContinueCard } from '@/components/dashboard/continue-card'
 import { CourseThumb } from '@/components/ui/course-thumb'
 import { buildRaiseSnapshot, type OnboardingData } from '@/lib/raise-context'
 import type { Course } from '@/lib/types'
@@ -186,19 +185,21 @@ export default async function DashboardPage() {
             targetValuation={snap.targetValuation}
           />
 
-          {hasEnrollment && primaryCourse ? (
-            <ContinueCard
+          {hasEnrollment && primaryCourse && moduleRows.length > 0 ? (
+            <SectionHeatmap
               courseId={primaryCourse.id}
               courseTitle={primaryCourse.title}
+              modules={moduleRows}
+              sections={sectionRows}
+              progress={sectionProgress}
+              completedCount={completedSections}
+              totalCount={totalSections}
               nextSectionTitle={nextSectionTitle}
               nextModuleIndex={nextModuleIndex}
               nextModuleTitle={nextModule?.title ?? null}
-              completedSections={completedSections}
-              totalSections={totalSections}
               resumeHref={resumeHref}
-              isEmpty={!firstIncomplete}
             />
-          ) : (
+          ) : !hasEnrollment ? (
             <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden flex-1">
               <div
                 className="absolute -right-32 -top-32 w-[400px] h-[400px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
@@ -270,27 +271,13 @@ export default async function DashboardPage() {
                 <p className="text-[13px] text-ink-muted">New material is being prepared.</p>
               )}
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="lg:col-span-1">
           <RaiseFunnel raiseStatus={snap.raiseStatus} raiseAmount={snap.raiseAmount} />
         </div>
       </div>
-
-      {/* Full-width heatmap (only when enrolled) */}
-      {hasEnrollment && primaryCourse && moduleRows.length > 0 && (
-        <div className="mb-5">
-          <SectionHeatmap
-            courseId={primaryCourse.id}
-            modules={moduleRows}
-            sections={sectionRows}
-            progress={sectionProgress}
-            completedCount={completedSections}
-            totalCount={totalSections}
-          />
-        </div>
-      )}
 
       {/* Compact coach */}
       <AiCoach starters={starters} compact />

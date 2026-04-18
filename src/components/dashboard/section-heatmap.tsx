@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 
 type Module = {
   id: string
@@ -15,15 +16,31 @@ type Section = {
 
 type Props = {
   courseId: string
+  courseTitle: string
   modules: Module[]
   sections: Section[]
   progress: Record<string, { completed: boolean }>
   completedCount: number
   totalCount: number
-  bare?: boolean
+  nextSectionTitle: string | null
+  nextModuleIndex: number | null
+  nextModuleTitle: string | null
+  resumeHref: string
 }
 
-export function SectionHeatmap({ courseId, modules, sections, progress, completedCount, totalCount, bare = false }: Props) {
+export function SectionHeatmap({
+  courseId,
+  courseTitle,
+  modules,
+  sections,
+  progress,
+  completedCount,
+  totalCount,
+  nextSectionTitle,
+  nextModuleIndex,
+  nextModuleTitle,
+  resumeHref,
+}: Props) {
   const sectionsByModule = new Map<string, Section[]>()
   for (const s of sections) {
     const arr = sectionsByModule.get(s.module_id) ?? []
@@ -32,19 +49,17 @@ export function SectionHeatmap({ courseId, modules, sections, progress, complete
   }
 
   const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
-
-  const containerClass = bare
-    ? 'relative h-full'
-    : 'relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden h-full'
+  const isComplete = !nextSectionTitle
 
   return (
-    <div className={containerClass}>
-      <div className="flex items-start justify-between mb-7">
-        <div>
+    <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
+      {/* Header: progress metric */}
+      <div className="flex items-start justify-between mb-6 gap-4">
+        <div className="min-w-0">
           <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
             Course progress
           </p>
-          <div className="flex items-baseline gap-3">
+          <div className="flex items-baseline gap-3 flex-wrap">
             <span
               className="tabular-nums text-ink"
               style={{
@@ -60,12 +75,49 @@ export function SectionHeatmap({ courseId, modules, sections, progress, complete
               <span className="text-ink-faint text-[0.55em]">%</span>
             </span>
             <span className="text-[12px] text-ink-muted tabular-nums">
-              {completedCount} of {totalCount} sections
+              {completedCount} of {totalCount} sections &middot; {courseTitle}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Up next block with continue CTA */}
+      <div className="mb-7 pb-6 border-b border-line-soft">
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-[9.5px] font-semibold tracking-[0.24em] text-ink-muted uppercase mb-1.5">
+              {isComplete ? 'Course complete' : 'Up next'}
+            </p>
+            {!isComplete && nextModuleIndex !== null && nextModuleTitle && (
+              <p className="text-[10px] font-mono tabular-nums tracking-wider text-ink-faint uppercase mb-1.5 truncate">
+                M{String(nextModuleIndex + 1).padStart(2, '0')} &middot; {nextModuleTitle}
+              </p>
+            )}
+            <h3
+              className="text-ink"
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 700,
+                fontStyle: 'italic',
+                fontSize: 'clamp(20px, 2.4cqi, 28px)',
+                lineHeight: 1.08,
+                letterSpacing: '-0.025em',
+              }}
+            >
+              {isComplete ? 'All sections done' : nextSectionTitle}
+            </h3>
+          </div>
+          <Link
+            href={resumeHref}
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors group"
+          >
+            <span>{isComplete ? 'Review' : 'Continue'}</span>
+            <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2.2} />
+          </Link>
+        </div>
+      </div>
+
+      {/* Module bars */}
       <div className="space-y-3.5">
         {modules.map((mod, modIdx) => {
           const secs = sectionsByModule.get(mod.id) ?? []
