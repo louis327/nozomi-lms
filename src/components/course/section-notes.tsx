@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { NotebookPen, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type SectionNotesProps = {
@@ -68,83 +69,62 @@ export function SectionNotes({ sectionId, initialContent }: SectionNotesProps) {
 
   return (
     <>
-      {/* Floating button */}
       <button
         onClick={() => setOpen(!open)}
         className={`
           fixed right-6 bottom-6 z-30 w-12 h-12 rounded-full shadow-lg
-          flex items-center justify-center transition-all duration-200 cursor-pointer
+          flex items-center justify-center transition-colors duration-150 cursor-pointer
           ${open
-            ? 'bg-[#111] text-white hover:bg-[#333]'
+            ? 'bg-ink text-white hover:bg-black'
             : hasNotes
-              ? 'bg-nz-sakura text-white hover:bg-nz-sakura-deep'
-              : 'bg-[#111] text-white hover:bg-[#333]'
+              ? 'bg-accent text-white hover:bg-accent-deep'
+              : 'bg-ink text-white hover:bg-black'
           }
         `}
-        title={open ? 'Close notes' : 'My Notes'}
+        title={open ? 'Close notes' : 'My notes'}
+        aria-label={open ? 'Close notes' : 'Open notes'}
       >
-        {open ? (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            {hasNotes && (
-              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#22c55e] border-2 border-white" />
-            )}
-          </>
+        {open ? <X className="w-5 h-5" strokeWidth={1.5} /> : <NotebookPen className="w-5 h-5" strokeWidth={1.5} />}
+        {!open && hasNotes && (
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-2 border-canvas" />
         )}
       </button>
 
-      {/* Floating card (anchored above the button) */}
       <div
         className={`
-          fixed right-6 bottom-[76px] z-30 w-[320px] max-w-[calc(100vw-48px)]
-          bg-white rounded-xl border border-[#e8e8e8] shadow-xl
+          fixed right-6 bottom-[76px] z-30 w-[340px] max-w-[calc(100vw-48px)]
+          bg-surface rounded-2xl border border-line shadow-2xl
           flex flex-col overflow-hidden
           transition-all duration-200 origin-bottom-right
-          ${open
-            ? 'opacity-100 scale-100 pointer-events-auto'
-            : 'opacity-0 scale-95 pointer-events-none'
-          }
+          ${open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}
         `}
-        style={{ maxHeight: 'min(420px, calc(100vh - 120px))' }}
+        style={{ maxHeight: 'min(460px, calc(100vh - 120px))' }}
       >
-        {/* Card header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-[#111] flex items-center justify-center">
-              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            <span className="text-[13px] font-heading font-semibold text-[#111]">My Notes</span>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-line-soft shrink-0">
+          <div className="flex items-center gap-2.5">
+            <NotebookPen className="w-4 h-4 text-ink" strokeWidth={1.5} />
+            <span className="font-serif text-[15px] text-ink">My notes</span>
           </div>
           {status === 'saving' && (
-            <span className="text-[11px] text-[#aaa]">Saving...</span>
+            <span className="text-[10.5px] text-ink-muted uppercase tracking-[0.12em]">Saving…</span>
           )}
           {status === 'saved' && (
-            <span className="text-[11px] text-[#22c55e]">Saved</span>
+            <span className="text-[10.5px] text-success uppercase tracking-[0.12em]">Saved</span>
           )}
         </div>
 
-        {/* Card body */}
         <div className="flex-1 p-3 min-h-0">
           <textarea
             value={content}
             onChange={handleChange}
             onBlur={handleBlur}
-            placeholder="Write your notes for this section..."
-            className="w-full h-full min-h-[240px] bg-[#f9f9f9] border border-[#e8e8e8] rounded-lg px-3 py-2.5 text-[13px] text-[#111] placeholder:text-[#bbb] focus:outline-none focus:border-[#111] transition-colors resize-none"
+            placeholder="Write your notes for this section…"
+            className="w-full h-full min-h-[260px] bg-surface-muted/50 border border-line-soft rounded-xl px-3.5 py-3 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-line-strong transition-colors resize-none leading-relaxed"
           />
         </div>
 
-        {/* Card footer */}
-        <div className="px-4 py-2.5 border-t border-[#f0f0f0] shrink-0">
-          <p className="text-[11px] text-[#bbb]">Auto-saves as you type</p>
+        <div className="px-5 py-2.5 border-t border-line-soft shrink-0">
+          <p className="text-[10.5px] text-ink-muted uppercase tracking-[0.12em]">Auto-saves as you type</p>
         </div>
       </div>
     </>

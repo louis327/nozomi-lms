@@ -502,7 +502,7 @@ export function SectionContent({
                   Next Section &rarr;
                 </Button>
               ) : (
-                <Button onClick={() => router.push('/dashboard')} variant="dark">
+                <Button onClick={() => router.push('/dashboard')}>
                   Back to Dashboard
                 </Button>
               )}

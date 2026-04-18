@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ArrowLeft, ChevronRight, ChevronLeft, Check, Settings, Menu, X } from 'lucide-react'
 import { useEditMode } from '@/lib/edit-mode-context'
 import { StructureEditorPanel } from '@/components/course/structure-editor-panel'
 import type { Course, Module, Section } from '@/lib/types'
@@ -49,6 +50,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
     if (currentModuleId && !expandedModules.has(currentModuleId)) {
       setExpandedModules((prev) => new Set(prev).add(currentModuleId))
     }
+
   }, [currentModuleId])
 
   function toggleModule(moduleId: string) {
@@ -81,51 +83,45 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-5 pt-4 pb-2">
+      {/* Back + title */}
+      <div className="px-5 pt-5 pb-3">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#aaa] hover:text-[#111] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[11px] text-white/50 hover:text-white transition-colors uppercase tracking-[0.14em] font-semibold"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
+          <ArrowLeft className="w-3 h-3" strokeWidth={2} />
           Dashboard
         </Link>
       </div>
 
-      {/* Course title + progress */}
-      <div className="px-5 pb-4 border-b border-[#eee]">
+      <div className="px-5 pb-5 border-b border-line-dark">
         <div className="flex items-center justify-between gap-2">
-          <Link
-            href={`/courses/${courseId}/learn`}
-            className="font-heading font-semibold text-[13px] text-[#111] hover:text-nz-sakura transition-colors line-clamp-2 flex-1"
-          >
+          <Link href={`/courses/${courseId}`} className="font-serif text-[17px] text-white leading-tight line-clamp-2 flex-1 hover:text-accent transition-colors">
             {course.title}
           </Link>
           {isAdmin && editMode && (
             <button
               onClick={() => setStructureOpen(true)}
-              className="p-1.5 rounded-lg text-[#aaa] hover:text-nz-sakura hover:bg-nz-sakura/10 transition-colors cursor-pointer shrink-0"
+              className="p-1.5 rounded-lg text-white/50 hover:text-accent hover:bg-white/[0.04] transition-colors cursor-pointer shrink-0"
               title="Edit course structure"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <Settings className="w-4 h-4" strokeWidth={1.5} />
             </button>
           )}
         </div>
         <div className="mt-3">
-          <div className="w-full h-1.5 rounded-full bg-[#f0f0f0] overflow-hidden">
-            <div className="h-full rounded-full bg-nz-sakura transition-all duration-700" style={{ width: `${pct}%` }} />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9.5px] text-white/40 uppercase tracking-[0.14em] font-semibold">Progress</span>
+            <span className="text-[11px] text-white font-semibold tabular-nums">{pct}%</span>
           </div>
-          <p className="text-[11px] text-[#aaa] mt-1.5">{pct}% complete</p>
+          <div className="w-full h-[3px] rounded-full bg-white/10 overflow-hidden">
+            <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${pct}%` }} />
+          </div>
         </div>
       </div>
 
       {/* Modules */}
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className="flex-1 overflow-y-auto py-3">
         {modules.map((mod, modIdx) => {
           const sections = [...(mod.sections ?? [])].sort((a, b) => a.sort_order - b.sort_order)
           const modCompleted = sections.length > 0 && sections.every((s) => progress[s.id])
@@ -135,33 +131,25 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
             <div key={mod.id} className="mb-0.5">
               <button
                 onClick={() => toggleModule(mod.id)}
-                className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-[#f9f9f9] transition-colors cursor-pointer group"
+                className="w-full flex items-center gap-2.5 px-5 py-2.5 text-left hover:bg-white/[0.03] transition-colors cursor-pointer group"
               >
-                <svg
-                  className={`w-3.5 h-3.5 text-[#ccc] transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-
+                <ChevronRight
+                  className={`w-3 h-3 text-white/40 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+                  strokeWidth={2}
+                />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-[#bbb] font-bold uppercase tracking-[0.08em] mb-0.5">
-                    Module {modIdx + 1}
+                  <p className="text-[9.5px] text-white/40 font-semibold uppercase tracking-[0.14em]">
+                    Module {String(modIdx + 1).padStart(2, '0')}
                   </p>
-                  <p className="text-[13px] text-[#111] font-medium truncate group-hover:text-nz-sakura transition-colors" title={mod.title}>
+                  <p className="text-[12.5px] text-white/90 font-medium truncate group-hover:text-white transition-colors mt-0.5" title={mod.title}>
                     {mod.title}
                   </p>
                 </div>
-
-                {modCompleted && (
-                  <svg className="w-4 h-4 text-[#22c55e] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
+                {modCompleted && <Check className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />}
               </button>
 
               {isExpanded && (
-                <div className="pb-2">
+                <div className="pb-1">
                   {sections.map((section) => {
                     const isCurrent = section.id === currentSectionId
                     const isCompleted = progress[section.id]
@@ -172,21 +160,19 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                         href={`/courses/${courseId}/learn/${section.id}`}
                         onClick={() => { setMobileOpen(false); setHoverOpen(false) }}
                         className={`
-                          flex items-center gap-3 pl-12 pr-5 py-2.5 text-[13px] transition-colors min-w-0
+                          relative flex items-center gap-2.5 pl-[42px] pr-5 py-2 text-[12.5px] transition-colors min-w-0 group
                           ${isCurrent
-                            ? 'bg-[#111] text-white font-medium'
-                            : 'text-[#666] hover:text-[#111] hover:bg-[#f9f9f9]'
+                            ? 'text-white bg-white/[0.06]'
+                            : 'text-white/55 hover:text-white hover:bg-white/[0.03]'
                           }
                         `}
                       >
+                        {isCurrent && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-accent" />}
                         {isCompleted ? (
-                          <svg className="w-4 h-4 shrink-0 text-[#22c55e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
+                          <Check className="w-3 h-3 text-accent shrink-0" strokeWidth={2.5} />
                         ) : (
-                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 ${isCurrent ? 'border-white' : 'border-[#ddd]'}`} />
+                          <span className={`w-3 h-3 rounded-full border shrink-0 ${isCurrent ? 'border-white/80' : 'border-white/20'}`} />
                         )}
-
                         <span className="truncate" title={section.title}>{section.title}</span>
                       </Link>
                     )
@@ -200,7 +186,6 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
 
       <div className="p-3" />
 
-      {/* Structure editor panel */}
       {isAdmin && (
         <StructureEditorPanel
           open={structureOpen}
@@ -217,54 +202,39 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white border border-[#e8e8e8] text-[#666] hover:text-[#111] transition-colors cursor-pointer shadow-sm"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface-dark border border-line-dark text-white/80 hover:text-white transition-colors cursor-pointer shadow-sm"
         aria-label="Toggle sidebar"
       >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          {mobileOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
+        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/40" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside
         onMouseEnter={handleHoverEnter}
         onMouseLeave={handleHoverLeave}
         className={`
-          fixed top-0 left-0 bottom-0 w-[280px] bg-white border-r border-[#eee] z-40
+          fixed top-0 left-0 bottom-0 w-[280px] bg-surface-dark border-r border-line-dark text-ink-inverted z-40
           transition-transform duration-300
           ${isDesktopVisible ? 'lg:translate-x-0' : 'lg:-translate-x-full'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${collapsed && hoverOpen ? 'lg:shadow-xl' : ''}
+          ${collapsed && hoverOpen ? 'lg:shadow-2xl' : ''}
         `}
       >
         {sidebarContent}
 
-        {/* Chevron toggle — pinned to sidebar edge, always visible on desktop */}
         <button
           onClick={onToggleCollapse}
           onMouseEnter={handleHoverEnter}
-          className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 items-center justify-center rounded-full bg-nz-sakura border border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
+          className="hidden lg:flex absolute top-6 -right-3 w-6 h-6 items-center justify-center rounded-full bg-accent text-white hover:bg-accent-deep shadow-sm transition-all cursor-pointer z-10"
           title={collapsed ? 'Pin sidebar' : 'Hide sidebar'}
         >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            {collapsed ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            )}
-          </svg>
+          {collapsed ? <ChevronRight className="w-3 h-3" strokeWidth={2.5} /> : <ChevronLeft className="w-3 h-3" strokeWidth={2.5} />}
         </button>
       </aside>
 
-      {/* Invisible hover zone on left edge when collapsed */}
       {collapsed && !hoverOpen && (
         <div
           onMouseEnter={handleHoverEnter}
@@ -272,17 +242,14 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
         />
       )}
 
-      {/* When fully collapsed (no hover), show a small expand chevron at left edge */}
       {collapsed && !hoverOpen && (
         <button
           onClick={onToggleCollapse}
           onMouseEnter={handleHoverEnter}
-          className="hidden lg:flex fixed top-5 left-0 z-40 w-6 h-6 items-center justify-center rounded-r-full bg-nz-sakura border border-l-0 border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer hover:scale-110"
+          className="hidden lg:flex fixed top-6 left-0 z-40 w-6 h-6 items-center justify-center rounded-r-full bg-accent text-white hover:bg-accent-deep shadow-sm transition-all cursor-pointer"
           title="Show sidebar"
         >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
         </button>
       )}
     </>

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 type ProfileFormProps = {
   email: string
@@ -49,49 +51,33 @@ export function ProfileForm({ email, fullName: initialName }: ProfileFormProps) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Email (read-only) */}
-      <div>
-        <label className="block text-[11px] font-bold text-[#999] uppercase tracking-[0.08em] mb-2">
-          Email
-        </label>
-        <div className="px-4 py-3 rounded-lg bg-[#f9f9f9] border border-[#e8e8e8] text-[13px] text-[#888]">
+      <div className="flex flex-col gap-1.5 w-full">
+        <label className="eyebrow">Email</label>
+        <div className="px-4 py-2.5 rounded-xl bg-surface-muted/60 border border-line-soft text-[14px] text-ink-muted">
           {email}
         </div>
       </div>
 
-      {/* Full Name */}
-      <div>
-        <label htmlFor="fullName" className="block text-[11px] font-bold text-[#999] uppercase tracking-[0.08em] mb-2">
-          Full Name
-        </label>
-        <input
-          id="fullName"
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          placeholder="Enter your full name"
-          className="w-full px-4 py-3 rounded-lg bg-white border border-[#e8e8e8] text-[13px] text-[#111] placeholder:text-[#ccc] focus:outline-none focus:border-[#111] transition-colors"
-        />
-      </div>
+      <Input
+        label="Full name"
+        type="text"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+        placeholder="Enter your full name"
+      />
 
-      {/* Error */}
       {error && (
-        <div className="px-4 py-3 rounded-lg bg-[#fef2f2] border border-[#fecaca] text-[13px] text-[#ef4444]">
+        <div className="px-4 py-3 rounded-xl bg-error/10 border border-error/20 text-[13px] text-error">
           {error}
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-5 py-2.5 text-[13px] font-heading font-semibold rounded-lg bg-[#111] text-white hover:bg-[#333] transition-colors disabled:opacity-50 cursor-pointer"
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" loading={saving}>
+          Save changes
+        </Button>
         {saved && (
-          <span className="text-[13px] text-[#22c55e] font-medium">Saved successfully</span>
+          <span className="text-[12px] text-success uppercase tracking-[0.12em] font-medium">Saved</span>
         )}
       </div>
     </form>

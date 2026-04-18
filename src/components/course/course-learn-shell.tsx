@@ -34,7 +34,7 @@ export function CourseLearnShell({ course, progress, courseId, isAdmin, children
 
   return (
     <EditModeWrapper isAdmin={isAdmin ?? false} defaultEditMode={isAdmin ?? false}>
-      <div className="flex min-h-screen bg-white">
+      <div className="flex min-h-screen bg-canvas">
         <CourseSidebar
           course={course as any}
           progress={progress}

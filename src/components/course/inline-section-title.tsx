@@ -40,25 +40,25 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
 
   if (!editMode) {
     return (
-      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-nz-text-primary mb-8">
+      <h1 className="display text-[40px] sm:text-[48px] mb-10 leading-[1.1]">
         {title}
       </h1>
     )
   }
 
   return (
-    <div className="relative mb-8 group">
+    <div className="relative mb-10 group">
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-        className="w-full font-heading text-2xl sm:text-3xl font-bold text-nz-text-primary bg-transparent border-b-2 border-transparent focus:border-nz-sakura/40 hover:border-nz-border transition-colors focus:outline-none"
+        className="w-full display text-[40px] sm:text-[48px] leading-[1.1] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none"
       />
       {saving && (
         <div className="absolute right-0 top-1/2 -translate-y-1/2">
-          <div className="w-4 h-4 border-2 border-nz-sakura/30 border-t-nz-sakura rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
         </div>
       )}
     </div>

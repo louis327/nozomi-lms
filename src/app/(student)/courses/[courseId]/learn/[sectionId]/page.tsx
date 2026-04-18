@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionContent } from '@/components/course/section-content'
 import { ModuleChecklist } from '@/components/course/module-checklist'
@@ -17,7 +18,6 @@ export default async function SectionPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Fetch section with content blocks
   const { data: section } = await supabase
     .from('sections')
     .select(`
@@ -29,7 +29,6 @@ export default async function SectionPage({
 
   if (!section) redirect(`/courses/${courseId}/learn`)
 
-  // Fetch user's progress for this section
   const { data: sectionProgress } = await supabase
     .from('section_progress')
     .select('*')
@@ -37,8 +36,13 @@ export default async function SectionPage({
     .eq('section_id', sectionId)
     .single()
 
-  // Determine the next section for navigation
-  // 1. Get all sections in the same module after this one
+  const { data: moduleMeta } = await supabase
+    .from('modules')
+    .select('id, title, sort_order, course_id, courses ( id, title )')
+    .eq('id', section.module_id)
+    .single()
+
+  // Next section
   const { data: siblingsSections } = await supabase
     .from('sections')
     .select('id, sort_order')
@@ -49,35 +53,53 @@ export default async function SectionPage({
 
   let nextSectionId: string | null = siblingsSections?.[0]?.id ?? null
 
-  // 2. If no more sections in this module, look at the next module
-  if (!nextSectionId) {
-    // Get the current module's sort_order and course_id
-    const { data: currentModule } = await supabase
+  if (!nextSectionId && moduleMeta) {
+    const { data: nextModules } = await supabase
       .from('modules')
-      .select('sort_order, course_id')
-      .eq('id', section.module_id)
-      .single()
+      .select('id, sort_order, sections ( id, sort_order )')
+      .eq('course_id', moduleMeta.course_id)
+      .gt('sort_order', moduleMeta.sort_order)
+      .order('sort_order', { ascending: true })
+      .limit(1)
 
-    if (currentModule) {
-      const { data: nextModules } = await supabase
-        .from('modules')
-        .select('id, sort_order, sections ( id, sort_order )')
-        .eq('course_id', currentModule.course_id)
-        .gt('sort_order', currentModule.sort_order)
-        .order('sort_order', { ascending: true })
-        .limit(1)
-
-      const nextModule = nextModules?.[0]
-      if (nextModule) {
-        const nextModSections = [...((nextModule as any).sections ?? [])].sort(
-          (a: any, b: any) => a.sort_order - b.sort_order
-        )
-        nextSectionId = nextModSections[0]?.id ?? null
-      }
+    const nextModule = nextModules?.[0]
+    if (nextModule) {
+      const nextModSections = [...((nextModule as any).sections ?? [])].sort(
+        (a: any, b: any) => a.sort_order - b.sort_order
+      )
+      nextSectionId = nextModSections[0]?.id ?? null
     }
   }
 
-  // Fetch user's notes for this section
+  // Prev section
+  const { data: prevSiblings } = await supabase
+    .from('sections')
+    .select('id, sort_order')
+    .eq('module_id', section.module_id)
+    .lt('sort_order', section.sort_order)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+
+  let prevSectionId: string | null = prevSiblings?.[0]?.id ?? null
+
+  if (!prevSectionId && moduleMeta) {
+    const { data: prevModules } = await supabase
+      .from('modules')
+      .select('id, sort_order, sections ( id, sort_order )')
+      .eq('course_id', moduleMeta.course_id)
+      .lt('sort_order', moduleMeta.sort_order)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+
+    const prevModule = prevModules?.[0]
+    if (prevModule) {
+      const prevModSections = [...((prevModule as any).sections ?? [])].sort(
+        (a: any, b: any) => b.sort_order - a.sort_order
+      )
+      prevSectionId = prevModSections[0]?.id ?? null
+    }
+  }
+
   const { data: sectionNote } = await supabase
     .from('section_notes')
     .select('content')
@@ -85,7 +107,6 @@ export default async function SectionPage({
     .eq('section_id', sectionId)
     .single()
 
-  // Check if this is the last section of the module (for module deliverable checklist)
   const { data: allModuleSections } = await supabase
     .from('sections')
     .select('id, sort_order')
@@ -95,7 +116,6 @@ export default async function SectionPage({
 
   const isLastSectionInModule = allModuleSections?.[0]?.id === sectionId
 
-  // Fetch module deliverables if last section
   let moduleDeliverables: any[] = []
   let moduleProgress: any = null
   if (isLastSectionInModule) {
@@ -119,44 +139,70 @@ export default async function SectionPage({
     }
   }
 
+  const courseTitle = (moduleMeta as any)?.courses?.title ?? 'Course'
+
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Video embed — only show top-level video_url if no video block exists in content_blocks */}
-      {section.video_url && !(section.content_blocks ?? []).some((b: any) => b.type === 'video') && (
-        <div className="mb-8">
-          <VideoEmbed url={section.video_url} />
+    <div className="px-6 lg:px-10 py-10 pb-24">
+      <div className="max-w-[680px] mx-auto">
+        {/* Eyebrow: course / module */}
+        <div className="flex items-center gap-2 mb-6 breadcrumb">
+          <Link href={`/courses/${courseId}`} className="hover:text-ink transition-colors">{courseTitle}</Link>
+          <span className="text-ink-faint">/</span>
+          <span className="text-ink font-semibold">{moduleMeta?.title ?? 'Module'}</span>
         </div>
-      )}
 
-      {/* Section title */}
-      <InlineSectionTitle sectionId={sectionId} title={section.title} />
+        {section.video_url && !(section.content_blocks ?? []).some((b: any) => b.type === 'video') && (
+          <div className="mb-8 rounded-xl overflow-hidden bg-surface border border-line">
+            <VideoEmbed url={section.video_url} />
+          </div>
+        )}
 
-      {/* Content blocks + submit */}
-      <SectionContent
-        section={section as any}
-        sectionProgress={sectionProgress as any}
-        courseId={courseId}
-        nextSectionId={nextSectionId}
-      />
+        <InlineSectionTitle sectionId={sectionId} title={section.title} />
 
-      {/* Section Notes */}
-      <div className="mt-10">
-        <SectionNotes
-          sectionId={sectionId}
-          initialContent={sectionNote?.content ?? ''}
+        <SectionContent
+          section={section as any}
+          sectionProgress={sectionProgress as any}
+          courseId={courseId}
+          nextSectionId={nextSectionId}
         />
-      </div>
 
-      {/* Module checklist (if last section and has deliverables) */}
-      {isLastSectionInModule && moduleDeliverables.length > 0 && (
+        {/* Section nav */}
+        <div className="mt-14 pt-6 border-t border-line flex items-center justify-between gap-3">
+          {prevSectionId ? (
+            <Link
+              href={`/courses/${courseId}/learn/${prevSectionId}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium text-ink-soft hover:text-ink border border-line rounded-full hover:border-line-strong transition-colors"
+            >
+              <span aria-hidden>←</span> Previous
+            </Link>
+          ) : <span />}
+          {nextSectionId && (
+            <Link
+              href={`/courses/${courseId}/learn/${nextSectionId}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium bg-ink text-white rounded-full hover:bg-black transition-colors"
+            >
+              Next section <span aria-hidden>→</span>
+            </Link>
+          )}
+        </div>
+
         <div className="mt-12">
-          <ModuleChecklist
-            moduleId={section.module_id}
-            deliverables={moduleDeliverables}
-            moduleProgress={moduleProgress}
+          <SectionNotes
+            sectionId={sectionId}
+            initialContent={sectionNote?.content ?? ''}
           />
         </div>
-      )}
+
+        {isLastSectionInModule && moduleDeliverables.length > 0 && (
+          <div className="mt-12">
+            <ModuleChecklist
+              moduleId={section.module_id}
+              deliverables={moduleDeliverables}
+              moduleProgress={moduleProgress}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
