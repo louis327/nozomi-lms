@@ -36,9 +36,8 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-40 bg-canvas/85 backdrop-blur-xl border-b border-line">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-1.5">
+          <Link href="/" className="flex items-center">
             <span className="font-serif text-[20px] text-ink tracking-tight">Nozomi</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           </Link>
 
           <div className="hidden md:flex items-center gap-8">

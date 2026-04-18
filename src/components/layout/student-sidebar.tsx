@@ -6,17 +6,11 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   BookOpen,
-  ClipboardList,
-  Calendar,
-  Users,
   BarChart3,
-  Award,
-  FileBadge,
   LogOut,
   Menu,
   X,
   Shield,
-  Settings,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -26,15 +20,10 @@ type NavItem = { href: string; label: string; icon: React.ComponentType<{ classN
 const learningItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/courses', label: 'My Courses', icon: BookOpen },
-  { href: '/assignments', label: 'Assignments', icon: ClipboardList },
-  { href: '/schedule', label: 'Schedule', icon: Calendar },
-  { href: '/community', label: 'Community', icon: Users },
 ]
 
 const progressItems: NavItem[] = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/achievements', label: 'Achievements', icon: Award },
-  { href: '/certificates', label: 'Certificates', icon: FileBadge },
 ]
 
 export function StudentSidebar({
@@ -113,9 +102,8 @@ export function StudentSidebar({
       >
         {/* Brand */}
         <div className="flex items-center justify-between px-5 h-[64px] border-b border-line-dark">
-          <Link href="/dashboard" className="flex items-center gap-1.5">
+          <Link href="/dashboard" className="flex items-center">
             <span className="font-serif text-[18px] text-white tracking-tight">Nozomi</span>
-            <span className="w-[5px] h-[5px] rounded-full bg-accent mt-2" />
           </Link>
           <button
             onClick={() => setMobileOpen(false)}

@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { FileText, ArrowRight } from 'lucide-react'
 import { ProfileForm } from '@/components/profile/profile-form'
 
 export const metadata = { title: 'Profile — Nozomi' }
@@ -45,6 +47,26 @@ export default async function ProfilePage() {
             email={user.email ?? ''}
             fullName={profile?.full_name ?? ''}
           />
+        </div>
+
+        <div className="mt-6 bg-surface rounded-2xl border border-line p-6">
+          <Link
+            href="/onboarding?redo=1"
+            className="group flex items-center gap-4"
+          >
+            <div className="w-11 h-11 rounded-xl bg-accent-soft flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-accent-deep" strokeWidth={1.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-serif text-[16px] text-ink leading-tight group-hover:text-accent transition-colors">
+                Revisit your founder dossier
+              </p>
+              <p className="text-[12.5px] text-ink-soft mt-0.5">
+                Update your raise, team, or blocker as things change.
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-ink-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" strokeWidth={1.5} />
+          </Link>
         </div>
       </div>
     </div>

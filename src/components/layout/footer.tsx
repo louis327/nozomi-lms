@@ -5,10 +5,9 @@ export function Footer() {
     <footer className="border-t border-line bg-canvas">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="font-serif text-[18px] text-ink tracking-tight">Nozomi</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-            <span className="text-ink-muted text-[12px] ml-2">Learning Platform</span>
+            <span className="text-ink-muted text-[12px]">Learning Platform</span>
           </div>
 
           <div className="flex items-center gap-6">

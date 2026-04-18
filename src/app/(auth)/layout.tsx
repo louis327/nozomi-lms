@@ -3,9 +3,8 @@ import Link from 'next/link'
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-4 py-12">
-      <Link href="/" className="mb-8 inline-flex items-center gap-1.5">
+      <Link href="/" className="mb-8 inline-flex items-center">
         <span className="font-serif text-[22px] text-ink tracking-tight">Nozomi</span>
-        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
       </Link>
 
       <div
