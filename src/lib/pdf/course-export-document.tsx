@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   Document,
   Page,
@@ -8,21 +10,24 @@ import {
 } from '@react-pdf/renderer'
 import type { ExtractedAnswer } from '@/lib/answer-extract'
 
+const FONTS_DIR = join(process.cwd(), 'src/lib/pdf/fonts')
+const loadFont = (file: string) => readFileSync(join(FONTS_DIR, file))
+
 Font.register({
   family: 'Open Sans',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVI.ttf', fontWeight: 400, fontStyle: 'normal' },
-    { src: 'https://fonts.gstatic.com/s/opensans/v35/memQYaGs126MiZpBA-UvXbMYjeslDdKEfQm2beLyeb5T.ttf', fontWeight: 400, fontStyle: 'italic' },
-    { src: 'https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsg-1x4gaVI.ttf', fontWeight: 600, fontStyle: 'normal' },
-    { src: 'https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ5x4gaVI.ttf', fontWeight: 700, fontStyle: 'normal' },
-    { src: 'https://fonts.gstatic.com/s/opensans/v35/memQYaGs126MiZpBA-UvXbMYjeslHdKEfQm2beLyeb5T.ttf', fontWeight: 700, fontStyle: 'italic' },
+    { src: loadFont('OpenSans-Regular.ttf') as unknown as string, fontWeight: 400, fontStyle: 'normal' },
+    { src: loadFont('OpenSans-Italic.ttf') as unknown as string, fontWeight: 400, fontStyle: 'italic' },
+    { src: loadFont('OpenSans-SemiBold.ttf') as unknown as string, fontWeight: 600, fontStyle: 'normal' },
+    { src: loadFont('OpenSans-Bold.ttf') as unknown as string, fontWeight: 700, fontStyle: 'normal' },
+    { src: loadFont('OpenSans-BoldItalic.ttf') as unknown as string, fontWeight: 700, fontStyle: 'italic' },
   ],
 })
 
 Font.register({
   family: 'JetBrains Mono',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.ttf', fontWeight: 500 },
+    { src: loadFont('JetBrainsMono-Medium.ttf') as unknown as string, fontWeight: 500 },
   ],
 })
 
