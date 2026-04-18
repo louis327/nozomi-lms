@@ -2,26 +2,21 @@ import Link from 'next/link'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-nz-bg-secondary via-white to-nz-bg-tertiary flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Subtle decorative background dots */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #E8458B 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-
-      {/* Logo */}
-      <Link
-        href="/"
-        className="relative z-10 mb-8 font-heading font-bold text-3xl text-nz-text-primary tracking-tight"
-      >
-        NOZOMI<span className="text-nz-sakura">.</span>
+    <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-4 py-12">
+      <Link href="/" className="mb-8 inline-flex items-center gap-1.5">
+        <span className="font-serif text-[22px] text-ink tracking-tight">Nozomi</span>
+        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
       </Link>
 
-      {/* Auth card */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white border border-nz-border shadow-xl p-8 sm:p-10">
+      <div
+        className="w-full max-w-md rounded-2xl bg-surface border border-line p-8 sm:p-10"
+        style={{ boxShadow: '0 1px 2px rgba(20,20,20,0.04), 0 8px 24px -12px rgba(20,20,20,0.08)' }}
+      >
         {children}
       </div>
 
-      {/* Footer */}
-      <p className="relative z-10 mt-8 text-xs text-nz-text-muted">
-        &copy; {new Date().getFullYear()} Nozomi. All rights reserved.
+      <p className="mt-8 text-[11px] text-ink-faint uppercase tracking-[0.14em]">
+        &copy; {new Date().getFullYear()} Nozomi
       </p>
     </div>
   )

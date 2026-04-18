@@ -1,14 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import type { Course } from '@/lib/types'
+import { CourseThumb } from '@/components/ui/course-thumb'
 
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Logged-in users go straight to dashboard
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
 
@@ -24,101 +22,98 @@ export default async function HomePage() {
   }))
 
   return (
-    <div className="relative">
-      {/* Hero Section */}
-      <section className="relative px-4 sm:px-6 lg:px-8 pt-12 pb-16 sm:pt-16 sm:pb-20">
+    <div>
+      {/* Hero */}
+      <section className="px-6 lg:px-10 pt-16 pb-20">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-nz-text-primary tracking-tight leading-tight" style={{ letterSpacing: '-0.035em' }}>
-            Master Web3{' '}
-            <span className="text-sakura-gradient">Fundraising</span>
+          <p className="eyebrow-accent mb-6">Raise Web3 — the program</p>
+          <h1 className="display text-[52px] sm:text-[64px] lg:text-[80px] leading-[1.02] mb-8">
+            Master Web3 <em>fundraising,</em>
+            <br />taught by operators.
           </h1>
-
-          {/* Sakura gradient accent line */}
-          <div className="mx-auto mt-6 h-0.5 w-24 rounded-full bg-gradient-to-r from-transparent via-nz-sakura/50 to-transparent" />
-
-          <p className="mt-6 text-lg sm:text-xl text-nz-text-secondary max-w-2xl mx-auto leading-relaxed">
-            Learn from battle-tested operators who have raised and deployed capital across
-            the Web3 ecosystem. Nozomi is the YC for Web3 — actionable knowledge, not theory.
+          <p className="text-[17px] text-ink-soft max-w-2xl mx-auto leading-relaxed">
+            Nozomi is the YC for Web3. Learn from founders who&apos;ve raised and deployed capital
+            across DeFi, infrastructure, and consumer — actionable knowledge, not theory.
           </p>
 
-          <div className="mt-10">
+          <div className="mt-10 flex items-center justify-center gap-3">
             <a
               href="#courses"
-              className="inline-flex items-center px-7 py-3.5 font-heading font-semibold text-base bg-nz-sakura text-white rounded-xl hover:bg-nz-sakura-deep transition-all duration-200 sakura-glow"
+              className="inline-flex items-center px-6 py-3 text-[13.5px] font-medium bg-ink text-white rounded-full hover:bg-black transition-colors"
             >
-              Explore Courses
-              <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              Explore courses
+              <svg className="ml-2 w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </a>
+            <Link
+              href="/signup"
+              className="inline-flex items-center px-6 py-3 text-[13.5px] font-medium border border-line text-ink rounded-full hover:border-line-strong transition-colors"
+            >
+              Get started
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Course Grid */}
-      <section id="courses" className="px-4 sm:px-6 lg:px-8 pb-16">
+      {/* Courses */}
+      <section id="courses" className="px-6 lg:px-10 pb-24">
         <div className="max-w-6xl mx-auto">
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-nz-text-primary mb-8">
-            Available Courses
-          </h2>
+          <div className="flex items-baseline justify-between mb-8">
+            <div>
+              <p className="eyebrow mb-2">Catalog</p>
+              <h2 className="display text-[32px] sm:text-[36px]">
+                Available <em>courses</em>
+              </h2>
+            </div>
+            <span className="text-[12px] text-ink-muted">
+              {coursesWithCount.length} {coursesWithCount.length === 1 ? 'course' : 'courses'}
+            </span>
+          </div>
 
           {coursesWithCount.length === 0 ? (
-            <Card className="p-12 text-center">
-              <p className="text-nz-text-muted text-lg">
-                No courses available yet. Check back soon.
-              </p>
-            </Card>
+            <div className="p-16 text-center rounded-2xl bg-surface border border-line">
+              <p className="text-ink-muted text-[14px]">No courses available yet. Check back soon.</p>
+            </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {coursesWithCount.map((course) => (
-                <Link key={course.id} href={`/courses/${course.id}`} className="group">
-                  <Card hoverable className="flex flex-col h-full overflow-hidden hover:-translate-y-0.5 transition-all">
-                    {/* Cover image or gradient placeholder */}
-                    <div className="relative h-44 bg-nz-bg-tertiary overflow-hidden">
-                      {course.cover_image ? (
-                        <img
-                          src={course.cover_image}
-                          alt={course.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 rounded-2xl bg-nz-sakura/10 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-nz-sakura/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                      {/* Bottom gradient overlay */}
-                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/80 to-transparent" />
+                <Link
+                  key={course.id}
+                  href={`/courses/${course.id}`}
+                  className="group rounded-2xl overflow-hidden bg-surface border border-line hover:border-line-strong transition-colors flex flex-col"
+                >
+                  <div className="aspect-[16/10] overflow-hidden bg-surface-muted">
+                    <CourseThumb
+                      title={course.title}
+                      coverImage={course.cover_image}
+                      className="w-full h-full rounded-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col flex-1 p-5">
+                    <h3 className="font-serif text-[20px] leading-[1.2] text-ink mb-2 line-clamp-2 group-hover:text-accent-deep transition-colors">
+                      {course.title}
+                    </h3>
+
+                    {course.description && (
+                      <p className="text-[13px] text-ink-soft leading-relaxed line-clamp-3 mb-5">
+                        {course.description}
+                      </p>
+                    )}
+
+                    <div className="mt-auto pt-4 border-t border-line-soft flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-[0.12em] text-ink-muted font-medium">
+                        {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}
+                      </span>
+                      <span className="text-[12px] font-medium text-accent inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
+                        View
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
                     </div>
-
-                    {/* Content */}
-                    <div className="flex flex-col flex-1 p-5">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <h3 className="font-heading font-semibold text-lg text-nz-text-primary group-hover:text-nz-sakura transition-colors leading-snug line-clamp-2">
-                          {course.title}
-                        </h3>
-                        <Badge variant="sakura">{course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}</Badge>
-                      </div>
-
-                      {course.description && (
-                        <p className="text-sm text-nz-text-tertiary leading-relaxed line-clamp-3 mb-4">
-                          {course.description}
-                        </p>
-                      )}
-
-                      <div className="mt-auto pt-3 border-t border-nz-border">
-                        <span className="text-sm font-medium text-nz-sakura group-hover:text-nz-sakura-deep transition-colors inline-flex items-center gap-1.5">
-                          View Course
-                          <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                  </Card>
+                  </div>
                 </Link>
               ))}
             </div>

@@ -47,15 +47,16 @@ function LoginForm() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold text-nz-text-primary mb-1 text-center">
-        Welcome back
-      </h1>
-      <p className="text-sm text-nz-text-muted mb-8 text-center">
-        Sign in to continue learning.
-      </p>
+      <div className="text-center mb-8">
+        <p className="eyebrow-accent mb-3">Sign in</p>
+        <h1 className="display text-[32px] leading-[1.15] mb-2">
+          Welcome <em>back.</em>
+        </h1>
+        <p className="text-[14px] text-ink-soft">Continue where you left off.</p>
+      </div>
 
       {error && (
-        <div className="mb-6 px-4 py-3 rounded-xl bg-nz-error/10 border border-nz-error/20 text-sm text-nz-error">
+        <div className="mb-6 px-4 py-3 rounded-xl bg-error/10 border border-error/20 text-[13px] text-error">
           {error}
         </div>
       )}
@@ -87,15 +88,15 @@ function LoginForm() {
           className="w-full"
           size="lg"
         >
-          Sign In
+          Sign in
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-nz-text-muted">
+      <p className="mt-6 text-center text-[13px] text-ink-muted">
         Don&apos;t have an account?{' '}
         <Link
           href="/signup"
-          className="text-nz-sakura hover:text-nz-sakura-deep transition-colors font-medium"
+          className="text-accent hover:text-accent-deep transition-colors font-medium"
         >
           Sign up
         </Link>
@@ -108,11 +109,11 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="space-y-5 animate-pulse">
-        <div className="h-8 w-48 bg-nz-bg-tertiary rounded-lg" />
-        <div className="h-4 w-56 bg-nz-bg-tertiary rounded-lg" />
-        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
-        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
-        <div className="h-12 bg-nz-bg-tertiary rounded-xl" />
+        <div className="h-8 w-48 bg-surface-muted rounded-lg" />
+        <div className="h-4 w-56 bg-surface-muted rounded-lg" />
+        <div className="h-12 bg-surface-muted rounded-xl" />
+        <div className="h-12 bg-surface-muted rounded-xl" />
+        <div className="h-12 bg-surface-muted rounded-xl" />
       </div>
     }>
       <LoginForm />
