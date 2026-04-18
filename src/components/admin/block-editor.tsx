@@ -18,7 +18,7 @@ import {
 
 interface ContentBlock {
   id: string
-  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'file' | 'video' | 'structured_prompt' | 'fillable_table'
+  type: 'rich_text' | 'callout' | 'table' | 'workbook_prompt' | 'checklist' | 'completion_checklist' | 'file' | 'video' | 'structured_prompt' | 'fillable_table'
   content: Record<string, unknown>
   sort_order: number
 }
@@ -251,6 +251,165 @@ function ChecklistBlock({ block, onChange }: { block: ContentBlock; onChange: (c
       >
         <Plus className="w-3.5 h-3.5" />
         Add Item
+      </button>
+    </div>
+  )
+}
+
+type CCItem = { label: string; hint?: string }
+type CCGroup = { heading: string; items: CCItem[] }
+
+function CompletionChecklistBlock({
+  block,
+  onChange,
+}: {
+  block: ContentBlock
+  onChange: (c: Record<string, unknown>) => void
+}) {
+  const title = (block.content.title as string) || ''
+  const subtitle = (block.content.subtitle as string) || ''
+  const completionLabel = (block.content.completionLabel as string) || 'Complete before moving on'
+  const groups = ((block.content.groups as CCGroup[]) || []).map((g) => ({
+    heading: g.heading ?? '',
+    items: (g.items ?? []).map((i) => ({ label: i.label ?? '', hint: i.hint ?? '' })),
+  }))
+
+  const setGroups = (next: CCGroup[]) => onChange({ ...block.content, groups: next })
+
+  const updateGroup = (gi: number, patch: Partial<CCGroup>) => {
+    setGroups(groups.map((g, i) => (i === gi ? { ...g, ...patch } : g)))
+  }
+
+  const addGroup = () => {
+    setGroups([...groups, { heading: 'New group', items: [{ label: '', hint: '' }] }])
+  }
+
+  const removeGroup = (gi: number) => {
+    if (groups.length <= 1) return
+    setGroups(groups.filter((_, i) => i !== gi))
+  }
+
+  const updateItem = (gi: number, ii: number, patch: Partial<CCItem>) => {
+    const nextGroups = groups.map((g, i) => {
+      if (i !== gi) return g
+      return {
+        ...g,
+        items: g.items.map((item, j) => (j === ii ? { ...item, ...patch } : item)),
+      }
+    })
+    setGroups(nextGroups)
+  }
+
+  const addItem = (gi: number) => {
+    const nextGroups = groups.map((g, i) =>
+      i === gi ? { ...g, items: [...g.items, { label: '', hint: '' }] } : g,
+    )
+    setGroups(nextGroups)
+  }
+
+  const removeItem = (gi: number, ii: number) => {
+    const nextGroups = groups.map((g, i) => {
+      if (i !== gi) return g
+      if (g.items.length <= 1) return g
+      return { ...g, items: g.items.filter((_, j) => j !== ii) }
+    })
+    setGroups(nextGroups)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => onChange({ ...block.content, title: e.target.value })}
+          placeholder="Checklist title (e.g. 'Fundraising Goals and Blueprint')"
+          className="w-full px-4 py-2 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm font-heading font-semibold text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+        />
+        <input
+          type="text"
+          value={subtitle}
+          onChange={(e) => onChange({ ...block.content, subtitle: e.target.value })}
+          placeholder="Subtitle (optional)"
+          className="w-full px-3 py-2 rounded-lg bg-nz-bg-tertiary border border-nz-border text-xs text-nz-text-secondary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+        />
+        <input
+          type="text"
+          value={completionLabel}
+          onChange={(e) => onChange({ ...block.content, completionLabel: e.target.value })}
+          placeholder="Completion label (shown above the title)"
+          className="w-full px-3 py-1.5 rounded-lg bg-transparent border-none text-xs text-nz-text-tertiary placeholder:text-nz-text-muted focus:outline-none"
+        />
+      </div>
+
+      <div className="space-y-3">
+        {groups.map((group, gi) => (
+          <div key={gi} className="rounded-xl border border-nz-border/60 bg-nz-bg-secondary/40 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={group.heading}
+                onChange={(e) => updateGroup(gi, { heading: e.target.value })}
+                placeholder="Group heading (e.g. 'THE NUMBERS')"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-nz-bg-tertiary border border-nz-border text-xs font-semibold uppercase tracking-[0.16em] text-nz-text-secondary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+              />
+              <button
+                onClick={() => removeGroup(gi)}
+                disabled={groups.length <= 1}
+                className="p-1.5 rounded-lg text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Remove group"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 pl-1">
+              {group.items.map((item, ii) => (
+                <div key={ii} className="flex items-start gap-2">
+                  <div className="w-4 h-4 rounded border border-nz-border shrink-0 mt-2" />
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="text"
+                      value={item.label}
+                      onChange={(e) => updateItem(gi, ii, { label: e.target.value })}
+                      placeholder="Checklist item…"
+                      className="w-full px-3 py-2 rounded-lg bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+                    />
+                    <input
+                      type="text"
+                      value={item.hint ?? ''}
+                      onChange={(e) => updateItem(gi, ii, { hint: e.target.value })}
+                      placeholder="Clarifying hint (optional)"
+                      className="w-full px-3 py-1.5 rounded-lg bg-transparent border border-dashed border-nz-border/50 text-xs text-nz-text-tertiary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removeItem(gi, ii)}
+                    disabled={group.items.length <= 1}
+                    className="p-1.5 rounded-lg text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed mt-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => addItem(gi)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs text-nz-sakura/70 hover:text-nz-sakura hover:bg-nz-sakura/5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add item
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={addGroup}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-nz-sakura hover:bg-nz-sakura/10 transition-colors cursor-pointer border border-dashed border-nz-border hover:border-nz-sakura/40 w-full justify-center"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Add group
       </button>
     </div>
   )
@@ -592,6 +751,7 @@ const blockTypeLabels: Record<string, string> = {
   table: 'Table',
   workbook_prompt: 'Workbook Prompt',
   checklist: 'Checklist',
+  completion_checklist: 'Completion checklist',
   file: 'File Upload',
   video: 'Video',
   structured_prompt: 'Structured Prompt',
@@ -611,6 +771,8 @@ export function BlockEditor({ block, onChange, onDelete, onDuplicate, dragHandle
         return <WorkbookPromptBlock block={block} onChange={onChange} />
       case 'checklist':
         return <ChecklistBlock block={block} onChange={onChange} />
+      case 'completion_checklist':
+        return <CompletionChecklistBlock block={block} onChange={onChange} />
       case 'file':
         return <FileUploadBlock block={block} onChange={onChange} />
       case 'video':

@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useState, useCallback } from 'react'
+import { ReactNode, useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useEditMode } from '@/lib/edit-mode-context'
@@ -10,6 +10,8 @@ import { SortableBlocksContainer, SortableBlockWrapper } from '@/components/cour
 import { createBlock, reorderBlocks, getDefaultContent } from '@/lib/block-actions'
 import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
+import { SectionRecapModal } from '@/components/course/section-recap-modal'
+import { extractSectionAnswers, sectionHasPrompts } from '@/lib/answer-extract'
 import { ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
@@ -19,6 +21,7 @@ const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'table', label: 'Table' },
   { type: 'workbook_prompt', label: 'Workbook Prompt' },
   { type: 'checklist', label: 'Checklist' },
+  { type: 'completion_checklist', label: 'Completion checklist' },
   { type: 'file', label: 'File Upload' },
   { type: 'video', label: 'Video' },
 ]
@@ -93,12 +96,73 @@ export function SectionContent({
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(sectionProgress?.completed ?? false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [recapOpen, setRecapOpen] = useState(false)
+  const [recapCompletedAt, setRecapCompletedAt] = useState<string | null>(
+    sectionProgress?.completed_at ?? null,
+  )
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const lastSavedSerialized = useRef(
+    JSON.stringify({
+      w: existingWorkbook,
+      c: (existingWorkbook as any)?._checklists ?? {},
+    }),
+  )
 
   const [blocks, setBlocks] = useState<ContentBlock[]>(
     [...(section.content_blocks ?? [])].sort((a, b) => a.sort_order - b.sort_order)
   )
 
-  const hasWorkbookPrompts = blocks.some((b) => b.type === 'workbook_prompt' || b.type === 'structured_prompt' || b.type === 'fillable_table')
+  const hasPrompts = sectionHasPrompts(blocks)
+  const hasWorkbookPrompts = hasPrompts
+
+  const mergedWorkbook = { ...workbookData, _checklists: checklistData }
+  const recapAnswers = extractSectionAnswers(blocks, mergedWorkbook)
+
+  useEffect(() => {
+    if (saved) return
+    if (!hasPrompts) return
+
+    const currentSerialized = JSON.stringify({ w: workbookData, c: checklistData })
+    if (currentSerialized === lastSavedSerialized.current) return
+
+    const timer = setTimeout(async () => {
+      setAutosaveStatus('saving')
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setAutosaveStatus('error')
+          return
+        }
+        const mergedData = { ...workbookData, _checklists: checklistData }
+        const { error } = await supabase.from('section_progress').upsert(
+          {
+            user_id: user.id,
+            section_id: section.id,
+            workbook_data: mergedData,
+          },
+          { onConflict: 'user_id,section_id' },
+        )
+        if (error) {
+          setAutosaveStatus('error')
+          return
+        }
+        lastSavedSerialized.current = currentSerialized
+        setAutosaveStatus('saved')
+      } catch {
+        setAutosaveStatus('error')
+      }
+    }, 900)
+
+    return () => clearTimeout(timer)
+  }, [workbookData, checklistData, saved, hasPrompts, supabase, section.id])
+
+  const goNext = useCallback(() => {
+    if (nextSectionId) {
+      router.push(`/courses/${courseId}/learn/${nextSectionId}`)
+    } else {
+      router.push(`/courses/${courseId}`)
+    }
+  }, [router, courseId, nextSectionId])
 
   const handleSubmit = useCallback(async () => {
     setSaving(true)
@@ -108,6 +172,7 @@ export function SectionContent({
       if (!user) return
 
       const mergedData = { ...workbookData, _checklists: checklistData }
+      const completedAt = new Date().toISOString()
 
       const { error } = await supabase.from('section_progress').upsert(
         {
@@ -115,7 +180,7 @@ export function SectionContent({
           section_id: section.id,
           completed: true,
           workbook_data: mergedData,
-          completed_at: new Date().toISOString(),
+          completed_at: completedAt,
         },
         { onConflict: 'user_id,section_id' }
       )
@@ -126,19 +191,22 @@ export function SectionContent({
       }
 
       setSaved(true)
+      setRecapCompletedAt(completedAt)
+      lastSavedSerialized.current = JSON.stringify({ w: workbookData, c: checklistData })
+      setAutosaveStatus('saved')
       router.refresh()
 
-      if (nextSectionId) {
-        setTimeout(() => {
-          router.push(`/courses/${courseId}/learn/${nextSectionId}`)
-        }, 600)
+      if (hasPrompts) {
+        setRecapOpen(true)
+      } else {
+        goNext()
       }
     } catch {
       setSaveError('Something went wrong. Please try again.')
     } finally {
       setSaving(false)
     }
-  }, [workbookData, checklistData, section.id, courseId, nextSectionId, router, supabase])
+  }, [workbookData, checklistData, section.id, router, supabase, hasPrompts, goNext])
 
   const handleBlockUpdate = useCallback((updated: ContentBlock) => {
     setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))
@@ -253,6 +321,138 @@ export function SectionContent({
             </DoBlock>
           </div>
         )
+
+      case 'completion_checklist': {
+        const title = (block.content.title as string) || 'Complete before moving on'
+        const subtitle = (block.content.subtitle as string) || ''
+        const completionLabel = (block.content.completionLabel as string) || 'Complete before moving on'
+        const groups =
+          (block.content.groups as Array<{
+            heading: string
+            items: Array<{ label: string; hint?: string }>
+          }>) ?? []
+
+        const allItems = groups.flatMap((g, gi) =>
+          (g.items ?? []).map((_, ii) => `${block.id}_g${gi}_i${ii}`),
+        )
+        const totalCount = allItems.length
+        const checkedCount = allItems.filter((k) => checklistData[k]).length
+        const allChecked = totalCount > 0 && checkedCount === totalCount
+
+        return (
+          <div
+            key={block.id}
+            className="my-8 rounded-2xl border border-line bg-surface overflow-hidden"
+          >
+            {/* Header */}
+            <div className="px-6 lg:px-8 py-6 border-b border-line-soft bg-surface-muted/50">
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent mb-2">
+                {completionLabel}
+              </p>
+              <h3
+                className="text-ink"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 700,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(22px, 2.2cqi, 28px)',
+                  lineHeight: 1.1,
+                  letterSpacing: '-0.025em',
+                }}
+              >
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="mt-2 text-[14px] text-ink-soft leading-[1.55] max-w-prose">
+                  {subtitle}
+                </p>
+              )}
+
+              <div className="mt-5 flex items-center gap-3">
+                <div className="flex-1 h-[6px] rounded-full bg-line-soft overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      allChecked ? 'bg-success' : 'bg-accent'
+                    }`}
+                    style={{
+                      width: totalCount === 0 ? '0%' : `${(checkedCount / totalCount) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span
+                  className={`text-[11px] font-mono tabular-nums tracking-wider uppercase shrink-0 ${
+                    allChecked ? 'text-success' : 'text-ink-muted'
+                  }`}
+                >
+                  {allChecked ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      All items checked
+                    </span>
+                  ) : (
+                    <>
+                      {checkedCount} / {totalCount} checked
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Groups */}
+            <div className="divide-y divide-line-soft">
+              {groups.map((group, gi) => (
+                <div key={gi} className="px-6 lg:px-8 py-5">
+                  {group.heading && (
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-muted mb-3">
+                      {group.heading}
+                    </p>
+                  )}
+                  <div className="space-y-1">
+                    {(group.items ?? []).map((item, ii) => {
+                      const key = `${block.id}_g${gi}_i${ii}`
+                      const checked = checklistData[key] ?? false
+                      return (
+                        <label
+                          key={key}
+                          className="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-muted/60 transition-colors cursor-pointer group -mx-3"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              setChecklistData((prev) => ({ ...prev, [key]: e.target.checked }))
+                            }
+                            disabled={saved}
+                            className="mt-[3px] w-4 h-4 rounded border-line accent-[var(--nz-accent)] cursor-pointer shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={`text-[14px] leading-[1.5] transition-colors ${
+                                checked ? 'text-ink-muted line-through' : 'text-ink group-hover:text-ink'
+                              }`}
+                            >
+                              {item.label}
+                            </p>
+                            {item.hint && (
+                              <p
+                                className={`mt-1 text-[12.5px] leading-[1.5] ${
+                                  checked ? 'text-ink-faint' : 'text-ink-soft'
+                                }`}
+                              >
+                                {item.hint}
+                              </p>
+                            )}
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      }
 
       case 'checklist':
         return (
@@ -475,6 +675,19 @@ export function SectionContent({
 
   return (
     <div>
+      <SectionRecapModal
+        open={recapOpen}
+        sectionTitle={section.title}
+        answers={recapAnswers}
+        completedAt={recapCompletedAt}
+        primaryLabel={nextSectionId ? 'Next section' : 'Back to course'}
+        onPrimary={() => {
+          setRecapOpen(false)
+          goNext()
+        }}
+        onClose={() => setRecapOpen(false)}
+      />
+
       {renderBlocks()}
 
       {/* Complete / continue — lightweight */}
@@ -482,19 +695,29 @@ export function SectionContent({
         <div className="mt-12 pt-6 border-t border-line-soft">
           {saved ? (
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success">
-                  <Check className="w-3 h-3" strokeWidth={2.5} />
-                </span>
-                <span>
-                  Section complete
-                  {sectionProgress?.completed_at && (
-                    <span className="text-ink-faint">
-                      {' · '}
-                      {new Date(sectionProgress.completed_at).toLocaleDateString()}
-                    </span>
-                  )}
-                </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success">
+                    <Check className="w-3 h-3" strokeWidth={2.5} />
+                  </span>
+                  <span>
+                    Section complete
+                    {recapCompletedAt && (
+                      <span className="text-ink-faint">
+                        {' · '}
+                        {new Date(recapCompletedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {hasPrompts && (
+                  <button
+                    onClick={() => setRecapOpen(true)}
+                    className="text-[12px] font-medium text-accent hover:text-accent-deep underline underline-offset-4 decoration-accent/40 hover:decoration-accent cursor-pointer"
+                  >
+                    Review responses
+                  </button>
+                )}
               </div>
               {nextSectionId ? (
                 <button
@@ -506,21 +729,48 @@ export function SectionContent({
                 </button>
               ) : (
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push(`/courses/${courseId}`)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors cursor-pointer"
                 >
-                  Back to dashboard
+                  Back to course
                   <ArrowRight className="w-4 h-4" strokeWidth={2} />
                 </button>
               )}
             </div>
           ) : (
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <p className="text-[12.5px] text-ink-muted">
-                {hasWorkbookPrompts
-                  ? 'Fill in your responses above, then mark this section complete.'
-                  : 'Ready to move on?'}
-              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-[12.5px] text-ink-muted">
+                  {hasWorkbookPrompts
+                    ? 'Fill in your responses above, then mark this section complete.'
+                    : 'Ready to move on?'}
+                </p>
+                {hasWorkbookPrompts && autosaveStatus !== 'idle' && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-mono tabular-nums tracking-wider uppercase ${
+                      autosaveStatus === 'error'
+                        ? 'text-error'
+                        : autosaveStatus === 'saving'
+                          ? 'text-ink-muted'
+                          : 'text-ink-faint'
+                    }`}
+                  >
+                    {autosaveStatus === 'saving' && (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-ink-muted animate-pulse" />
+                        Saving
+                      </>
+                    )}
+                    {autosaveStatus === 'saved' && (
+                      <>
+                        <Check className="w-3 h-3" strokeWidth={2.5} />
+                        Saved
+                      </>
+                    )}
+                    {autosaveStatus === 'error' && 'Save failed — will retry'}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 {saveError && (
                   <span className="text-[12px] text-error">{saveError}</span>

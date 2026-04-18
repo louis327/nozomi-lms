@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Download } from 'lucide-react'
 
 type Module = {
   id: string
@@ -67,14 +67,14 @@ export function SectionHeatmap({
             Course progress
           </p>
           <h2
-            className="text-white max-w-[28ch]"
+            className="text-white max-w-[30ch]"
             style={{
               fontFamily: 'var(--font-sans)',
-              fontWeight: 700,
+              fontWeight: 600,
               fontStyle: 'italic',
-              fontSize: 'clamp(22px, 2.8cqi, 32px)',
-              lineHeight: 1.04,
-              letterSpacing: '-0.025em',
+              fontSize: 'clamp(18px, 2.1cqi, 24px)',
+              lineHeight: 1.15,
+              letterSpacing: '-0.02em',
             }}
           >
             {courseTitle}
@@ -99,23 +99,34 @@ export function SectionHeatmap({
               className="text-ink"
               style={{
                 fontFamily: 'var(--font-sans)',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontStyle: 'italic',
-                fontSize: 'clamp(20px, 2.4cqi, 28px)',
-                lineHeight: 1.08,
-                letterSpacing: '-0.025em',
+                fontSize: 'clamp(17px, 1.9cqi, 22px)',
+                lineHeight: 1.2,
+                letterSpacing: '-0.02em',
               }}
             >
               {isComplete ? 'All sections done' : nextSectionTitle}
             </h3>
           </div>
-          <Link
-            href={resumeHref}
-            className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors group"
-          >
-            <span>{isComplete ? 'Review' : 'Continue'}</span>
-            <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2.2} />
-          </Link>
+          <div className="shrink-0 flex items-center gap-2">
+            {isComplete && (
+              <a
+                href={`/api/courses/${courseId}/export`}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-line-strong text-ink text-[13px] font-semibold hover:bg-surface-muted transition-colors"
+              >
+                <Download className="w-4 h-4" strokeWidth={2} />
+                <span>Workbook</span>
+              </a>
+            )}
+            <Link
+              href={resumeHref}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors group"
+            >
+              <span>{isComplete ? 'Review' : 'Continue'}</span>
+              <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2.2} />
+            </Link>
+          </div>
         </div>
       </div>
 

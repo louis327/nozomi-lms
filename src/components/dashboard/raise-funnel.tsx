@@ -74,11 +74,11 @@ export function RaiseFunnel({ raiseStatus, raiseAmount }: Props) {
             className="text-ink"
             style={{
               fontFamily: 'var(--font-sans)',
-              fontWeight: 700,
+              fontWeight: 600,
               fontStyle: 'italic',
-              fontSize: 'clamp(20px, 2.4cqi, 28px)',
-              lineHeight: 1.05,
-              letterSpacing: '-0.022em',
+              fontSize: 'clamp(17px, 1.9cqi, 22px)',
+              lineHeight: 1.15,
+              letterSpacing: '-0.02em',
             }}
           >
             {currentIndex >= 0 ? STAGES[currentIndex].label : 'Not set'}

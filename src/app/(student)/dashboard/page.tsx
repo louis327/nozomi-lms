@@ -164,11 +164,11 @@ export default async function DashboardPage() {
           className="text-ink"
           style={{
             fontFamily: 'var(--font-sans)',
-            fontWeight: 700,
+            fontWeight: 600,
             fontStyle: 'italic',
-            fontSize: 'clamp(28px, 3.8cqi, 44px)',
-            lineHeight: 1.02,
-            letterSpacing: '-0.032em',
+            fontSize: 'clamp(22px, 2.4cqi, 30px)',
+            lineHeight: 1.1,
+            letterSpacing: '-0.022em',
           }}
         >
           Good to see you, {displayName}
@@ -212,14 +212,14 @@ export default async function DashboardPage() {
                     Start here
                   </p>
                   <h2
-                    className="text-ink max-w-[20ch]"
+                    className="text-ink max-w-[22ch]"
                     style={{
                       fontFamily: 'var(--font-sans)',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontStyle: 'italic',
-                      fontSize: 'clamp(24px, 2.8cqi, 34px)',
-                      lineHeight: 1.05,
-                      letterSpacing: '-0.025em',
+                      fontSize: 'clamp(19px, 2cqi, 24px)',
+                      lineHeight: 1.15,
+                      letterSpacing: '-0.02em',
                     }}
                   >
                     Explore courses to close faster

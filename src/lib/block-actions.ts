@@ -72,6 +72,14 @@ export function getDefaultContent(type: ContentBlock['type']): Record<string, un
     case 'table': return { rows: [['', ''], ['', '']] }
     case 'workbook_prompt': return { label: '', placeholder: '', prompt: '' }
     case 'checklist': return { items: [''] }
+    case 'completion_checklist': return {
+      title: '',
+      subtitle: '',
+      completionLabel: 'Complete before moving on',
+      groups: [
+        { heading: 'Group one', items: [{ label: '', hint: '' }] },
+      ],
+    }
     case 'file': return { fileUrl: '', label: '', fileName: '' }
     case 'video': return { url: '' }
     default: return {}

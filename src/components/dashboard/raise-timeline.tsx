@@ -100,15 +100,15 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose }: Props) {
           className="text-ink"
           style={{
             fontFamily: 'var(--font-sans)',
-            fontWeight: 700,
+            fontWeight: 600,
             fontStyle: 'italic',
-            fontSize: 'clamp(40px, 5.2cqi, 64px)',
-            lineHeight: 0.98,
-            letterSpacing: '-0.035em',
+            fontSize: 'clamp(26px, 3cqi, 38px)',
+            lineHeight: 1.04,
+            letterSpacing: '-0.025em',
           }}
         >
           {headline}
-          <span className="text-ink-muted font-normal not-italic text-[0.32em] align-middle ml-3 tracking-[0.14em] uppercase">
+          <span className="text-ink-muted font-normal not-italic text-[0.38em] align-middle ml-3 tracking-[0.14em] uppercase">
             to close
           </span>
         </h2>
