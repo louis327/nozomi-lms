@@ -39,7 +39,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
       Underline,
       TiptapLink.configure({
         openOnClick: false,
-        HTMLAttributes: { class: 'text-nz-sakura underline underline-offset-2' },
+        HTMLAttributes: { class: 'text-accent underline underline-offset-2' },
       }),
       Placeholder.configure({ placeholder }),
     ],
@@ -93,8 +93,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
       onClick={onClick}
       className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
         active
-          ? 'bg-nz-sakura/15 text-nz-sakura'
-          : 'text-nz-text-tertiary hover:text-nz-text-primary hover:bg-nz-bg-elevated'
+          ? 'bg-accent/15 text-accent'
+          : 'text-ink-muted hover:text-ink hover:bg-surface-muted'
       }`}
     >
       {children}
@@ -102,9 +102,9 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
   )
 
   return (
-    <div className="rounded-xl bg-nz-bg-tertiary border border-nz-border overflow-hidden">
+    <div className="rounded-xl bg-surface border border-line overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-nz-border bg-nz-bg-elevated/30 flex-wrap">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-line-soft bg-surface-muted/40 flex-wrap">
         <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}>
           <Bold className="w-4 h-4" />
         </ToolbarButton>
@@ -114,7 +114,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
         <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')}>
           <UnderlineIcon className="w-4 h-4" />
         </ToolbarButton>
-        <div className="w-px h-5 bg-nz-border mx-1" />
+        <div className="w-px h-5 bg-line mx-1" />
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           active={editor.isActive('heading', { level: 2 })}
@@ -127,18 +127,18 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
         >
           <Heading3 className="w-4 h-4" />
         </ToolbarButton>
-        <div className="w-px h-5 bg-nz-border mx-1" />
+        <div className="w-px h-5 bg-line mx-1" />
         <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}>
           <List className="w-4 h-4" />
         </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}>
           <ListOrdered className="w-4 h-4" />
         </ToolbarButton>
-        <div className="w-px h-5 bg-nz-border mx-1" />
+        <div className="w-px h-5 bg-line mx-1" />
         <ToolbarButton onClick={toggleLink} active={editor.isActive('link')}>
           <LinkIcon className="w-4 h-4" />
         </ToolbarButton>
-        <div className="w-px h-5 bg-nz-border mx-1" />
+        <div className="w-px h-5 bg-line mx-1" />
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()}>
           <Undo className="w-4 h-4" />
         </ToolbarButton>
@@ -149,8 +149,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
 
       {/* Link input bar */}
       {showLinkInput && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-nz-border bg-nz-bg-elevated/50">
-          <LinkIcon className="w-3.5 h-3.5 text-nz-text-tertiary shrink-0" />
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-line-soft bg-surface-muted/50">
+          <LinkIcon className="w-3.5 h-3.5 text-ink-muted shrink-0" />
           <input
             type="url"
             value={linkUrl}
@@ -161,19 +161,19 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
             }}
             placeholder="https://example.com"
             autoFocus
-            className="flex-1 bg-transparent text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
           />
           <button
             type="button"
             onClick={applyLink}
-            className="p-1 rounded-md text-nz-success hover:bg-nz-success/10 transition-colors cursor-pointer"
+            className="p-1 rounded-md text-success hover:bg-success/10 transition-colors cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
             onClick={cancelLink}
-            className="p-1 rounded-md text-nz-text-tertiary hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer"
+            className="p-1 rounded-md text-ink-muted hover:text-error hover:bg-error/10 transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>

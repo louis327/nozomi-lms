@@ -7,9 +7,19 @@ import { saveBlock, deleteBlock } from '@/lib/block-actions'
 import { useToast } from '@/components/ui/toast'
 import type { ContentBlock } from '@/lib/types'
 
-const BlockEditor = dynamic(
-  () => import('@/components/admin/block-editor').then((m) => m.BlockEditor),
-  { ssr: false, loading: () => <div className="py-8 flex justify-center"><div className="w-6 h-6 border-2 border-nz-sakura/30 border-t-nz-sakura rounded-full animate-spin" /></div> }
+const EditableBlockRender = dynamic(
+  () =>
+    import('@/components/course/editable-block-render').then(
+      (m) => m.EditableBlockRender,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-8 flex justify-center">
+        <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+      </div>
+    ),
+  },
 )
 
 type InlineBlockEditorProps = {
@@ -97,41 +107,39 @@ export function InlineBlockEditor({
 
   if (editing) {
     return (
-      <div className="relative rounded-2xl border-2 border-nz-sakura/40 bg-nz-bg-card">
+      <div className="relative rounded-2xl border border-accent/40 bg-surface shadow-sm">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-nz-border/50 bg-nz-bg-elevated/30 rounded-t-2xl">
-          <span className="text-xs font-semibold text-nz-sakura uppercase tracking-wider">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-line-soft bg-surface-muted/40 rounded-t-2xl">
+          <span className="text-[10.5px] font-semibold text-accent uppercase tracking-[0.22em]">
             Editing
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={handleDelete}
-              className="px-2 py-1 rounded-lg text-xs text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-lg text-[11.5px] text-ink-muted hover:text-error hover:bg-error/10 transition-colors cursor-pointer"
             >
               Delete
             </button>
             <button
               onClick={handleCancel}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-nz-text-secondary hover:text-nz-text-primary hover:bg-nz-bg-elevated transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-[11.5px] font-medium text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-nz-sakura text-white hover:bg-nz-sakura/90 disabled:opacity-50 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full text-[11.5px] font-semibold bg-ink text-ink-inverted hover:bg-accent disabled:opacity-50 transition-colors cursor-pointer"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
         {/* Editor */}
-        <div className="p-4">
-          <BlockEditor
+        <div className="px-4 py-2">
+          <EditableBlockRender
             block={{ ...block, content: localContent }}
             onChange={handleChange}
-            onDelete={handleDelete}
-            dragHandleProps={{}}
           />
         </div>
       </div>
@@ -141,11 +149,11 @@ export function InlineBlockEditor({
   return (
     <div
       onClick={handleEdit}
-      className="relative rounded-2xl border-2 border-transparent hover:border-nz-sakura/30 hover:bg-nz-sakura/[0.02] transition-all cursor-pointer group"
+      className="relative rounded-2xl border border-transparent hover:border-accent/30 hover:bg-accent-soft/20 transition-all cursor-pointer group"
     >
       {children}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="px-2 py-1 rounded-lg bg-nz-bg-elevated/90 border border-nz-border text-[10px] font-medium text-nz-text-muted backdrop-blur-sm">
+        <span className="px-2 py-1 rounded-full bg-surface/90 border border-line text-[10px] font-semibold tracking-wider uppercase text-ink-muted backdrop-blur-sm">
           Click to edit
         </span>
       </div>
