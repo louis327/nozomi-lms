@@ -48,6 +48,8 @@ export interface Profile {
   email: string
   full_name: string | null
   role: 'student' | 'admin'
+  onboarding_completed: boolean
+  onboarding_data: Record<string, string | string[]> | null
   created_at: string
   updated_at: string
 }

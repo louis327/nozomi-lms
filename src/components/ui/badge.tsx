@@ -1,10 +1,12 @@
 import { ReactNode } from 'react'
 
 const badgeVariants = {
-  sakura: 'bg-[#fdf2f8] text-nz-sakura border-[#fce7f3]',
-  success: 'bg-[#f0fdf4] text-[#16a34a] border-[#dcfce7]',
-  warning: 'bg-[#fffbeb] text-[#d97706] border-[#fef3c7]',
-  neutral: 'bg-[#f5f5f5] text-[#666] border-[#e8e8e8]',
+  accent: 'bg-accent-soft text-accent-deep',
+  success: 'bg-[#dcfce7] text-success',
+  warning: 'bg-[#fef3c7] text-warning',
+  neutral: 'bg-surface-muted text-ink-soft',
+  dark: 'bg-ink text-ink-inverted',
+  outline: 'bg-transparent text-ink border border-line-strong',
 } as const
 
 type BadgeProps = {
@@ -17,9 +19,9 @@ export function Badge({ variant = 'neutral', children, className = '' }: BadgePr
   return (
     <span
       className={`
-        inline-flex items-center px-2 py-0.5
-        text-[11px] font-semibold font-heading
-        rounded-md border
+        inline-flex items-center gap-1 px-2 py-0.5
+        text-[10px] font-semibold uppercase tracking-[0.08em]
+        rounded-full
         ${badgeVariants[variant]}
         ${className}
       `}
