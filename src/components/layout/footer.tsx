@@ -2,38 +2,34 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer className="border-t border-nz-border bg-nz-bg-secondary/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <footer className="border-t border-line bg-canvas">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Branding */}
           <div className="flex items-center gap-2">
-            <span className="font-heading font-bold text-lg text-nz-text-primary tracking-tight">
-              NOZOMI<span className="text-nz-sakura">.</span>
-            </span>
-            <span className="text-nz-text-muted text-sm">Learning Platform</span>
+            <span className="font-serif text-[18px] text-ink tracking-tight">Nozomi</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            <span className="text-ink-muted text-[12px] ml-2">Learning Platform</span>
           </div>
 
-          {/* Links */}
           <div className="flex items-center gap-6">
             <a
               href="https://nozomi.network"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-nz-text-tertiary hover:text-nz-sakura transition-colors"
+              className="text-[12px] text-ink-muted hover:text-accent transition-colors"
             >
               nozomi.network
             </a>
             <Link
               href="/courses"
-              className="text-sm text-nz-text-tertiary hover:text-nz-text-secondary transition-colors"
+              className="text-[12px] text-ink-muted hover:text-ink transition-colors"
             >
               Courses
             </Link>
           </div>
 
-          {/* Copyright */}
-          <p className="text-xs text-nz-text-muted">
-            &copy; {new Date().getFullYear()} Nozomi. All rights reserved.
+          <p className="text-[11px] text-ink-faint uppercase tracking-[0.14em]">
+            &copy; {new Date().getFullYear()} Nozomi
           </p>
         </div>
       </div>

@@ -13,16 +13,20 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, email')
+    .select('role, full_name, email, onboarding_completed')
     .eq('id', user.id)
     .single()
+
+  if (profile && !profile.onboarding_completed) {
+    redirect('/onboarding')
+  }
 
   const userName = profile?.full_name || profile?.email || 'Student'
   const isAdmin = profile?.role === 'admin'
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[#fafafa]">
+      <div className="min-h-screen bg-canvas">
         <StudentLayoutShell userName={userName} isAdmin={isAdmin}>
           {children}
         </StudentLayoutShell>

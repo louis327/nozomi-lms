@@ -1,54 +1,52 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
-  Compass,
+  BookOpen,
+  ClipboardList,
+  Calendar,
+  Users,
+  BarChart3,
+  Award,
+  FileBadge,
   LogOut,
   Menu,
   X,
   Shield,
-  ChevronLeft,
-  ChevronRight,
+  Settings,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const navItems = [
+type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; badge?: string }
+
+const learningItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/courses', label: 'Browse Courses', icon: Compass },
+  { href: '/courses', label: 'My Courses', icon: BookOpen },
+  { href: '/assignments', label: 'Assignments', icon: ClipboardList },
+  { href: '/schedule', label: 'Schedule', icon: Calendar },
+  { href: '/community', label: 'Community', icon: Users },
+]
+
+const progressItems: NavItem[] = [
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/achievements', label: 'Achievements', icon: Award },
+  { href: '/certificates', label: 'Certificates', icon: FileBadge },
 ]
 
 export function StudentSidebar({
   userName,
   isAdmin,
-  collapsed,
-  onToggleCollapse,
 }: {
   userName: string
   isAdmin: boolean
-  collapsed: boolean
-  onToggleCollapse: () => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [hoverExpanded, setHoverExpanded] = useState(false)
-  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleMouseEnter = useCallback(() => {
-    if (!collapsed) return
-    hoverTimeout.current = setTimeout(() => setHoverExpanded(true), 200)
-  }, [collapsed])
-
-  const handleMouseLeave = useCallback(() => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
-    setHoverExpanded(false)
-  }, [])
-
-  const isExpanded = !collapsed || hoverExpanded
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -56,12 +54,44 @@ export function StudentSidebar({
     router.push('/')
   }
 
+  const isActive = (href: string) =>
+    href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
+
+  const renderItem = (item: NavItem) => {
+    const Icon = item.icon
+    const active = isActive(item.href)
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={() => setMobileOpen(false)}
+        className={`
+          group relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-colors
+          ${active
+            ? 'bg-white/[0.06] text-white'
+            : 'text-white/55 hover:text-white hover:bg-white/[0.04]'
+          }
+        `}
+      >
+        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-accent" />}
+        <Icon className="w-[17px] h-[17px] shrink-0" strokeWidth={1.5} />
+        <span className="flex-1">{item.label}</span>
+        {item.badge && (
+          <span className="text-[10px] font-semibold text-white bg-accent rounded-full px-1.5 py-0.5 leading-none">
+            {item.badge}
+          </span>
+        )}
+      </Link>
+    )
+  }
+
   return (
     <>
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white border border-[#e8e8e8] text-[#666] hover:text-[#111] lg:hidden cursor-pointer shadow-sm"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface border border-line text-ink-soft hover:text-ink lg:hidden cursor-pointer shadow-sm"
+        aria-label="Open menu"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -74,123 +104,79 @@ export function StudentSidebar({
         />
       )}
 
-      {/* Invisible hover zone on left edge when collapsed */}
-      {collapsed && !hoverExpanded && (
-        <div
-          onMouseEnter={handleMouseEnter}
-          className="fixed top-0 left-0 w-[60px] h-screen z-40 hidden lg:block"
-        />
-      )}
-
       <aside
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className={`fixed top-0 left-0 h-screen bg-white border-r border-[#eee] flex-col z-50 transition-[width] duration-300 ease-in-out ${
-          isExpanded ? 'w-[240px]' : 'w-[60px]'
-        } ${mobileOpen ? 'flex translate-x-0' : 'hidden lg:flex'} ${hoverExpanded ? 'shadow-lg' : ''}`}
+        className={`
+          fixed top-0 left-0 h-screen w-[232px] bg-surface-dark text-ink-inverted
+          flex-col z-50 border-r border-line-dark
+          ${mobileOpen ? 'flex' : 'hidden lg:flex'}
+        `}
       >
-        {/* Logo */}
-        <div className={`h-[60px] flex items-center border-b border-[#eee] overflow-hidden ${!isExpanded ? 'justify-center px-2' : 'justify-between px-5'}`}>
-          <Link href="/dashboard" className="flex items-center gap-0 shrink-0">
-            <span className="font-heading font-bold text-[17px] text-[#111] tracking-[-0.02em]">N</span>
-            <span className={`font-heading font-bold text-[17px] text-[#111] tracking-[-0.02em] transition-[opacity,max-width] duration-300 ease-in-out overflow-hidden whitespace-nowrap ${!isExpanded ? 'max-w-0 opacity-0' : 'max-w-[120px] opacity-100'}`}>OZOMI</span>
-            <span className="font-heading font-bold text-[17px] text-nz-sakura tracking-[-0.02em]">.</span>
+        {/* Brand */}
+        <div className="flex items-center justify-between px-5 h-[64px] border-b border-line-dark">
+          <Link href="/dashboard" className="flex items-center gap-1.5">
+            <span className="font-serif text-[18px] text-white tracking-tight">Nozomi</span>
+            <span className="w-[5px] h-[5px] rounded-full bg-accent mt-2" />
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
-            className={`p-1.5 rounded-lg text-[#999] hover:text-[#111] lg:hidden cursor-pointer transition-opacity duration-200 ${!isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            className="p-1 rounded text-white/50 hover:text-white lg:hidden cursor-pointer"
+            aria-label="Close menu"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 py-3 transition-[padding] duration-300 ease-in-out ${!isExpanded ? 'px-1.5' : 'px-3'}`}>
-          <p className={`text-[10px] font-bold text-[#bbb] uppercase tracking-[0.1em] px-3 mb-2 transition-[opacity,max-height] duration-300 ease-in-out overflow-hidden whitespace-nowrap ${!isExpanded ? 'max-h-0 opacity-0 mb-0' : 'max-h-6 opacity-100'}`}>Menu</p>
-          <div className="space-y-0.5">
-            {navItems.map((item) => {
-              const isActive =
-                item.href === '/dashboard'
-                  ? pathname === '/dashboard'
-                  : pathname.startsWith(item.href)
-              const Icon = item.icon
+        <nav className="flex-1 px-3 py-5 overflow-y-auto">
+          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-[0.18em] px-3 mb-2">
+            Learning
+          </p>
+          <div className="space-y-0.5 mb-6">{learningItems.map(renderItem)}</div>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  title={!isExpanded ? item.label : undefined}
-                  className={`
-                    relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-300 ease-in-out overflow-hidden
-                    ${!isExpanded ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'}
-                    ${
-                      isActive
-                        ? 'bg-[#111] text-white'
-                        : 'text-[#666] hover:bg-[#f5f5f5] hover:text-[#111]'
-                    }
-                  `}
-                >
-                  <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
-                  <span className={`transition-[opacity,max-width] duration-300 ease-in-out overflow-hidden whitespace-nowrap ${!isExpanded ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'}`}>{item.label}</span>
-                </Link>
-              )
-            })}
-          </div>
+          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-[0.18em] px-3 mb-2">
+            Progress
+          </p>
+          <div className="space-y-0.5">{progressItems.map(renderItem)}</div>
         </nav>
 
         {/* User section */}
-        <div className={`border-t border-[#eee] transition-[padding] duration-300 ease-in-out ${!isExpanded ? 'p-1.5' : 'p-3'}`}>
+        <div className="border-t border-line-dark px-3 py-3">
           {isAdmin && (
             <Link
               href="/admin"
               onClick={() => setMobileOpen(false)}
-              title={!isExpanded ? 'Admin Panel' : undefined}
-              className={`flex items-center rounded-lg text-[13px] font-medium text-[#888] hover:text-nz-sakura hover:bg-[#fdf2f8] transition-all duration-300 ease-in-out mb-1 overflow-hidden ${!isExpanded ? 'justify-center p-2.5' : 'gap-2.5 px-3 py-2'}`}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-white/55 hover:text-white hover:bg-white/[0.04] transition-colors mb-1"
             >
-              <Shield className="w-4 h-4 shrink-0" />
-              <span className={`transition-[opacity,max-width] duration-300 ease-in-out overflow-hidden whitespace-nowrap ${!isExpanded ? 'max-w-0 opacity-0' : 'max-w-[120px] opacity-100'}`}>Admin Panel</span>
+              <Shield className="w-[17px] h-[17px]" strokeWidth={1.5} />
+              <span>Admin Panel</span>
             </Link>
           )}
 
-          <Link
-            href="/dashboard/profile"
-            title={!isExpanded ? `${userName || 'Student'} — Profile` : undefined}
-            className={`flex items-center rounded-lg hover:bg-[#f5f5f5] transition-all duration-300 ease-in-out group overflow-hidden ${!isExpanded ? 'justify-center p-1.5' : 'gap-3 px-3 py-2.5'}`}
-          >
-            <div className="w-8 h-8 rounded-full bg-nz-sakura flex items-center justify-center text-white text-[13px] font-heading font-bold shrink-0 hover:ring-2 hover:ring-nz-sakura/30 transition-all cursor-pointer">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
+            <Link
+              href="/dashboard/profile"
+              className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-white text-[13px] font-semibold shrink-0 hover:ring-2 hover:ring-accent/30 transition-all"
+              aria-label="Profile"
+            >
               {userName?.charAt(0)?.toUpperCase() || 'S'}
-            </div>
-            <div className={`flex-1 min-w-0 transition-[opacity,max-width] duration-300 ease-in-out overflow-hidden ${!isExpanded ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'}`}>
-              <p className="text-[13px] font-medium text-[#111] truncate group-hover:text-nz-sakura transition-colors">{userName || 'Student'}</p>
-              <p className="text-[11px] text-[#aaa]">Profile</p>
-            </div>
+            </Link>
+            <Link href="/dashboard/profile" className="flex-1 min-w-0 group">
+              <p className="text-[13px] font-medium text-white truncate leading-tight group-hover:text-accent transition-colors">
+                {userName || 'Student'}
+              </p>
+              <p className="text-[10.5px] text-white/40 uppercase tracking-[0.12em] mt-0.5">
+                Learner
+              </p>
+            </Link>
             <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleSignOut()
-              }}
-              className={`p-1.5 rounded-lg text-[#ccc] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-all duration-300 ease-in-out cursor-pointer shrink-0 ${!isExpanded ? 'max-w-0 opacity-0 overflow-hidden p-0' : 'max-w-[40px] opacity-100'}`}
+              onClick={handleSignOut}
+              className="p-1.5 rounded-md text-white/35 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
               title="Sign out"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" strokeWidth={1.5} />
             </button>
-          </Link>
+          </div>
         </div>
-
-        {/* Collapse/expand toggle — sits on the sidebar edge */}
-        <button
-          onClick={() => { onToggleCollapse(); setHoverExpanded(false) }}
-          className="hidden lg:flex absolute top-[56px] -right-3 w-6 h-6 items-center justify-center rounded-full bg-nz-sakura border border-nz-sakura text-white hover:brightness-110 shadow-sm transition-all cursor-pointer z-10 hover:scale-110"
-          title={collapsed ? 'Expand' : 'Collapse'}
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" strokeWidth={2} />
-          ) : (
-            <ChevronLeft className="w-4 h-4" strokeWidth={2} />
-          )}
-        </button>
       </aside>
     </>
   )

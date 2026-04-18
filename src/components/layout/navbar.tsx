@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Menu, X } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 
 export function Navbar() {
@@ -32,43 +33,41 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-nz-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-canvas/85 backdrop-blur-xl border-b border-line">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-0.5 font-heading font-bold text-xl text-nz-text-primary tracking-tight">
-            NOZOMI<span className="text-nz-sakura">.</span>
+          <Link href="/" className="flex items-center gap-1.5">
+            <span className="font-serif text-[20px] text-ink tracking-tight">Nozomi</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           </Link>
 
-          {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-nz-text-secondary hover:text-nz-text-primary transition-colors font-medium"
+                className="text-[13px] text-ink-soft hover:text-ink transition-colors font-medium"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <div className="relative group">
-                <button className="flex items-center gap-2 text-sm text-nz-text-secondary hover:text-nz-text-primary transition-colors cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-nz-sakura/10 flex items-center justify-center text-nz-sakura text-xs font-semibold">
+                <button className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-8 h-8 rounded-full bg-accent-soft flex items-center justify-center text-accent-deep text-[11px] font-semibold">
                     {(user.email?.[0] ?? 'U').toUpperCase()}
                   </div>
                 </button>
-                <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-nz-bg-card border border-nz-border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="px-4 py-2 text-xs text-nz-text-muted truncate border-b border-nz-border">
+                <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-surface border border-line rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <div className="px-4 py-2 text-[11px] text-ink-muted truncate border-b border-line-soft">
                     {user.email}
                   </div>
                   <Link
                     href="/dashboard"
-                    className="block px-4 py-2 text-sm text-nz-text-secondary hover:text-nz-text-primary hover:bg-nz-bg-tertiary transition-colors"
+                    className="block px-4 py-2 text-[13px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors"
                   >
                     Dashboard
                   </Link>
@@ -78,9 +77,9 @@ export function Navbar() {
                       await supabase.auth.signOut()
                       window.location.href = '/'
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-nz-text-secondary hover:text-nz-error hover:bg-nz-bg-tertiary transition-colors cursor-pointer"
+                    className="w-full text-left px-4 py-2 text-[13px] text-ink-soft hover:text-error hover:bg-surface-muted transition-colors cursor-pointer"
                   >
-                    Sign Out
+                    Sign out
                   </button>
                 </div>
               </div>
@@ -88,52 +87,44 @@ export function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="text-sm text-nz-text-secondary hover:text-nz-text-primary transition-colors font-medium"
+                  className="text-[13px] text-ink-soft hover:text-ink transition-colors font-medium"
                 >
-                  Log In
+                  Log in
                 </Link>
                 <Link
                   href="/signup"
-                  className="px-4 py-2 text-sm font-heading font-semibold bg-nz-sakura text-white rounded-xl hover:bg-nz-sakura-deep transition-colors"
+                  className="px-4 py-2 text-[13px] font-medium bg-ink text-white rounded-full hover:bg-black transition-colors"
                 >
-                  Sign Up
+                  Sign up
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile Hamburger */}
           <button
-            className="md:hidden text-nz-text-secondary hover:text-nz-text-primary p-2 cursor-pointer"
+            className="md:hidden text-ink-soft hover:text-ink p-2 cursor-pointer"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-nz-border bg-white/95 backdrop-blur-xl">
-          <div className="px-4 py-4 space-y-2">
+        <div className="md:hidden border-t border-line bg-canvas/95 backdrop-blur-xl">
+          <div className="px-6 py-4 space-y-2">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="block py-2.5 text-sm text-nz-text-secondary hover:text-nz-text-primary transition-colors font-medium"
+                className="block py-2.5 text-[13px] text-ink-soft hover:text-ink transition-colors font-medium"
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-nz-border space-y-2">
+            <div className="pt-3 border-t border-line-soft space-y-2">
               {user ? (
                 <button
                   onClick={async () => {
@@ -141,25 +132,25 @@ export function Navbar() {
                     await supabase.auth.signOut()
                     window.location.href = '/'
                   }}
-                  className="block w-full text-left py-2.5 text-sm text-nz-error cursor-pointer"
+                  className="block w-full text-left py-2.5 text-[13px] text-error cursor-pointer"
                 >
-                  Sign Out
+                  Sign out
                 </button>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="block py-2.5 text-sm text-nz-text-secondary hover:text-nz-text-primary transition-colors"
+                    className="block py-2.5 text-[13px] text-ink-soft hover:text-ink transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Log In
+                    Log in
                   </Link>
                   <Link
                     href="/signup"
-                    className="block py-2.5 text-sm text-nz-sakura font-semibold"
+                    className="block py-2.5 text-[13px] text-accent font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Sign Up
+                    Sign up
                   </Link>
                 </>
               )}
