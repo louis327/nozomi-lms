@@ -63,7 +63,7 @@ export default async function DiscoverPage() {
             fontFamily: 'var(--font-sans)',
             fontWeight: 700,
             fontStyle: 'italic',
-            fontSize: 'clamp(52px, 8vw, 112px)',
+            fontSize: 'clamp(44px, 7cqi, 84px)',
             lineHeight: 0.96,
             letterSpacing: '-0.035em',
           }}

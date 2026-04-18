@@ -76,7 +76,7 @@ export function RaiseFunnel({ raiseStatus, raiseAmount }: Props) {
               fontFamily: 'var(--font-sans)',
               fontWeight: 700,
               fontStyle: 'italic',
-              fontSize: 'clamp(22px, 2.4vw, 32px)',
+              fontSize: 'clamp(20px, 2.4cqi, 28px)',
               lineHeight: 1.05,
               letterSpacing: '-0.022em',
             }}

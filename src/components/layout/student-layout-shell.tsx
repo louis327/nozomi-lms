@@ -22,7 +22,10 @@ export function StudentLayoutShell({
   return (
     <>
       <StudentSidebar userName={userName} isAdmin={isAdmin} />
-      <main className="min-h-screen lg:ml-[232px] bg-canvas">
+      <main
+        className="min-h-screen lg:ml-[232px] bg-canvas"
+        style={{ containerType: 'inline-size' }}
+      >
         {children}
       </main>
     </>

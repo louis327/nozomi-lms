@@ -90,7 +90,7 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount }
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 700,
                 fontStyle: 'italic',
-                fontSize: 'clamp(42px, 5.2vw, 68px)',
+                fontSize: 'clamp(36px, 4.6cqi, 56px)',
                 lineHeight: 0.95,
                 letterSpacing: '-0.035em',
               }}

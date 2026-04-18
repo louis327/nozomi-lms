@@ -202,7 +202,7 @@ export default async function DashboardPage() {
             fontFamily: 'var(--font-sans)',
             fontWeight: 700,
             fontStyle: 'italic',
-            fontSize: 'clamp(40px, 5.6vw, 72px)',
+            fontSize: 'clamp(36px, 5.2cqi, 60px)',
             lineHeight: 0.98,
             letterSpacing: '-0.035em',
           }}
@@ -242,7 +242,7 @@ export default async function DashboardPage() {
                       fontFamily: 'var(--font-sans)',
                       fontWeight: 700,
                       fontStyle: 'italic',
-                      fontSize: 'clamp(20px, 2.2vw, 28px)',
+                      fontSize: 'clamp(18px, 2cqi, 24px)',
                       lineHeight: 1.05,
                       letterSpacing: '-0.022em',
                     }}
@@ -278,7 +278,7 @@ export default async function DashboardPage() {
                   fontFamily: 'var(--font-sans)',
                   fontWeight: 700,
                   fontStyle: 'italic',
-                  fontSize: 'clamp(24px, 2.4vw, 32px)',
+                  fontSize: 'clamp(22px, 2.4cqi, 28px)',
                   lineHeight: 1.05,
                   letterSpacing: '-0.022em',
                 }}
@@ -317,7 +317,7 @@ export default async function DashboardPage() {
                     fontFamily: 'var(--font-sans)',
                     fontWeight: 700,
                     fontStyle: 'italic',
-                    fontSize: 'clamp(30px, 3.6vw, 48px)',
+                    fontSize: 'clamp(26px, 3.4cqi, 40px)',
                     lineHeight: 1.02,
                     letterSpacing: '-0.028em',
                   }}
@@ -386,7 +386,7 @@ export default async function DashboardPage() {
                   fontFamily: 'var(--font-sans)',
                   fontWeight: 700,
                   fontStyle: 'italic',
-                  fontSize: 'clamp(24px, 2.6vw, 34px)',
+                  fontSize: 'clamp(22px, 2.6cqi, 30px)',
                   lineHeight: 1.05,
                   letterSpacing: '-0.022em',
                 }}
@@ -414,7 +414,7 @@ export default async function DashboardPage() {
                       fontFamily: 'var(--font-sans)',
                       fontWeight: 500,
                       fontStyle: 'italic',
-                      fontSize: 'clamp(20px, 2.4vw, 30px)',
+                      fontSize: 'clamp(18px, 2.4cqi, 26px)',
                       lineHeight: 1.2,
                       letterSpacing: '-0.015em',
                     }}

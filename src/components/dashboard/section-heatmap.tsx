@@ -46,7 +46,7 @@ export function SectionHeatmap({ courseId, modules, sections, progress, complete
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 700,
                 fontStyle: 'italic',
-                fontSize: 'clamp(34px, 4vw, 52px)',
+                fontSize: 'clamp(28px, 3.6cqi, 44px)',
                 lineHeight: 0.95,
                 letterSpacing: '-0.032em',
               }}
