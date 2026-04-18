@@ -50,7 +50,6 @@ export function SectionHeatmap({
     sectionsByModule.set(s.module_id, arr)
   }
 
-  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   const isComplete = !nextSectionTitle
 
   return (
@@ -84,29 +83,6 @@ export function SectionHeatmap({
       </div>
 
       <div className="p-7 lg:p-8">
-      {/* Metric row */}
-      <div className="flex items-baseline justify-between gap-4 mb-6">
-        <div className="flex items-baseline gap-3 flex-wrap min-w-0">
-          <span
-            className="tabular-nums text-ink"
-            style={{
-              fontFamily: 'var(--font-sans)',
-              fontWeight: 700,
-              fontStyle: 'italic',
-              fontSize: 'clamp(32px, 4cqi, 48px)',
-              lineHeight: 0.95,
-              letterSpacing: '-0.032em',
-            }}
-          >
-            {pct}
-            <span className="text-ink-faint text-[0.55em]">%</span>
-          </span>
-          <span className="text-[12px] text-ink-muted tabular-nums">
-            {completedCount} of {totalCount} sections
-          </span>
-        </div>
-      </div>
-
       {/* Up next block with continue CTA */}
       <div className="mb-7 pb-6 border-b border-line-soft">
         <div className="flex items-end justify-between gap-4">
