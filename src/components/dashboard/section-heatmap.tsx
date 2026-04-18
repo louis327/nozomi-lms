@@ -20,9 +20,10 @@ type Props = {
   progress: Record<string, { completed: boolean }>
   completedCount: number
   totalCount: number
+  bare?: boolean
 }
 
-export function SectionHeatmap({ courseId, modules, sections, progress, completedCount, totalCount }: Props) {
+export function SectionHeatmap({ courseId, modules, sections, progress, completedCount, totalCount, bare = false }: Props) {
   const sectionsByModule = new Map<string, Section[]>()
   for (const s of sections) {
     const arr = sectionsByModule.get(s.module_id) ?? []
@@ -32,8 +33,12 @@ export function SectionHeatmap({ courseId, modules, sections, progress, complete
 
   const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
+  const containerClass = bare
+    ? 'relative h-full'
+    : 'relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden h-full'
+
   return (
-    <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden h-full">
+    <div className={containerClass}>
       <div className="flex items-start justify-between mb-7">
         <div>
           <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">

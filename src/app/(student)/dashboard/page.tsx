@@ -211,92 +211,95 @@ export default async function DashboardPage() {
         </h1>
       </div>
 
-      {/* Primary widget grid */}
+      {/* Primary widget grid: timeline + stats (left stack) + funnel (right) */}
       <div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex flex-col gap-5">
             <RaiseTimeline
               closeDate={snap.targetCloseDate}
               closeText={snap.targetCloseText}
               daysToClose={snap.daysToClose}
               raiseAmount={snap.raiseAmount}
             />
+
+            {stats.length > 0 && (
+              <div className="rounded-2xl border border-line bg-surface overflow-hidden flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line h-full">
+                  {stats.map((stat, i) => (
+                    <div key={i} className="p-5 lg:p-6 flex flex-col justify-center">
+                      <p className="text-[9.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
+                        {stat.label}
+                      </p>
+                      <p
+                        className="text-ink truncate"
+                        style={{
+                          fontFamily: 'var(--font-sans)',
+                          fontWeight: 700,
+                          fontStyle: 'italic',
+                          fontSize: 'clamp(18px, 2cqi, 24px)',
+                          lineHeight: 1.05,
+                          letterSpacing: '-0.022em',
+                        }}
+                      >
+                        {stat.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="lg:col-span-1">
             <RaiseFunnel raiseStatus={snap.raiseStatus} raiseAmount={snap.raiseAmount} />
           </div>
         </div>
 
-        {/* Stats strip */}
-        {stats.length > 0 && (
-          <div className="rounded-2xl border border-line bg-surface overflow-hidden mb-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line">
-              {stats.map((stat, i) => (
-                <div key={i} className="p-5 lg:p-6">
-                  <p className="text-[9.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
-                    {stat.label}
-                  </p>
-                  <p
-                    className="text-ink truncate"
-                    style={{
-                      fontFamily: 'var(--font-sans)',
-                      fontWeight: 700,
-                      fontStyle: 'italic',
-                      fontSize: 'clamp(18px, 2cqi, 24px)',
-                      lineHeight: 1.05,
-                      letterSpacing: '-0.022em',
-                    }}
-                  >
-                    {stat.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Course progress OR first-entry discovery */}
+        {/* Course progress + Continue — one combined card */}
         {hasEnrollment && primaryCourse ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-            <div className="lg:col-span-2">
-              <SectionHeatmap
-                courseId={primaryCourse.id}
-                modules={moduleRows}
-                sections={sectionRows}
-                progress={sectionProgress}
-                completedCount={completedSections}
-                totalCount={totalSections}
-              />
-            </div>
-            <div className="lg:col-span-1 rounded-2xl border border-line bg-surface p-7 flex flex-col">
-              <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-3">
-                Continue
-              </p>
-              <h3
-                className="text-ink mb-4"
-                style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 700,
-                  fontStyle: 'italic',
-                  fontSize: 'clamp(22px, 2.4cqi, 28px)',
-                  lineHeight: 1.05,
-                  letterSpacing: '-0.022em',
-                }}
-              >
-                {primaryCourse.title}
-              </h3>
-              <p className="text-[13px] text-ink-soft mb-6 leading-[1.55] flex-1">
-                {firstIncomplete
-                  ? `Pick up where you left off — ${firstIncomplete.title}.`
-                  : 'All sections complete. Review or revisit.'}
-              </p>
-              <Link
-                href={resumeHref}
-                className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors group"
-              >
-                {firstIncomplete ? 'Continue learning' : 'Review course'}
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2.2} />
-              </Link>
+          <div className="rounded-2xl border border-line bg-surface overflow-hidden mb-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3">
+              <div className="lg:col-span-2 p-7 lg:p-8 lg:border-r border-line">
+                <SectionHeatmap
+                  courseId={primaryCourse.id}
+                  modules={moduleRows}
+                  sections={sectionRows}
+                  progress={sectionProgress}
+                  completedCount={completedSections}
+                  totalCount={totalSections}
+                  bare
+                />
+              </div>
+              <div className="lg:col-span-1 p-7 lg:p-8 flex flex-col border-t lg:border-t-0 border-line">
+                <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-3">
+                  Continue
+                </p>
+                <h3
+                  className="text-ink mb-2"
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 700,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(20px, 2.2cqi, 26px)',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.022em',
+                  }}
+                >
+                  {firstIncomplete ? firstIncomplete.title : primaryCourse.title}
+                </h3>
+                <p className="text-[12.5px] text-ink-muted mb-6 leading-[1.55] flex-1">
+                  {firstIncomplete
+                    ? `Next up in ${primaryCourse.title}.`
+                    : 'All sections complete. Review or revisit.'}
+                </p>
+                <Link
+                  href={resumeHref}
+                  className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors group"
+                >
+                  {firstIncomplete ? 'Continue learning' : 'Review course'}
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2.2} />
+                </Link>
+              </div>
             </div>
           </div>
         ) : (
