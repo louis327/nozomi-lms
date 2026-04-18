@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { ReactNode, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useEditMode } from '@/lib/edit-mode-context'
@@ -8,9 +8,9 @@ import { useToast } from '@/components/ui/toast'
 import { InlineBlockEditor } from '@/components/course/inline-block-editor'
 import { SortableBlocksContainer, SortableBlockWrapper } from '@/components/course/sortable-blocks'
 import { createBlock, reorderBlocks, getDefaultContent } from '@/lib/block-actions'
-import { Button } from '@/components/ui/button'
 import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
+import { ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
 const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
@@ -27,28 +27,40 @@ function InsertBlockButton({ onInsert }: { onInsert: (type: ContentBlock['type']
   const [open, setOpen] = useState(false)
   return (
     <div className="relative flex items-center justify-center py-1 group">
-      <div className="absolute inset-x-0 top-1/2 h-px bg-[#eee] group-hover:bg-nz-sakura/20 transition-colors" />
+      <div className="absolute inset-x-0 top-1/2 h-px bg-line group-hover:bg-accent/30 transition-colors" />
       <button
         onClick={() => setOpen(!open)}
-        className="relative z-10 w-6 h-6 rounded-full bg-white border border-[#ddd] hover:border-nz-sakura/40 hover:bg-nz-sakura/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+        className="relative z-10 w-6 h-6 rounded-full bg-surface border border-line hover:border-accent/40 hover:bg-accent-soft flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
       >
-        <svg className="w-3 h-3 text-[#aaa] group-hover:text-nz-sakura" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
+        <Plus className="w-3 h-3 text-ink-muted group-hover:text-accent" strokeWidth={2} />
       </button>
       {open && (
-        <div className="absolute top-full mt-1 bg-white border border-[#e8e8e8] rounded-xl overflow-hidden shadow-xl z-30 w-48">
+        <div className="absolute top-full mt-1 bg-surface border border-line rounded-xl overflow-hidden shadow-xl z-30 w-48">
           {blockTypeOptions.map((bt) => (
             <button
               key={bt.type}
               onClick={() => { onInsert(bt.type); setOpen(false) }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#666] hover:text-[#111] hover:bg-[#f9f9f9] transition-colors cursor-pointer"
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
             >
               {bt.label}
             </button>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function DoBlock({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="my-7 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Pencil className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent">
+          {label}
+        </p>
+      </div>
+      {children}
     </div>
   )
 }
@@ -128,7 +140,6 @@ export function SectionContent({
     }
   }, [workbookData, checklistData, section.id, courseId, nextSectionId, router, supabase])
 
-  // Edit mode handlers
   const handleBlockUpdate = useCallback((updated: ContentBlock) => {
     setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))
   }, [])
@@ -191,20 +202,32 @@ export function SectionContent({
         const headers = rows[0] ?? []
         const bodyRows = rows.slice(1)
         return (
-          <div key={block.id} className="my-6 overflow-x-auto rounded-2xl border border-[#ececec] bg-white">
+          <div key={block.id} className="my-7 overflow-x-auto rounded-xl border border-line bg-surface">
             <table className="w-full text-[14px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr>
                   {headers.map((h: string, i: number) => (
-                    <th key={i} className="px-6 py-4 text-left font-heading font-semibold text-[#111] border-b border-[#ececec] text-[14px]">{h}</th>
+                    <th
+                      key={i}
+                      className="px-5 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-muted border-b border-line"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {bodyRows.map((row: string[], ri: number) => (
-                  <tr key={ri} className="border-b border-[#f4f4f4] last:border-0">
+                  <tr key={ri} className="border-b border-line-soft last:border-0">
                     {row.map((cell: string, ci: number) => (
-                      <td key={ci} className={`px-6 py-4 text-[14px] leading-[1.55] ${ci === 0 ? 'text-[#111] font-medium' : 'text-[#5a5a5a]'}`}>{cell}</td>
+                      <td
+                        key={ci}
+                        className={`px-5 py-4 text-[14px] leading-[1.55] ${
+                          ci === 0 ? 'text-ink font-medium' : 'text-ink-soft'
+                        }`}
+                      >
+                        {cell}
+                      </td>
                     ))}
                   </tr>
                 ))}
@@ -216,96 +239,83 @@ export function SectionContent({
 
       case 'workbook_prompt':
         return (
-          <div key={block.id} className="my-6 p-5 rounded-xl bg-[#f9f9f9] border border-[#e8e8e8]">
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-6 h-6 rounded-md bg-nz-sakura flex items-center justify-center shrink-0 mt-0.5">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-              <p className="text-[13px] font-heading font-semibold text-[#111]">
-                {block.content.label ?? block.content.prompt ?? 'Your response'}
-              </p>
-            </div>
-            <textarea
-              className="w-full min-h-[120px] bg-white border border-[#e8e8e8] rounded-lg px-4 py-3 text-[13px] text-[#111] placeholder:text-[#bbb] focus:outline-none focus:border-[#111] transition-colors resize-y"
-              placeholder={block.content.placeholder as string || 'Type your response here...'}
-              value={workbookData[block.id] ?? ''}
-              onChange={(e) =>
-                setWorkbookData((prev) => ({ ...prev, [block.id]: e.target.value }))
-              }
-              disabled={saved}
-            />
+          <div key={block.id}>
+            <DoBlock label={(block.content.label as string) ?? (block.content.prompt as string) ?? 'Your response'}>
+              <textarea
+                className="w-full min-h-[120px] bg-surface border border-line rounded-lg px-4 py-3 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent/40 transition-colors resize-y leading-[1.6]"
+                placeholder={(block.content.placeholder as string) || 'Type your response here…'}
+                value={workbookData[block.id] ?? ''}
+                onChange={(e) =>
+                  setWorkbookData((prev) => ({ ...prev, [block.id]: e.target.value }))
+                }
+                disabled={saved}
+              />
+            </DoBlock>
           </div>
         )
 
       case 'checklist':
         return (
-          <div key={block.id} className="my-6 p-5 rounded-xl bg-[#f9f9f9] border border-[#e8e8e8]">
-            {block.content.title && (
-              <h3 className="font-heading font-semibold text-[15px] text-[#111] mb-1">
-                {block.content.title as string}
-              </h3>
-            )}
-            {block.content.description && (
-              <p className="text-[13px] text-[#888] mb-4">{block.content.description as string}</p>
-            )}
-            <div className="space-y-1">
-            {(block.content.items as string[] ?? []).map((item: string, i: number) => {
-              const key = `${block.id}_${i}`
-              return (
-                <label
-                  key={key}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#f0f0f0] transition-colors cursor-pointer group"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checklistData[key] ?? false}
-                    onChange={(e) =>
-                      setChecklistData((prev) => ({ ...prev, [key]: e.target.checked }))
-                    }
-                    disabled={saved}
-                    className="mt-0.5 w-4 h-4 rounded border-[#ddd] accent-nz-sakura cursor-pointer"
-                  />
-                  <span className="text-[13px] text-[#666] group-hover:text-[#111] transition-colors">
-                    {item}
-                  </span>
-                </label>
-              )
-            })}
-            </div>
+          <div key={block.id}>
+            <DoBlock label={(block.content.title as string) ?? 'Checklist'}>
+              {block.content.description && (
+                <p className="text-[13px] text-ink-soft mb-4 -mt-1">{block.content.description as string}</p>
+              )}
+              <div className="space-y-0.5">
+                {(block.content.items as string[] ?? []).map((item: string, i: number) => {
+                  const key = `${block.id}_${i}`
+                  const checked = checklistData[key] ?? false
+                  return (
+                    <label
+                      key={key}
+                      className="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-surface transition-colors cursor-pointer group"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) =>
+                          setChecklistData((prev) => ({ ...prev, [key]: e.target.checked }))
+                        }
+                        disabled={saved}
+                        className="mt-0.5 w-4 h-4 rounded border-line accent-[var(--nz-accent)] cursor-pointer"
+                      />
+                      <span className={`text-[14px] leading-[1.5] transition-colors ${checked ? 'text-ink-muted line-through' : 'text-ink-soft group-hover:text-ink'}`}>
+                        {item}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </DoBlock>
           </div>
         )
 
       case 'file':
         return (
-          <div key={block.id} className="my-4">
-            <a
-              href={block.content.fileUrl ?? block.content.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-4 py-3 rounded-lg bg-[#f9f9f9] border border-[#e8e8e8] hover:border-[#d4d4d4] transition-colors group"
-            >
-              <div className="w-8 h-8 rounded-md bg-nz-sakura flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[13px] font-medium text-[#111] group-hover:text-nz-sakura transition-colors">
-                  {block.content.label ?? block.content.fileName ?? block.content.filename ?? 'Download File'}
-                </p>
-                {block.content.description && (
-                  <p className="text-[11px] text-[#aaa]">{block.content.description}</p>
-                )}
-              </div>
-            </a>
-          </div>
+          <a
+            key={block.id}
+            href={block.content.fileUrl ?? block.content.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="my-6 inline-flex items-center gap-3 px-4 py-3 rounded-xl border border-line bg-surface hover:border-accent/40 hover:bg-surface-muted transition-colors group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-accent-soft flex items-center justify-center shrink-0">
+              <Download className="w-4 h-4 text-accent-deep" strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13.5px] font-semibold text-ink group-hover:text-accent-deep transition-colors truncate">
+                {block.content.label ?? block.content.fileName ?? block.content.filename ?? 'Download file'}
+              </p>
+              {block.content.description && (
+                <p className="text-[11.5px] text-ink-muted truncate">{block.content.description}</p>
+              )}
+            </div>
+          </a>
         )
 
       case 'video':
         return (
-          <div key={block.id} className="my-6">
+          <div key={block.id} className="my-7 rounded-xl overflow-hidden border border-line bg-surface">
             {block.content.url && <VideoEmbed url={block.content.url as string} />}
           </div>
         )
@@ -313,43 +323,35 @@ export function SectionContent({
       case 'structured_prompt': {
         const spFields = (block.content.fields as Array<{ key: string; label: string; prefix?: string; suffix?: string; type?: string }>) ?? []
         return (
-          <div key={block.id} className="my-6 p-5 rounded-xl bg-[#f9f9f9] border border-[#e8e8e8]">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-6 h-6 rounded-md bg-nz-sakura flex items-center justify-center shrink-0 mt-0.5">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-              <p className="text-[13px] font-heading font-semibold text-[#111]">
-                {(block.content.label as string) || 'Your responses'}
-              </p>
-            </div>
-            <div className="space-y-3">
-              {spFields.map((field) => {
-                const fieldKey = `${block.id}_${field.key}`
-                return (
-                  <div key={field.key} className="flex items-center gap-3">
-                    <label className="text-[13px] text-[#666] w-2/5 shrink-0">{field.label}</label>
-                    <div className="flex-1 flex items-center gap-0 bg-white border border-[#e8e8e8] rounded-lg overflow-hidden focus-within:border-[#111] transition-colors">
-                      {field.prefix && (
-                        <span className="pl-3 pr-1 text-[13px] text-[#aaa] select-none">{field.prefix}</span>
-                      )}
-                      <input
-                        type="text"
-                        className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-[#111] placeholder:text-[#ccc] focus:outline-none"
-                        placeholder="..."
-                        value={workbookData[fieldKey] ?? ''}
-                        onChange={(e) => setWorkbookData((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
-                        disabled={saved}
-                      />
-                      {field.suffix && (
-                        <span className="pr-3 pl-1 text-[13px] text-[#aaa] select-none">{field.suffix}</span>
-                      )}
+          <div key={block.id}>
+            <DoBlock label={(block.content.label as string) || 'Your responses'}>
+              <div className="space-y-3">
+                {spFields.map((field) => {
+                  const fieldKey = `${block.id}_${field.key}`
+                  return (
+                    <div key={field.key} className="flex items-center gap-3">
+                      <label className="text-[13px] text-ink-soft w-2/5 shrink-0">{field.label}</label>
+                      <div className="flex-1 flex items-center gap-0 bg-surface border border-line rounded-lg overflow-hidden focus-within:border-accent/40 transition-colors">
+                        {field.prefix && (
+                          <span className="pl-3 pr-1 text-[13px] text-ink-faint select-none">{field.prefix}</span>
+                        )}
+                        <input
+                          type="text"
+                          className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
+                          placeholder="…"
+                          value={workbookData[fieldKey] ?? ''}
+                          onChange={(e) => setWorkbookData((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
+                          disabled={saved}
+                        />
+                        {field.suffix && (
+                          <span className="pr-3 pl-1 text-[13px] text-ink-faint select-none">{field.suffix}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            </DoBlock>
           </div>
         )
       }
@@ -358,68 +360,66 @@ export function SectionContent({
         const ftColumns = (block.content.columns as string[]) ?? []
         const ftRows = (block.content.rows as Array<{ cells: Array<{ value: string; editable: boolean; prefix?: string; suffix?: string; placeholder?: string }> }>) ?? []
         return (
-          <div key={block.id} className="my-6">
-            {block.content.label && (
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-6 h-6 rounded-md bg-nz-sakura flex items-center justify-center shrink-0 mt-0.5">
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </div>
-                <p className="text-[13px] font-heading font-semibold text-[#111]">
-                  {block.content.label as string}
-                </p>
-              </div>
-            )}
-            <div className="overflow-x-auto rounded-xl border border-[#e8e8e8]">
-              <table className="w-full text-[13px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                {ftColumns.length > 0 && (
-                  <thead>
-                    <tr className="bg-[#f9f9f9]">
-                      {ftColumns.map((col, ci) => (
-                        <th key={ci} className="px-5 py-3.5 text-left font-heading font-semibold text-[#111] border-b border-[#e8e8e8] border-r border-[#f0f0f0] last:border-r-0 text-[11px] uppercase tracking-wider">{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                )}
-                <tbody>
-                  {ftRows.map((row, ri) => (
-                    <tr key={ri} className={`border-b border-[#f0f0f0] last:border-0 ${ri % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}`}>
-                      {row.cells.map((cell, ci) => {
-                        const cellKey = `${block.id}_r${ri}_c${ci}`
-                        if (!cell.editable) {
+          <div key={block.id}>
+            <DoBlock label={(block.content.label as string) || 'Fill in the table'}>
+              <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+                <table className="w-full text-[13px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                  {ftColumns.length > 0 && (
+                    <thead>
+                      <tr className="bg-surface-muted">
+                        {ftColumns.map((col, ci) => (
+                          <th
+                            key={ci}
+                            className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted border-b border-line border-r border-line-soft last:border-r-0"
+                          >
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                  )}
+                  <tbody>
+                    {ftRows.map((row, ri) => (
+                      <tr key={ri} className="border-b border-line-soft last:border-0">
+                        {row.cells.map((cell, ci) => {
+                          const cellKey = `${block.id}_r${ri}_c${ci}`
+                          if (!cell.editable) {
+                            return (
+                              <td
+                                key={ci}
+                                className="px-4 py-3 text-ink font-medium border-r border-line-soft last:border-r-0"
+                              >
+                                {cell.value}
+                              </td>
+                            )
+                          }
                           return (
-                            <td key={ci} className="px-5 py-3.5 text-[#666] border-r border-[#f0f0f0] last:border-r-0 font-medium">
-                              {cell.value}
+                            <td key={ci} className="px-2 py-1.5 border-r border-line-soft last:border-r-0">
+                              <div className="flex items-center gap-0 bg-surface border border-line rounded-md overflow-hidden focus-within:border-accent/40 transition-colors">
+                                {cell.prefix && (
+                                  <span className="pl-2.5 pr-0.5 text-[13px] text-ink-faint select-none">{cell.prefix}</span>
+                                )}
+                                <input
+                                  type="text"
+                                  className="flex-1 bg-transparent px-2 py-2 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none min-w-[60px]"
+                                  placeholder={cell.placeholder || '…'}
+                                  value={workbookData[cellKey] ?? ''}
+                                  onChange={(e) => setWorkbookData((prev) => ({ ...prev, [cellKey]: e.target.value }))}
+                                  disabled={saved}
+                                />
+                                {cell.suffix && (
+                                  <span className="pr-2.5 pl-0.5 text-[13px] text-ink-faint select-none">{cell.suffix}</span>
+                                )}
+                              </div>
                             </td>
                           )
-                        }
-                        return (
-                          <td key={ci} className="px-2 py-1.5 border-r border-[#f0f0f0] last:border-r-0">
-                            <div className="flex items-center gap-0 bg-white border border-[#e8e8e8] rounded-lg overflow-hidden focus-within:border-[#111] transition-colors">
-                              {cell.prefix && (
-                                <span className="pl-2.5 pr-0.5 text-[13px] text-[#aaa] select-none">{cell.prefix}</span>
-                              )}
-                              <input
-                                type="text"
-                                className="flex-1 bg-transparent px-2 py-2 text-[13px] text-[#111] placeholder:text-[#ccc] focus:outline-none min-w-[60px]"
-                                placeholder={cell.placeholder || '...'}
-                                value={workbookData[cellKey] ?? ''}
-                                onChange={(e) => setWorkbookData((prev) => ({ ...prev, [cellKey]: e.target.value }))}
-                                disabled={saved}
-                              />
-                              {cell.suffix && (
-                                <span className="pr-2.5 pl-0.5 text-[13px] text-[#aaa] select-none">{cell.suffix}</span>
-                              )}
-                            </div>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </DoBlock>
           </div>
         )
       }
@@ -455,9 +455,9 @@ export function SectionContent({
           <InsertBlockButton onInsert={(type) => handleInsertBlock(type, blocks.length)} />
 
           {blocks.length === 0 && (
-            <div className="py-12 text-center bg-[#f9f9f9] border border-[#e8e8e8] rounded-2xl">
-              <p className="text-[#888] text-sm mb-2">No content blocks yet.</p>
-              <p className="text-[#aaa] text-xs">Hover between the lines above to add your first block.</p>
+            <div className="py-12 text-center bg-surface-muted border border-line rounded-2xl">
+              <p className="text-ink-muted text-sm mb-2">No content blocks yet.</p>
+              <p className="text-ink-faint text-xs">Hover between the lines above to add your first block.</p>
             </div>
           )}
         </div>
@@ -465,7 +465,7 @@ export function SectionContent({
     }
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-7">
         {blocks.map((block) => (
           <div key={block.id}>{renderBlock(block)}</div>
         ))}
@@ -477,57 +477,67 @@ export function SectionContent({
     <div>
       {renderBlocks()}
 
-      {/* Submit — hide in edit mode */}
-      {!editMode && <div className="mt-10">
-        <div className="rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] p-6">
+      {/* Complete / continue — lightweight */}
+      {!editMode && (
+        <div className="mt-12 pt-6 border-t border-line-soft">
           {saved ? (
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#22c55e] flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-[13px] font-heading font-semibold text-[#22c55e]">Section Complete</p>
-                  <p className="text-[11px] text-[#aaa]">
-                    {sectionProgress?.completed_at
-                      ? `Completed ${new Date(sectionProgress.completed_at).toLocaleDateString()}`
-                      : 'Just now'}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success">
+                  <Check className="w-3 h-3" strokeWidth={2.5} />
+                </span>
+                <span>
+                  Section complete
+                  {sectionProgress?.completed_at && (
+                    <span className="text-ink-faint">
+                      {' · '}
+                      {new Date(sectionProgress.completed_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </span>
               </div>
               {nextSectionId ? (
-                <Button onClick={() => router.push(`/courses/${courseId}/learn/${nextSectionId}`)}>
-                  Next Section &rarr;
-                </Button>
+                <button
+                  onClick={() => router.push(`/courses/${courseId}/learn/${nextSectionId}`)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors cursor-pointer"
+                >
+                  Next section
+                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                </button>
               ) : (
-                <Button onClick={() => router.push('/dashboard')}>
-                  Back to Dashboard
-                </Button>
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors cursor-pointer"
+                >
+                  Back to dashboard
+                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                </button>
               )}
             </div>
           ) : (
-            <div className="space-y-3">
-              {saveError && (
-                <div className="px-4 py-3 rounded-lg bg-[#fef2f2] border border-[#fecaca] text-[13px] text-[#ef4444]">
-                  {saveError}
-                </div>
-              )}
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <p className="text-[13px] text-[#888]">
-                  {hasWorkbookPrompts
-                    ? 'Fill in your responses above, then submit to complete this section.'
-                    : 'Mark this section as complete to continue.'}
-                </p>
-                <Button onClick={handleSubmit} loading={saving}>
-                  {hasWorkbookPrompts ? 'Submit & Complete' : 'Complete Section'}
-                </Button>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <p className="text-[12.5px] text-ink-muted">
+                {hasWorkbookPrompts
+                  ? 'Fill in your responses above, then mark this section complete.'
+                  : 'Ready to move on?'}
+              </p>
+              <div className="flex items-center gap-3">
+                {saveError && (
+                  <span className="text-[12px] text-error">{saveError}</span>
+                )}
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {saving ? 'Saving…' : hasWorkbookPrompts ? 'Submit & complete' : 'Complete section'}
+                  {!saving && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
+                </button>
               </div>
             </div>
           )}
         </div>
-      </div>}
+      )}
     </div>
   )
 }

@@ -227,19 +227,23 @@ body {
 /* Prose for course content */
 .prose-nozomi {
   color: var(--nz-ink);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 16.5px;
+  line-height: 1.72;
+  letter-spacing: -0.003em;
 }
 .prose-nozomi h1, .prose-nozomi h2, .prose-nozomi h3 {
   font-family: var(--font-sans);
   color: var(--nz-ink);
   font-weight: 700;
-  letter-spacing: -0.015em;
+  font-style: italic;
+  letter-spacing: -0.025em;
 }
-.prose-nozomi h1 { font-size: 32px; line-height: 1.15; margin-bottom: 1rem; }
-.prose-nozomi h2 { font-size: 24px; line-height: 1.2; margin-top: 2.25rem; margin-bottom: 0.75rem; }
-.prose-nozomi h3 { font-size: 19px; line-height: 1.3; margin-top: 1.75rem; margin-bottom: 0.5rem; }
-.prose-nozomi p { margin-bottom: 1.1rem; }
+.prose-nozomi h1 { font-size: 34px; line-height: 1.08; margin-top: 2.25rem; margin-bottom: 1rem; }
+.prose-nozomi h2 { font-size: 26px; line-height: 1.12; margin-top: 2.5rem; margin-bottom: 0.75rem; }
+.prose-nozomi h3 { font-size: 20px; line-height: 1.25; margin-top: 2rem; margin-bottom: 0.5rem; }
+.prose-nozomi h2 + p, .prose-nozomi h3 + p { margin-top: 0; }
+.prose-nozomi > :first-child { margin-top: 0; }
+.prose-nozomi p { margin-bottom: 1.15rem; }
 .prose-nozomi em { font-style: italic; }
 .prose-nozomi a { color: var(--nz-accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .prose-nozomi a:hover { color: var(--nz-accent-deep); }
