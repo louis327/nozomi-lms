@@ -3,56 +3,35 @@ type Props = {
   closeText: string | null
   daysToClose: number | null
   raiseAmount: string | null
+  targetValuation: string | null
 }
 
-function monthsBetween(a: Date, b: Date): Date[] {
-  const out: Date[] = []
-  const cursor = new Date(a.getFullYear(), a.getMonth(), 1)
-  const endMarker = new Date(b.getFullYear(), b.getMonth(), 1)
-  while (cursor <= endMarker) {
-    out.push(new Date(cursor))
-    cursor.setMonth(cursor.getMonth() + 1)
-  }
-  return out
+const MS_PER_DAY = 86400000
+
+function formatShortDate(d: Date): string {
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()
 }
 
-export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount }: Props) {
-  const today = new Date()
-
-  if (!closeDate) {
+export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount, targetValuation }: Props) {
+  if (!closeDate || daysToClose === null) {
     return (
-      <div className="relative h-[180px] rounded-2xl border border-line bg-surface p-7 flex flex-col justify-between overflow-hidden">
-        <div>
-          <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-3">
-            No close date set
-          </p>
-          <p className="text-[14px] text-ink-soft max-w-md">
-            Set a target close in onboarding to see your raise timeline.
-          </p>
-        </div>
+      <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
+        <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-3">
+          No close date set
+        </p>
+        <p className="text-[14px] text-ink-soft max-w-md">
+          Set a target close in onboarding to see your raise timeline.
+        </p>
       </div>
     )
   }
 
-  const months = monthsBetween(today, closeDate)
-  const totalDays = Math.max(1, Math.ceil((closeDate.getTime() - today.getTime()) / 86400000))
-  const urgencyPct = daysToClose === null
-    ? 0
-    : daysToClose <= 0
-      ? 100
-      : daysToClose <= 14
-        ? 92
-        : daysToClose <= 30
-          ? 80
-          : daysToClose <= 60
-            ? 65
-            : daysToClose <= 90
-              ? 45
-              : 25
+  const today = new Date()
+  const totalDays = Math.max(1, Math.ceil((closeDate.getTime() - today.getTime()) / MS_PER_DAY))
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7))
 
-  const headline = daysToClose === null
-    ? '—'
-    : daysToClose < 0
+  const headline =
+    daysToClose < 0
       ? 'Past target'
       : daysToClose === 0
         ? 'Today'
@@ -62,125 +41,141 @@ export function RaiseTimeline({ closeDate, closeText, daysToClose, raiseAmount }
             ? `${Math.ceil(daysToClose / 7)} weeks`
             : `${Math.round(daysToClose / 30)} months`
 
-  const urgencyLabel = daysToClose === null ? '' : daysToClose <= 14 ? 'CRITICAL' : daysToClose <= 45 ? 'URGENT' : daysToClose <= 120 ? 'ACTIVE' : 'EARLY'
-  const urgencyColor = daysToClose === null
-    ? 'text-ink-muted'
-    : daysToClose <= 14
-      ? 'text-error'
-      : daysToClose <= 45
-        ? 'text-accent'
-        : 'text-ink-soft'
+  const statusLabel =
+    daysToClose <= 14 ? 'CRITICAL' : daysToClose <= 45 ? 'URGENT' : daysToClose <= 120 ? 'ACTIVE' : 'EARLY'
+  const statusColor =
+    daysToClose <= 14 ? 'text-error' : daysToClose <= 45 ? 'text-accent' : 'text-ink-soft'
+
+  const barCount = Math.min(totalWeeks, 26)
+  const barStep = totalWeeks / barCount
+
+  const bars = Array.from({ length: barCount }, (_, i) => {
+    const weekOffset = Math.round(i * barStep)
+    const date = new Date(today.getTime() + weekOffset * 7 * MS_PER_DAY)
+    const isFirst = i === 0
+    const isLast = i === barCount - 1
+    const isMonthStart = date.getDate() <= 7
+    return { weekOffset, date, isFirst, isLast, isMonthStart }
+  })
+
+  const chips: { label: string; value: string }[] = []
+  if (raiseAmount) chips.push({ label: 'Raising', value: raiseAmount })
+  if (targetValuation) chips.push({ label: 'At', value: targetValuation })
+  chips.push({ label: '', value: `${totalDays} days left` })
 
   return (
     <div className="relative rounded-2xl border border-line bg-surface p-7 lg:p-8 overflow-hidden">
       <div
-        className="absolute -right-20 -top-20 w-[320px] h-[320px] rounded-full opacity-[0.06] blur-3xl"
+        className="absolute -right-24 -top-24 w-[340px] h-[340px] rounded-full opacity-[0.07] blur-3xl pointer-events-none"
         style={{ background: 'radial-gradient(circle, var(--nz-accent) 0%, transparent 70%)' }}
       />
 
-      <div className="relative flex items-start justify-between mb-8">
+      {/* Header */}
+      <div className="relative flex items-start justify-between mb-6 gap-4">
         <div>
-          <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
-            Target close &middot; {closeText ?? '—'}
+          <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase">
+            Target close &middot; {closeText ?? formatShortDate(closeDate)}
           </p>
-          <div className="flex items-baseline gap-4">
-            <span
-              className="tabular-nums text-ink"
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 700,
-                fontStyle: 'italic',
-                fontSize: 'clamp(36px, 4.6cqi, 56px)',
-                lineHeight: 0.95,
-                letterSpacing: '-0.035em',
-              }}
-            >
-              {headline}
-            </span>
-            {raiseAmount && (
-              <span className="text-[14px] text-ink-muted">
-                to close <span className="text-ink font-semibold">{raiseAmount}</span>
-              </span>
-            )}
-          </div>
         </div>
+        <div className={`flex items-center gap-2 text-[10px] font-semibold tracking-[0.24em] uppercase ${statusColor}`}>
+          <span className="relative flex w-2 h-2">
+            <span className="absolute inset-0 rounded-full bg-current animate-ping opacity-60" />
+            <span className="relative rounded-full bg-current w-2 h-2" />
+          </span>
+          {statusLabel}
+        </div>
+      </div>
 
-        {urgencyLabel && (
-          <div className={`flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.24em] uppercase ${urgencyColor}`}>
-            <span className="relative flex w-2 h-2">
-              <span className={`absolute inset-0 rounded-full bg-current animate-ping opacity-60`} />
-              <span className="relative rounded-full bg-current w-2 h-2" />
-            </span>
-            {urgencyLabel}
+      {/* Headline + chips */}
+      <div className="relative mb-8">
+        <h2
+          className="text-ink mb-3"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontWeight: 700,
+            fontStyle: 'italic',
+            fontSize: 'clamp(40px, 5.2cqi, 64px)',
+            lineHeight: 0.98,
+            letterSpacing: '-0.035em',
+          }}
+        >
+          {headline}
+          <span className="text-ink-muted font-normal not-italic text-[0.35em] align-middle ml-3 tracking-[0.14em] uppercase">
+            to close
+          </span>
+        </h2>
+
+        {chips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            {chips.map((chip, i) => (
+              <div key={i} className="flex items-baseline gap-1.5">
+                {i > 0 && <span className="w-1 h-1 rounded-full bg-line-strong mr-3" />}
+                {chip.label && (
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
+                    {chip.label}
+                  </span>
+                )}
+                <span className="text-[13.5px] font-semibold text-ink tabular-nums">{chip.value}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Timeline */}
-      <div className="relative h-[64px]">
-        <svg
-          viewBox="0 0 1000 64"
-          preserveAspectRatio="none"
-          className="absolute inset-0 w-full h-full"
-          aria-hidden
-        >
-          {/* Baseline */}
-          <line x1="20" y1="42" x2="980" y2="42" stroke="var(--nz-border-strong)" strokeWidth="1" />
-
-          {/* Urgency fill */}
-          <line
-            x1="20"
-            y1="42"
-            x2={20 + (960 * urgencyPct) / 100}
-            y2="42"
-            stroke="var(--nz-accent)"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-
-          {/* Month ticks */}
-          {months.map((m, i) => {
-            const daysFromStart = Math.max(0, Math.floor((m.getTime() - today.getTime()) / 86400000))
-            const x = 20 + (960 * daysFromStart) / totalDays
-            const isFirst = i === 0
-            const isLast = i === months.length - 1
-            if (isFirst || isLast) return null
+      {/* Bar timeline */}
+      <div className="relative">
+        <div className="flex items-end gap-[3px] h-[52px]">
+          {bars.map((b, i) => {
+            const isToday = b.isFirst
+            const height = b.isFirst || b.isLast ? 48 : b.isMonthStart ? 32 : 22
             return (
-              <g key={i}>
-                <line x1={x} y1="38" x2={x} y2="46" stroke="var(--nz-border-strong)" strokeWidth="1" />
-              </g>
+              <div key={i} className="flex-1 flex flex-col items-center justify-end relative">
+                <div
+                  className={`w-full rounded-sm ${
+                    isToday
+                      ? 'bg-accent'
+                      : b.isLast
+                        ? 'bg-ink'
+                        : b.isMonthStart
+                          ? 'bg-ink-faint'
+                          : 'bg-line-strong'
+                  }`}
+                  style={{ height: `${height}px` }}
+                />
+              </div>
             )
           })}
-
-          {/* Today marker */}
-          <circle cx="20" cy="42" r="6" fill="var(--nz-surface)" stroke="var(--nz-accent)" strokeWidth="2" />
-          <circle cx="20" cy="42" r="3" fill="var(--nz-accent)" />
-
-          {/* Close marker */}
-          <circle cx="980" cy="42" r="6" fill="var(--nz-ink)" />
-        </svg>
-
-        <div className="absolute left-0 -bottom-1">
-          <p className="text-[9.5px] font-mono tabular-nums tracking-wider text-ink-muted uppercase">TODAY</p>
-        </div>
-        <div className="absolute right-0 -bottom-1 text-right">
-          <p className="text-[9.5px] font-mono tabular-nums tracking-wider text-ink-muted uppercase">
-            CLOSE
-          </p>
         </div>
 
-        {/* Month labels — only show a few if many */}
-        <div className="absolute inset-x-5 top-0 flex items-start justify-between text-[9px] font-mono tabular-nums uppercase tracking-wider text-ink-faint pointer-events-none">
-          {months
-            .filter((_, i) => i !== 0 && i !== months.length - 1 && (months.length <= 8 || i % Math.ceil(months.length / 6) === 0))
-            .map((m, i) => (
-              <span key={i} className="absolute" style={{
-                left: `${(Math.max(0, Math.floor((m.getTime() - today.getTime()) / 86400000)) / totalDays) * 100}%`,
-                transform: 'translateX(-50%)',
-              }}>
-                {m.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}
-              </span>
-            ))}
+        {/* Pulsing dot on today bar */}
+        <div
+          className="absolute top-0 flex items-center justify-center"
+          style={{ left: 0, width: `${100 / barCount}%` }}
+        >
+          <span className="relative flex w-3 h-3 -mt-1">
+            <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-60" />
+            <span className="relative rounded-full bg-accent border-2 border-surface w-3 h-3 shadow-[0_0_0_2px_var(--nz-accent)]" />
+          </span>
+        </div>
+
+        {/* Endpoint labels */}
+        <div className="flex items-baseline justify-between mt-3">
+          <div>
+            <p className="text-[9.5px] font-mono tabular-nums tracking-wider text-accent uppercase">
+              {formatShortDate(today)}
+            </p>
+            <p className="text-[9px] font-semibold tracking-[0.22em] text-ink-muted uppercase mt-0.5">
+              Today
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9.5px] font-mono tabular-nums tracking-wider text-ink uppercase">
+              {formatShortDate(closeDate)}
+            </p>
+            <p className="text-[9px] font-semibold tracking-[0.22em] text-ink-muted uppercase mt-0.5">
+              Close
+            </p>
+          </div>
         </div>
       </div>
     </div>

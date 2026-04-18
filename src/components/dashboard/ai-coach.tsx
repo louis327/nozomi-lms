@@ -5,10 +5,11 @@ import { Send, Loader2, Sparkles } from 'lucide-react'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
-export function AiCoach({ starters }: { starters: string[] }) {
+export function AiCoach({ starters, compact = false }: { starters: string[]; compact?: boolean }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [expanded, setExpanded] = useState(!compact)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -84,6 +85,58 @@ export function AiCoach({ starters }: { starters: string[] }) {
       e.preventDefault()
       send(input)
     }
+  }
+
+  const handleStarterClick = (prompt: string) => {
+    setExpanded(true)
+    send(prompt)
+  }
+
+  if (compact && !expanded) {
+    return (
+      <div className="relative rounded-2xl border border-line bg-surface p-6 lg:p-7 overflow-hidden">
+        <div
+          className="absolute -right-24 -bottom-24 w-[300px] h-[300px] rounded-full opacity-[0.05] blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, var(--nz-accent) 0%, transparent 70%)' }}
+        />
+        <div className="relative flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 rounded-xl bg-accent-soft flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-accent" strokeWidth={1.8} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.24em] text-ink-muted uppercase">
+              Your coach
+            </p>
+            <p className="text-[14px] font-semibold text-ink leading-tight">
+              Ask anything about your raise
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            setExpanded(true)
+            setTimeout(() => inputRef.current?.focus(), 50)
+          }}
+          className="relative w-full text-left flex items-center gap-3 bg-canvas border border-line hover:border-accent/40 rounded-xl px-4 py-3 mb-3 transition-colors cursor-pointer group"
+        >
+          <Send className="w-4 h-4 text-ink-faint group-hover:text-accent transition-colors" strokeWidth={1.8} />
+          <span className="text-[13px] text-ink-faint">Ask about valuation, timing, blockers…</span>
+        </button>
+
+        <div className="relative flex flex-wrap gap-1.5">
+          {starters.map((s) => (
+            <button
+              key={s}
+              onClick={() => handleStarterClick(s)}
+              className="text-[12px] text-ink-soft hover:text-accent bg-canvas hover:bg-accent-soft border border-line hover:border-accent/30 rounded-full px-3 py-1.5 transition-colors cursor-pointer"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
