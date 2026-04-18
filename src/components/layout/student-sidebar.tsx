@@ -6,7 +6,13 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   BookOpen,
+  Compass,
+  ClipboardList,
+  Calendar,
+  Users,
   BarChart3,
+  Award,
+  FileBadge,
   LogOut,
   Menu,
   X,
@@ -20,10 +26,16 @@ type NavItem = { href: string; label: string; icon: React.ComponentType<{ classN
 const learningItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/courses', label: 'My Courses', icon: BookOpen },
+  { href: '/discover', label: 'Discover', icon: Compass },
+  { href: '/assignments', label: 'Assignments', icon: ClipboardList },
+  { href: '/schedule', label: 'Schedule', icon: Calendar },
+  { href: '/community', label: 'Community', icon: Users },
 ]
 
 const progressItems: NavItem[] = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/achievements', label: 'Achievements', icon: Award },
+  { href: '/certificates', label: 'Certificates', icon: FileBadge },
 ]
 
 export function StudentSidebar({

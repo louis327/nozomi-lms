@@ -2,18 +2,16 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PageTopbar } from '@/components/layout/page-topbar'
-import { ProgressRing } from '@/components/ui/progress-ring'
-import { CourseThumb } from '@/components/ui/course-thumb'
 import { AiCoach } from '@/components/dashboard/ai-coach'
 import { buildRaiseSnapshot, formatCountdown, type OnboardingData } from '@/lib/raise-context'
-import { CheckCircle2, Circle, FileText, ArrowRight, Target } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 
 export const metadata = { title: 'Dashboard — Nozomi' }
 
-function formatDateLine(d = new Date()) {
+function formatMasthead(d = new Date()) {
   const day = d.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase()
   const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }).toUpperCase()
-  return `${day} · ${date}`
+  return `${day} \u00B7 ${date}`
 }
 
 function stripHtml(s: string) {
@@ -78,16 +76,13 @@ export default async function DashboardPage() {
 
   let moduleRows: { id: string; title: string; sort_order: number }[] = []
   let sectionRows: { id: string; module_id: string; title: string; sort_order: number }[] = []
-  let deliverables: { id: string; module_id: string; label: string; sort_order: number }[] = []
-  let sectionProgress: Record<string, { completed: boolean; completed_at: string | null }> = {}
-  let moduleProgressMap: Record<string, { completed: boolean }> = {}
+  const sectionProgress: Record<string, { completed: boolean }> = {}
   let recentNotes: {
     id: string
     content: string
     updated_at: string
     section_id: string
     section_title: string
-    module_id: string
   }[] = []
 
   if (primaryCourse) {
@@ -101,36 +96,19 @@ export default async function DashboardPage() {
     if (moduleRows.length > 0) {
       const moduleIds = moduleRows.map((m) => m.id)
 
-      const [{ data: sections }, { data: dels }, { data: modProg }] = await Promise.all([
-        supabase
-          .from('sections')
-          .select('id, module_id, title, sort_order')
-          .in('module_id', moduleIds)
-          .order('sort_order'),
-        supabase
-          .from('module_deliverables')
-          .select('id, module_id, label, sort_order')
-          .in('module_id', moduleIds)
-          .order('sort_order'),
-        supabase
-          .from('module_progress')
-          .select('module_id, completed')
-          .eq('user_id', user.id)
-          .in('module_id', moduleIds),
-      ])
-
+      const { data: sections } = await supabase
+        .from('sections')
+        .select('id, module_id, title, sort_order')
+        .in('module_id', moduleIds)
+        .order('sort_order')
       sectionRows = sections ?? []
-      deliverables = dels ?? []
-      for (const p of modProg ?? []) {
-        moduleProgressMap[p.module_id] = { completed: p.completed }
-      }
 
       if (sectionRows.length > 0) {
         const sectionIds = sectionRows.map((s) => s.id)
         const [{ data: secProg }, { data: notes }] = await Promise.all([
           supabase
             .from('section_progress')
-            .select('section_id, completed, completed_at')
+            .select('section_id, completed')
             .eq('user_id', user.id)
             .in('section_id', sectionIds),
           supabase
@@ -142,10 +120,7 @@ export default async function DashboardPage() {
             .limit(3),
         ])
         for (const p of secProg ?? []) {
-          sectionProgress[p.section_id] = {
-            completed: p.completed,
-            completed_at: p.completed_at,
-          }
+          sectionProgress[p.section_id] = { completed: p.completed }
         }
 
         const sectionById = new Map(sectionRows.map((s) => [s.id, s]))
@@ -159,7 +134,6 @@ export default async function DashboardPage() {
               updated_at: n.updated_at,
               section_id: n.section_id,
               section_title: sec.title,
-              module_id: sec.module_id,
             }
           })
           .filter((n): n is NonNullable<typeof n> => n !== null)
@@ -185,281 +159,302 @@ export default async function DashboardPage() {
       : `/courses/${primaryCourse.id}`
     : '/courses'
 
-  const deliverablesByModule = new Map<string, typeof deliverables>()
-  for (const d of deliverables) {
-    const arr = deliverablesByModule.get(d.module_id) ?? []
-    arr.push(d)
-    deliverablesByModule.set(d.module_id, arr)
-  }
-
-  const totalDeliverables = deliverables.length
-  const completedDeliverables = deliverables.filter(
-    (d) => moduleProgressMap[d.module_id]?.completed
-  ).length
+  const metaBits = [
+    snap.stage,
+    snap.projectType,
+    snap.targetValuation && `${snap.targetValuation} cap`,
+    snap.cofounders,
+    snap.teamSize && `team of ${snap.teamSize}`,
+  ].filter(Boolean) as string[]
 
   return (
-    <div className="px-6 lg:px-10 pb-16">
+    <div className="pb-24">
       <PageTopbar breadcrumb={[{ label: 'Nozomi', href: '/dashboard' }, { label: 'Dashboard' }]} />
 
-      {/* Hero */}
-      <section className="mt-6 mb-10">
-        <p className="eyebrow mb-5">
-          {formatDateLine()} · {displayName.toUpperCase()}&rsquo;S RAISE
-        </p>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-end">
-          <div>
-            <h1 className="display text-[48px] md:text-[60px] mb-4 max-w-3xl">
-              <em>{countdown}.</em>
-            </h1>
-            <p className="text-[14px] text-ink-soft max-w-xl leading-relaxed">
-              {snap.stage || snap.projectType ? (
-                <>
-                  {[snap.stage, snap.projectType].filter(Boolean).join(' · ')}
-                  {snap.raiseAmount && <> · Raising {snap.raiseAmount}</>}
-                  {snap.targetValuation && <> at {snap.targetValuation}</>}
-                </>
-              ) : (
-                <>Complete your onboarding to tailor your dashboard to your raise.</>
-              )}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 min-w-[280px]">
-            <div className="bg-surface border border-line rounded-xl p-4">
-              <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-1">
-                Raising
-              </p>
-              <p className="text-[18px] font-semibold text-ink">
-                {snap.raiseAmount || '—'}
-              </p>
-            </div>
-            <div className="bg-surface border border-line rounded-xl p-4">
-              <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-1">
-                Valuation
-              </p>
-              <p className="text-[18px] font-semibold text-ink">
-                {snap.targetValuation || '—'}
-              </p>
-            </div>
-            <div className="bg-surface border border-line rounded-xl p-4">
-              <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-1">
-                Status
-              </p>
-              <p className="text-[14px] font-semibold text-ink leading-tight">
-                {snap.raiseStatus || 'Not set'}
-              </p>
-            </div>
-            <div className="bg-surface border border-line rounded-xl p-4">
-              <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-1">
-                Team
-              </p>
-              <p className="text-[14px] font-semibold text-ink leading-tight">
-                {snap.teamSize || '—'}
-              </p>
-            </div>
-          </div>
+      {/* ─── MASTHEAD ─── */}
+      <div className="px-6 lg:px-12 pt-8 pb-6">
+        <div className="flex items-center gap-3 text-[10.5px] font-semibold tracking-[0.32em] text-ink-muted uppercase">
+          <span>{formatMasthead()}</span>
+          <span className="w-[20px] h-px bg-line-strong" />
+          <span>{displayName.toUpperCase()}&rsquo;S RAISE</span>
         </div>
-      </section>
+      </div>
 
-      {/* Blocker + Course progress */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5 mb-6">
-        <div className="bg-surface-dark text-ink-inverted rounded-2xl p-6 flex flex-col">
-          <div className="flex items-center gap-2 mb-3">
-            <Target className="w-4 h-4 text-accent" strokeWidth={1.8} />
-            <p className="text-[10.5px] font-semibold text-white/55 uppercase tracking-[0.16em]">
-              Your biggest blocker
-            </p>
-          </div>
-          {snap.biggestBlocker ? (
+      {/* ─── HERO: THE COUNTDOWN ─── */}
+      <section className="px-6 lg:px-12 pt-2 pb-14">
+        <h1
+          className="text-ink mb-8 max-w-[16ch]"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontWeight: 700,
+            fontStyle: 'italic',
+            fontSize: 'clamp(56px, 9vw, 128px)',
+            lineHeight: 0.95,
+            letterSpacing: '-0.038em',
+          }}
+        >
+          {countdown.includes('to close') ? (
             <>
-              <p className="font-serif text-[22px] md:text-[26px] text-white leading-snug mb-auto">
-                &ldquo;{snap.biggestBlocker}&rdquo;
-              </p>
-              <p className="text-[13px] text-white/55 leading-relaxed mt-5">
-                Ask your coach below for a concrete plan to move past this.
-              </p>
+              {countdown.replace(' to close', '')}<span className="text-ink-soft"> to close</span>
+              <span className="text-accent">.</span>
             </>
           ) : (
-            <p className="font-serif text-[20px] text-white/80 leading-snug">
-              Tell your coach what&rsquo;s in your way and get a specific plan back.
-            </p>
+            <>{countdown}<span className="text-accent">.</span></>
           )}
-        </div>
+        </h1>
 
-        <div className="bg-surface border border-line rounded-2xl p-6">
-          {primaryCourse ? (
-            <>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-1">
-                    Your course
-                  </p>
-                  <h2 className="font-serif text-[20px] text-ink leading-tight">
-                    {primaryCourse.title}
-                  </h2>
-                </div>
-                <ProgressRing value={pct} size={56} stroke={4} showLabel />
+        {metaBits.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 max-w-4xl">
+            {metaBits.map((bit, i) => (
+              <div key={i} className="flex items-center gap-5">
+                {i > 0 && <span className="w-1 h-1 rounded-full bg-line-strong" />}
+                <span className="text-[13.5px] text-ink-soft tracking-wide">{bit}</span>
               </div>
-              <p className="text-[12.5px] text-ink-muted mb-5">
-                {completedSections} of {totalSections} sections complete
-              </p>
-              <Link
-                href={resumeHref}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium rounded-full bg-ink text-white hover:bg-black transition-colors"
-              >
-                {firstIncomplete ? 'Continue learning' : 'Review course'}
-                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
-              </Link>
-            </>
-          ) : (
-            <div className="py-6">
-              <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-1">
-                No course yet
-              </p>
-              <h2 className="font-serif text-[20px] text-ink leading-tight mb-3">
-                Get the Nozomi playbook
-              </h2>
-              <Link
-                href="/courses"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium rounded-full bg-ink text-white hover:bg-black transition-colors"
-              >
-                Browse courses
-                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
-              </Link>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[14px] text-ink-soft max-w-xl">
+            Your onboarding sets up this view.{' '}
+            <Link href="/onboarding?redo=1" className="text-accent hover:underline">
+              Fill it in →
+            </Link>
+          </p>
+        )}
       </section>
 
-      {/* Deliverables + Notes */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5 mb-6">
-        <div className="bg-surface border border-line rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="font-serif text-[22px] text-ink leading-tight">Module deliverables</h2>
-              <p className="text-[12px] text-ink-muted mt-0.5">
-                {totalDeliverables > 0
-                  ? `${completedDeliverables} of ${totalDeliverables} complete`
-                  : 'Work products you&rsquo;ll produce'}
+      {/* ─── BLOCKER PULLQUOTE ─── */}
+      {snap.biggestBlocker && (
+        <>
+          <div className="px-6 lg:px-12">
+            <div className="border-t border-line" />
+          </div>
+          <section className="px-6 lg:px-12 py-14">
+            <div className="max-w-[1100px]">
+              <p className="text-[11px] font-semibold tracking-[0.32em] text-accent uppercase mb-8">
+                What&rsquo;s in the way
+              </p>
+              <div className="relative pl-6 md:pl-10 mb-6">
+                <span className="absolute left-0 top-1 bottom-1 w-[2px] bg-accent" />
+                <p
+                  className="text-ink max-w-[44ch]"
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 500,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(26px, 3.6vw, 44px)',
+                    lineHeight: 1.18,
+                    letterSpacing: '-0.018em',
+                  }}
+                >
+                  &ldquo;{snap.biggestBlocker}&rdquo;
+                </p>
+              </div>
+              <p className="text-[12.5px] text-ink-muted max-w-[44ch] leading-relaxed pl-6 md:pl-10">
+                Your self-reported blocker. Ask your coach below for a specific plan to move past this.
               </p>
             </div>
-          </div>
+          </section>
+        </>
+      )}
 
-          {moduleRows.length === 0 ? (
-            <p className="text-[13px] text-ink-muted italic py-4">
-              Enroll in a course to see deliverables.
+      {/* ─── COACH (primary action) ─── */}
+      <div className="px-6 lg:px-12">
+        <div className="border-t border-line" />
+      </div>
+      <section className="px-6 lg:px-12 py-10">
+        <div className="flex items-baseline justify-between gap-6 mb-6">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-2">
+              Your coach
             </p>
-          ) : (
-            <div className="space-y-5">
-              {moduleRows.map((mod) => {
-                const mods = deliverablesByModule.get(mod.id) ?? []
-                const modComplete = moduleProgressMap[mod.id]?.completed
-                if (mods.length === 0) return null
-                return (
-                  <div key={mod.id}>
-                    <div className="flex items-center gap-2 mb-2">
-                      {modComplete ? (
-                        <CheckCircle2 className="w-4 h-4 text-accent" strokeWidth={1.8} />
-                      ) : (
-                        <Circle className="w-4 h-4 text-ink-faint" strokeWidth={1.5} />
-                      )}
-                      <p className="text-[13px] font-semibold text-ink">{mod.title}</p>
-                    </div>
-                    <ul className="pl-6 space-y-1.5">
-                      {mods.map((d) => (
-                        <li
-                          key={d.id}
-                          className={`text-[13px] leading-relaxed ${
-                            modComplete ? 'text-ink-muted line-through' : 'text-ink-soft'
-                          }`}
-                        >
-                          {d.label}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              })}
-              {deliverables.length === 0 && (
-                <p className="text-[13px] text-ink-muted italic">
-                  This course doesn&rsquo;t have deliverables defined yet.
-                </p>
-              )}
-            </div>
-          )}
+            <h2
+              className="text-ink"
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 700,
+                fontStyle: 'italic',
+                fontSize: 'clamp(28px, 3.2vw, 40px)',
+                lineHeight: 1.05,
+                letterSpacing: '-0.022em',
+              }}
+            >
+              Ask anything about your raise.
+            </h2>
+          </div>
         </div>
+        <AiCoach starters={starters} />
+      </section>
 
-        <div className="bg-surface border border-line rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <FileText className="w-4 h-4 text-ink-soft" strokeWidth={1.6} />
-            <h2 className="font-serif text-[20px] text-ink leading-tight">Recent notes</h2>
+      {/* ─── WORK / PROGRESS ─── */}
+      {primaryCourse && (
+        <>
+          <div className="px-6 lg:px-12">
+            <div className="border-t border-line" />
           </div>
+          <section className="px-6 lg:px-12 py-14">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-start">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-3">
+                  The work
+                </p>
+                <h2
+                  className="text-ink mb-3 max-w-[20ch]"
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 700,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(32px, 4vw, 52px)',
+                    lineHeight: 1.02,
+                    letterSpacing: '-0.025em',
+                  }}
+                >
+                  {primaryCourse.title}
+                </h2>
+                <p className="text-[13.5px] text-ink-soft mb-6">
+                  {completedSections} of {totalSections} sections complete
+                </p>
+                <Link
+                  href={resumeHref}
+                  className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:text-accent-deep transition-colors group"
+                >
+                  {firstIncomplete ? 'Continue where you left off' : 'Review course'}
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2} />
+                </Link>
+              </div>
 
-          {recentNotes.length === 0 ? (
-            <p className="text-[12.5px] text-ink-muted italic leading-relaxed">
-              Jot thoughts while you read. Your notes will surface here.
+              <div className="flex items-center gap-5">
+                <div
+                  className="tabular-nums text-ink"
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 700,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(64px, 7vw, 108px)',
+                    lineHeight: 0.9,
+                    letterSpacing: '-0.04em',
+                  }}
+                >
+                  {pct}
+                  <span className="text-ink-faint text-[0.5em]">%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Module list */}
+            {moduleRows.length > 0 && (
+              <div className="mt-12 max-w-4xl">
+                <ul className="divide-y divide-line">
+                  {moduleRows.map((mod, i) => {
+                    const mods = sectionsByModule.get(mod.id) ?? []
+                    const done = mods.filter((s) => sectionProgress[s.id]?.completed).length
+                    const total = mods.length
+                    const complete = total > 0 && done === total
+                    const firstMod = mods.find((s) => !sectionProgress[s.id]?.completed) ?? mods[0]
+                    return (
+                      <li key={mod.id}>
+                        <Link
+                          href={firstMod ? `/courses/${primaryCourse.id}/learn/${firstMod.id}` : `/courses/${primaryCourse.id}`}
+                          className="group flex items-center gap-5 py-4 hover:bg-surface-muted/50 -mx-3 px-3 rounded-lg transition-colors"
+                        >
+                          <span className="text-[11px] font-mono tabular-nums text-ink-faint w-8">
+                            M{String(i + 1).padStart(2, '0')}
+                          </span>
+                          <span className={`flex-1 text-[15px] leading-snug ${complete ? 'text-ink-muted line-through' : 'text-ink group-hover:text-accent-deep'} transition-colors`}>
+                            {mod.title}
+                          </span>
+                          <div className="flex items-center gap-1" aria-label={`${done} of ${total} sections complete`}>
+                            {mods.map((s) => (
+                              <span
+                                key={s.id}
+                                className={`w-[18px] h-[3px] rounded-full ${
+                                  sectionProgress[s.id]?.completed ? 'bg-accent' : 'bg-line-strong'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[11.5px] tabular-nums text-ink-muted w-12 text-right">
+                            {done}/{total}
+                          </span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {/* ─── NOTES ─── */}
+      {recentNotes.length > 0 && (
+        <>
+          <div className="px-6 lg:px-12">
+            <div className="border-t border-line" />
+          </div>
+          <section className="px-6 lg:px-12 py-14">
+            <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-8">
+              Recent notes
             </p>
-          ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl">
               {recentNotes.map((n) => {
                 const text = stripHtml(n.content)
-                const preview = text.length > 120 ? `${text.slice(0, 120).trim()}…` : text
+                const preview = text.length > 140 ? `${text.slice(0, 140).trim()}…` : text
                 return (
                   <Link
                     key={n.id}
                     href={primaryCourse ? `/courses/${primaryCourse.id}/learn/${n.section_id}` : '#'}
-                    className="block group"
+                    className="group block"
                   >
-                    <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.14em] mb-1 group-hover:text-accent transition-colors">
+                    <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.18em] mb-2 group-hover:text-accent transition-colors">
                       {n.section_title}
                     </p>
-                    <p className="text-[13px] text-ink-soft leading-relaxed line-clamp-2">
+                    <p className="text-[13.5px] text-ink-soft leading-[1.5] line-clamp-4">
                       {preview || 'Empty note'}
                     </p>
                   </Link>
                 )
               })}
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* Coach */}
-      <section className="mb-6">
-        <AiCoach starters={starters} />
-      </section>
-
-      {/* Raise context footer */}
-      {(snap.projectDescription || snap.competitiveAdvantage) && (
-        <section className="bg-canvas border border-line-soft rounded-2xl p-6">
-          <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.16em] mb-4">
-            Your pitch, as you told us
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {snap.projectDescription && (
-              <div>
-                <p className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em] mb-1.5">
-                  What you&rsquo;re building
-                </p>
-                <p className="text-[13.5px] text-ink-soft leading-relaxed">
-                  {snap.projectDescription}
-                </p>
-              </div>
-            )}
-            {snap.competitiveAdvantage && (
-              <div>
-                <p className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em] mb-1.5">
-                  Your edge
-                </p>
-                <p className="text-[13.5px] text-ink-soft leading-relaxed">
-                  {snap.competitiveAdvantage}
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
+          </section>
+        </>
       )}
 
+      {/* ─── PITCH CONTEXT FOOTER ─── */}
+      {(snap.projectDescription || snap.competitiveAdvantage) && (
+        <>
+          <div className="px-6 lg:px-12">
+            <div className="border-t border-line" />
+          </div>
+          <section className="px-6 lg:px-12 py-14">
+            <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-8">
+              Your pitch, as you told us
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl">
+              {snap.projectDescription && (
+                <div>
+                  <p className="text-[10.5px] font-semibold text-ink uppercase tracking-[0.18em] mb-2">
+                    What you&rsquo;re building
+                  </p>
+                  <p className="text-[15px] text-ink-soft leading-[1.55] font-serif italic">
+                    &ldquo;{snap.projectDescription}&rdquo;
+                  </p>
+                </div>
+              )}
+              {snap.competitiveAdvantage && (
+                <div>
+                  <p className="text-[10.5px] font-semibold text-ink uppercase tracking-[0.18em] mb-2">
+                    Your edge
+                  </p>
+                  <p className="text-[15px] text-ink-soft leading-[1.55] font-serif italic">
+                    &ldquo;{snap.competitiveAdvantage}&rdquo;
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   )
 }
