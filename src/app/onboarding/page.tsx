@@ -3,6 +3,7 @@
 import { Suspense, useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Questions ───────────────────────────────────────────────────────────────
@@ -208,7 +209,7 @@ const STEPS: Step[] = [
     title: 'What\u2019s the single biggest thing blocking your raise right now?',
     subtitle: 'Pick the most honest answer \u2014 this is how we prioritise what to surface for you.',
     type: 'single',
-    columns: 2,
+    columns: 3,
     options: [
       'I don\u2019t know how much to raise or at what valuation',
       'I don\u2019t have a deck yet',
@@ -313,8 +314,8 @@ function OptionTile({
       type="button"
       onClick={onClick}
       className={`
-        group relative text-left rounded-2xl border backdrop-blur-sm
-        px-5 py-4 cursor-pointer
+        group relative text-left rounded-xl border backdrop-blur-sm
+        px-4 py-3 cursor-pointer
         transition-all duration-200 ease-out
         ${selected
           ? 'border-accent bg-accent/[0.12] text-white scale-[0.98]'
@@ -334,7 +335,7 @@ function OptionTile({
           {keyHint}
         </span>
       )}
-      <span className="text-[14.5px] leading-[1.4] pr-8 block">{label}</span>
+      <span className="text-[13.5px] leading-[1.35] pr-7 block">{label}</span>
     </button>
   )
 }
@@ -734,10 +735,10 @@ function OnboardingExperience() {
       <div className="animate-[fadeUp_600ms_ease-out_650ms_both]">
         <button
           onClick={() => goTo(0)}
-          className="group inline-flex items-center gap-3 px-9 py-4 bg-white text-black rounded-full hover:bg-accent hover:text-white transition-all cursor-pointer text-[14px] font-semibold tracking-wide"
+          className="group inline-flex items-center gap-2.5 px-9 py-4 bg-white text-black rounded-full hover:bg-accent hover:text-white transition-all cursor-pointer text-[14px] font-semibold tracking-wide shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(233,30,99,0.35)]"
         >
           Begin
-          <span className="w-6 h-px bg-current transition-all group-hover:w-10" />
+          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
         </button>
         <p className="mt-6 text-[10.5px] text-white/30 tracking-[0.24em] uppercase">
           Press <kbd className="px-1.5 py-0.5 rounded border border-white/15 text-white/50 mx-0.5 font-mono text-[10px]">↵</kbd> to begin
@@ -800,7 +801,7 @@ function OnboardingExperience() {
               <div className="relative pl-6 md:pl-8 mb-16 animate-[fadeUp_700ms_ease-out_600ms_both]">
                 <span className="absolute left-0 top-0 bottom-0 w-px bg-accent" />
                 <p className="text-[10.5px] font-semibold tracking-[0.3em] text-accent uppercase mb-3">
-                  What\u2019s in the way
+                  What&rsquo;s in the way
                 </p>
                 <p
                   className="text-white/90 max-w-[44ch]"
@@ -821,10 +822,10 @@ function OnboardingExperience() {
             <div className="flex items-center gap-5 animate-[fadeUp_700ms_ease-out_800ms_both]">
               <Link
                 href="/dashboard"
-                className="group inline-flex items-center gap-3 px-9 py-4 bg-accent hover:bg-accent-deep text-white rounded-full transition-all cursor-pointer text-[14px] font-semibold tracking-wide"
+                className="group inline-flex items-center gap-2.5 px-9 py-4 bg-accent hover:bg-accent-deep text-white rounded-full transition-all cursor-pointer text-[14px] font-semibold tracking-wide shadow-[0_0_40px_rgba(233,30,99,0.35)] hover:shadow-[0_0_60px_rgba(233,30,99,0.55)]"
               >
                 Enter your command center
-                <span className="w-6 h-px bg-current transition-all group-hover:w-10" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
               </Link>
             </div>
           </div>
@@ -901,36 +902,36 @@ function OnboardingExperience() {
 
           <div
             key={step}
-            className="min-h-full flex flex-col justify-center max-w-[920px] mx-auto px-8 lg:px-12 pt-28 pb-12"
+            className="min-h-full flex flex-col justify-center max-w-[980px] mx-auto px-8 lg:px-12 pt-24 pb-8"
             style={{ animation: 'questionEnter 420ms ease-out' }}
           >
             {currentQ.optional && (
-              <p className="text-[10.5px] font-semibold tracking-[0.28em] text-white/30 uppercase mb-5">
+              <p className="text-[10.5px] font-semibold tracking-[0.28em] text-white/30 uppercase mb-4">
                 Optional
               </p>
             )}
 
             <h2
-              className="text-white max-w-[22ch] mb-5"
+              className="text-white max-w-[22ch] mb-4"
               style={{
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 700,
                 fontStyle: 'italic',
-                fontSize: 'clamp(38px, 5.4vw, 72px)',
-                lineHeight: 1.02,
-                letterSpacing: '-0.03em',
+                fontSize: 'clamp(32px, 4.2vw, 56px)',
+                lineHeight: 1.04,
+                letterSpacing: '-0.028em',
               }}
             >
               {currentQ.title}
             </h2>
 
             {currentQ.subtitle && (
-              <p className="text-[14px] md:text-[15.5px] text-white/55 leading-[1.55] max-w-[60ch] mb-10">
+              <p className="text-[13.5px] md:text-[14.5px] text-white/55 leading-[1.5] max-w-[60ch] mb-7">
                 {currentQ.subtitle}
               </p>
             )}
 
-            <div className="mb-10">{renderQuestionBody(currentQ)}</div>
+            <div className="mb-8">{renderQuestionBody(currentQ)}</div>
 
             {/* Navigation */}
             <div className="flex items-center justify-between pt-6 border-t border-white/[0.06]">
@@ -955,30 +956,24 @@ function OnboardingExperience() {
                     Skip
                   </button>
                 )}
-                {(currentQ.type === 'text' || currentQ.type === 'multi' || currentQ.type === 'group') && (
-                  step === TOTAL - 1 ? (
-                    <button
-                      onClick={handleSubmit}
-                      disabled={(!currentQ.optional && !canContinue()) || saving}
-                      className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold hover:bg-accent hover:text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      {saving ? 'Saving\u2026' : 'Finish'}
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => goTo(step + 1)}
-                      disabled={!canContinue()}
-                      className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold hover:bg-accent hover:text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      Continue
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </button>
-                  )
+                {step === TOTAL - 1 ? (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={(!currentQ.optional && !canContinue()) || saving}
+                    className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold hover:bg-accent hover:text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(255,255,255,0.12)]"
+                  >
+                    {saving ? 'Saving\u2026' : 'Finish'}
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => goTo(step + 1)}
+                    disabled={!canContinue()}
+                    className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold hover:bg-accent hover:text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_24px_rgba(255,255,255,0.12)]"
+                  >
+                    Continue
+                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+                  </button>
                 )}
                 <p className="hidden md:block text-[10px] tracking-[0.2em] text-white/25 uppercase ml-1">
                   <kbd className="px-1 py-0.5 rounded border border-white/10 text-white/40">Esc</kbd>{' '}back

@@ -3,8 +3,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PageTopbar } from '@/components/layout/page-topbar'
 import { AiCoach } from '@/components/dashboard/ai-coach'
-import { buildRaiseSnapshot, formatCountdown, type OnboardingData } from '@/lib/raise-context'
-import { ArrowUpRight } from 'lucide-react'
+import { RaiseTimeline } from '@/components/dashboard/raise-timeline'
+import { RaiseFunnel } from '@/components/dashboard/raise-funnel'
+import { SectionHeatmap } from '@/components/dashboard/section-heatmap'
+import { CourseThumb } from '@/components/ui/course-thumb'
+import { buildRaiseSnapshot, type OnboardingData } from '@/lib/raise-context'
+import type { Course } from '@/lib/types'
+import { ArrowUpRight, Sparkles, Compass } from 'lucide-react'
 
 export const metadata = { title: 'Dashboard — Nozomi' }
 
@@ -56,7 +61,6 @@ export default async function DashboardPage() {
 
   const snap = buildRaiseSnapshot(profile?.onboarding_data as OnboardingData | null)
   const starters = buildStarters(snap)
-  const countdown = formatCountdown(snap)
 
   const { data: enrollments } = await supabase
     .from('enrollments')
@@ -73,6 +77,7 @@ export default async function DashboardPage() {
   const enrollmentRows = (enrollments ?? []) as unknown as EnrollmentRow[]
   const primary = enrollmentRows[0]
   const primaryCourse = primary?.courses ?? null
+  const hasEnrollment = !!primaryCourse
 
   let moduleRows: { id: string; title: string; sort_order: number }[] = []
   let sectionRows: { id: string; module_id: string; title: string; sort_order: number }[] = []
@@ -143,14 +148,6 @@ export default async function DashboardPage() {
 
   const totalSections = sectionRows.length
   const completedSections = Object.values(sectionProgress).filter((p) => p.completed).length
-  const pct = totalSections > 0 ? Math.round((completedSections / totalSections) * 100) : 0
-
-  const sectionsByModule = new Map<string, typeof sectionRows>()
-  for (const s of sectionRows) {
-    const arr = sectionsByModule.get(s.module_id) ?? []
-    arr.push(s)
-    sectionsByModule.set(s.module_id, arr)
-  }
 
   const firstIncomplete = sectionRows.find((s) => !sectionProgress[s.id]?.completed)
   const resumeHref = primaryCourse
@@ -159,302 +156,308 @@ export default async function DashboardPage() {
       : `/courses/${primaryCourse.id}`
     : '/courses'
 
-  const metaBits = [
-    snap.stage,
-    snap.projectType,
-    snap.targetValuation && `${snap.targetValuation} cap`,
-    snap.cofounders,
-    snap.teamSize && `team of ${snap.teamSize}`,
-  ].filter(Boolean) as string[]
+  let featuredCourses: (Course & { moduleCount: number; sectionTotal: number })[] = []
+  if (!hasEnrollment) {
+    const { data: featured } = await supabase
+      .from('courses')
+      .select('*, modules(id, sections(id))')
+      .eq('status', 'published')
+      .order('sort_order', { ascending: true })
+      .limit(3)
+
+    featuredCourses = ((featured ?? []) as (Course & { modules: { id: string; sections: { id: string }[] }[] })[]).map((c) => {
+      const sectionIds = c.modules?.flatMap((m) => m.sections?.map((s) => s.id) ?? []) ?? []
+      return {
+        ...c,
+        moduleCount: c.modules?.length ?? 0,
+        sectionTotal: sectionIds.length,
+      }
+    })
+  }
+
+  const stats: { label: string; value: string }[] = []
+  if (snap.raiseAmount) stats.push({ label: 'Raising', value: snap.raiseAmount })
+  if (snap.targetValuation) stats.push({ label: 'Valuation', value: snap.targetValuation })
+  if (snap.projectType) stats.push({ label: 'Sector', value: snap.projectType })
+  if (snap.stage) stats.push({ label: 'Stage', value: snap.stage })
 
   return (
     <div className="pb-24">
       <PageTopbar breadcrumb={[{ label: 'Nozomi', href: '/dashboard' }, { label: 'Dashboard' }]} />
 
-      {/* ─── MASTHEAD ─── */}
-      <div className="px-6 lg:px-12 pt-8 pb-6">
+      {/* Masthead */}
+      <div className="px-6 lg:px-12 pt-8 pb-5">
         <div className="flex items-center gap-3 text-[10.5px] font-semibold tracking-[0.32em] text-ink-muted uppercase">
           <span>{formatMasthead()}</span>
           <span className="w-[20px] h-px bg-line-strong" />
-          <span>{displayName.toUpperCase()}&rsquo;S RAISE</span>
+          <span>{displayName.toUpperCase()}&rsquo;S COMMAND CENTER</span>
         </div>
       </div>
 
-      {/* ─── HERO: THE COUNTDOWN ─── */}
-      <section className="px-6 lg:px-12 pt-2 pb-14">
+      {/* Greeting */}
+      <div className="px-6 lg:px-12 pb-8">
         <h1
-          className="text-ink mb-8 max-w-[16ch]"
+          className="text-ink"
           style={{
             fontFamily: 'var(--font-sans)',
             fontWeight: 700,
             fontStyle: 'italic',
-            fontSize: 'clamp(56px, 9vw, 128px)',
-            lineHeight: 0.95,
-            letterSpacing: '-0.038em',
+            fontSize: 'clamp(40px, 5.6vw, 72px)',
+            lineHeight: 0.98,
+            letterSpacing: '-0.035em',
           }}
         >
-          {countdown.includes('to close') ? (
-            <>
-              {countdown.replace(' to close', '')}<span className="text-ink-soft"> to close</span>
-              <span className="text-accent">.</span>
-            </>
-          ) : (
-            <>{countdown}<span className="text-accent">.</span></>
-          )}
+          Good to see you, {displayName}<span className="text-accent">.</span>
         </h1>
-
-        {metaBits.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 max-w-4xl">
-            {metaBits.map((bit, i) => (
-              <div key={i} className="flex items-center gap-5">
-                {i > 0 && <span className="w-1 h-1 rounded-full bg-line-strong" />}
-                <span className="text-[13.5px] text-ink-soft tracking-wide">{bit}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[14px] text-ink-soft max-w-xl">
-            Your onboarding sets up this view.{' '}
-            <Link href="/onboarding?redo=1" className="text-accent hover:underline">
-              Fill it in →
-            </Link>
-          </p>
-        )}
-      </section>
-
-      {/* ─── BLOCKER PULLQUOTE ─── */}
-      {snap.biggestBlocker && (
-        <>
-          <div className="px-6 lg:px-12">
-            <div className="border-t border-line" />
-          </div>
-          <section className="px-6 lg:px-12 py-14">
-            <div className="max-w-[1100px]">
-              <p className="text-[11px] font-semibold tracking-[0.32em] text-accent uppercase mb-8">
-                What&rsquo;s in the way
-              </p>
-              <div className="relative pl-6 md:pl-10 mb-6">
-                <span className="absolute left-0 top-1 bottom-1 w-[2px] bg-accent" />
-                <p
-                  className="text-ink max-w-[44ch]"
-                  style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontWeight: 500,
-                    fontStyle: 'italic',
-                    fontSize: 'clamp(26px, 3.6vw, 44px)',
-                    lineHeight: 1.18,
-                    letterSpacing: '-0.018em',
-                  }}
-                >
-                  &ldquo;{snap.biggestBlocker}&rdquo;
-                </p>
-              </div>
-              <p className="text-[12.5px] text-ink-muted max-w-[44ch] leading-relaxed pl-6 md:pl-10">
-                Your self-reported blocker. Ask your coach below for a specific plan to move past this.
-              </p>
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ─── COACH (primary action) ─── */}
-      <div className="px-6 lg:px-12">
-        <div className="border-t border-line" />
       </div>
-      <section className="px-6 lg:px-12 py-10">
-        <div className="flex items-baseline justify-between gap-6 mb-6">
-          <div>
-            <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-2">
-              Your coach
-            </p>
-            <h2
-              className="text-ink"
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 700,
-                fontStyle: 'italic',
-                fontSize: 'clamp(28px, 3.2vw, 40px)',
-                lineHeight: 1.05,
-                letterSpacing: '-0.022em',
-              }}
-            >
-              Ask anything about your raise.
-            </h2>
+
+      {/* Primary widget grid */}
+      <div className="px-6 lg:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+          <div className="lg:col-span-2">
+            <RaiseTimeline
+              closeDate={snap.targetCloseDate}
+              closeText={snap.targetCloseText}
+              daysToClose={snap.daysToClose}
+              raiseAmount={snap.raiseAmount}
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <RaiseFunnel raiseStatus={snap.raiseStatus} raiseAmount={snap.raiseAmount} />
           </div>
         </div>
-        <AiCoach starters={starters} />
-      </section>
 
-      {/* ─── WORK / PROGRESS ─── */}
-      {primaryCourse && (
-        <>
-          <div className="px-6 lg:px-12">
-            <div className="border-t border-line" />
+        {/* Stats strip */}
+        {stats.length > 0 && (
+          <div className="rounded-2xl border border-line bg-surface overflow-hidden mb-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line">
+              {stats.map((stat, i) => (
+                <div key={i} className="p-5 lg:p-6">
+                  <p className="text-[9.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
+                    {stat.label}
+                  </p>
+                  <p
+                    className="text-ink truncate"
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontWeight: 700,
+                      fontStyle: 'italic',
+                      fontSize: 'clamp(20px, 2.2vw, 28px)',
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.022em',
+                    }}
+                  >
+                    {stat.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-          <section className="px-6 lg:px-12 py-14">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 items-start">
+        )}
+
+        {/* Course progress OR first-entry discovery */}
+        {hasEnrollment && primaryCourse ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+            <div className="lg:col-span-2">
+              <SectionHeatmap
+                courseId={primaryCourse.id}
+                modules={moduleRows}
+                sections={sectionRows}
+                progress={sectionProgress}
+                completedCount={completedSections}
+                totalCount={totalSections}
+              />
+            </div>
+            <div className="lg:col-span-1 rounded-2xl border border-line bg-surface p-7 flex flex-col">
+              <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-3">
+                Continue
+              </p>
+              <h3
+                className="text-ink mb-4"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 700,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(24px, 2.4vw, 32px)',
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.022em',
+                }}
+              >
+                {primaryCourse.title}
+              </h3>
+              <p className="text-[13px] text-ink-soft mb-6 leading-[1.55] flex-1">
+                {firstIncomplete
+                  ? `Pick up where you left off — ${firstIncomplete.title}.`
+                  : 'All sections complete. Review or revisit.'}
+              </p>
+              <Link
+                href={resumeHref}
+                className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors group"
+              >
+                {firstIncomplete ? 'Continue learning' : 'Review course'}
+                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2.2} />
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-line bg-surface p-7 lg:p-8 mb-5 overflow-hidden relative">
+            <div
+              className="absolute -right-32 -top-32 w-[400px] h-[400px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
+              style={{ background: 'radial-gradient(circle, var(--nz-accent) 0%, transparent 70%)' }}
+            />
+            <div className="relative flex items-start justify-between mb-8 gap-4">
               <div>
-                <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-3">
-                  The work
+                <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-3 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-accent" strokeWidth={2} />
+                  Start here
                 </p>
                 <h2
-                  className="text-ink mb-3 max-w-[20ch]"
+                  className="text-ink max-w-[18ch]"
                   style={{
                     fontFamily: 'var(--font-sans)',
                     fontWeight: 700,
                     fontStyle: 'italic',
-                    fontSize: 'clamp(32px, 4vw, 52px)',
+                    fontSize: 'clamp(30px, 3.6vw, 48px)',
                     lineHeight: 1.02,
-                    letterSpacing: '-0.025em',
+                    letterSpacing: '-0.028em',
                   }}
                 >
-                  {primaryCourse.title}
+                  Explore courses to close faster<span className="text-accent">.</span>
                 </h2>
-                <p className="text-[13.5px] text-ink-soft mb-6">
-                  {completedSections} of {totalSections} sections complete
-                </p>
-                <Link
-                  href={resumeHref}
-                  className="inline-flex items-center gap-2 text-[13px] font-semibold text-accent hover:text-accent-deep transition-colors group"
-                >
-                  {firstIncomplete ? 'Continue where you left off' : 'Review course'}
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2} />
-                </Link>
               </div>
-
-              <div className="flex items-center gap-5">
-                <div
-                  className="tabular-nums text-ink"
-                  style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontWeight: 700,
-                    fontStyle: 'italic',
-                    fontSize: 'clamp(64px, 7vw, 108px)',
-                    lineHeight: 0.9,
-                    letterSpacing: '-0.04em',
-                  }}
-                >
-                  {pct}
-                  <span className="text-ink-faint text-[0.5em]">%</span>
-                </div>
-              </div>
+              <Link
+                href="/discover"
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-line text-[12.5px] font-semibold text-ink hover:border-accent hover:text-accent transition-colors group"
+              >
+                <Compass className="w-4 h-4" strokeWidth={1.8} />
+                <span>Discover all</span>
+                <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={2} />
+              </Link>
             </div>
 
-            {/* Module list */}
-            {moduleRows.length > 0 && (
-              <div className="mt-12 max-w-4xl">
-                <ul className="divide-y divide-line">
-                  {moduleRows.map((mod, i) => {
-                    const mods = sectionsByModule.get(mod.id) ?? []
-                    const done = mods.filter((s) => sectionProgress[s.id]?.completed).length
-                    const total = mods.length
-                    const complete = total > 0 && done === total
-                    const firstMod = mods.find((s) => !sectionProgress[s.id]?.completed) ?? mods[0]
-                    return (
-                      <li key={mod.id}>
-                        <Link
-                          href={firstMod ? `/courses/${primaryCourse.id}/learn/${firstMod.id}` : `/courses/${primaryCourse.id}`}
-                          className="group flex items-center gap-5 py-4 hover:bg-surface-muted/50 -mx-3 px-3 rounded-lg transition-colors"
-                        >
-                          <span className="text-[11px] font-mono tabular-nums text-ink-faint w-8">
-                            M{String(i + 1).padStart(2, '0')}
-                          </span>
-                          <span className={`flex-1 text-[15px] leading-snug ${complete ? 'text-ink-muted line-through' : 'text-ink group-hover:text-accent-deep'} transition-colors`}>
-                            {mod.title}
-                          </span>
-                          <div className="flex items-center gap-1" aria-label={`${done} of ${total} sections complete`}>
-                            {mods.map((s) => (
-                              <span
-                                key={s.id}
-                                className={`w-[18px] h-[3px] rounded-full ${
-                                  sectionProgress[s.id]?.completed ? 'bg-accent' : 'bg-line-strong'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-[11.5px] tabular-nums text-ink-muted w-12 text-right">
-                            {done}/{total}
-                          </span>
-                        </Link>
-                      </li>
-                    )
-                  })}
-                </ul>
+            {featuredCourses.length > 0 ? (
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4">
+                {featuredCourses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}`}
+                    className="group flex flex-col bg-canvas border border-line rounded-xl overflow-hidden hover:border-accent transition-colors"
+                  >
+                    <div className="aspect-[16/9] bg-surface-muted relative overflow-hidden">
+                      {course.cover_image ? (
+                        <img
+                          src={course.cover_image}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <CourseThumb title={course.title} size="lg" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col">
+                      <h3 className="font-serif text-[17px] text-ink leading-tight mb-2 group-hover:text-accent-deep transition-colors line-clamp-2">
+                        {course.title}
+                      </h3>
+                      <p className="text-[11px] text-ink-muted tracking-wide mt-auto">
+                        {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'} &middot; {course.sectionTotal} sections
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[13px] text-ink-muted">New material is being prepared.</p>
+            )}
+          </div>
+        )}
+
+        {/* Coach */}
+        <div className="rounded-2xl border border-line bg-surface p-7 lg:p-8 mb-5">
+          <div className="flex items-baseline justify-between gap-6 mb-5">
+            <div>
+              <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-2">
+                Your coach
+              </p>
+              <h2
+                className="text-ink"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 700,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(24px, 2.6vw, 34px)',
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.022em',
+                }}
+              >
+                Ask anything about your raise<span className="text-accent">.</span>
+              </h2>
+            </div>
+          </div>
+          <AiCoach starters={starters} />
+        </div>
+
+        {/* Blocker + Notes */}
+        {(snap.biggestBlocker || recentNotes.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {snap.biggestBlocker && (
+              <div className="lg:col-span-2 rounded-2xl border border-line bg-surface p-7 lg:p-8">
+                <p className="text-[10.5px] font-semibold tracking-[0.28em] text-accent uppercase mb-5">
+                  What&rsquo;s in the way
+                </p>
+                <div className="relative pl-5 mb-4">
+                  <span className="absolute left-0 top-1 bottom-1 w-[2px] bg-accent" />
+                  <p
+                    className="text-ink max-w-[40ch]"
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontWeight: 500,
+                      fontStyle: 'italic',
+                      fontSize: 'clamp(20px, 2.4vw, 30px)',
+                      lineHeight: 1.2,
+                      letterSpacing: '-0.015em',
+                    }}
+                  >
+                    &ldquo;{snap.biggestBlocker}&rdquo;
+                  </p>
+                </div>
+                <p className="text-[12px] text-ink-muted pl-5 leading-relaxed">
+                  Your self-reported blocker. Ask your coach above for a specific plan.
+                </p>
               </div>
             )}
-          </section>
-        </>
-      )}
 
-      {/* ─── NOTES ─── */}
-      {recentNotes.length > 0 && (
-        <>
-          <div className="px-6 lg:px-12">
-            <div className="border-t border-line" />
-          </div>
-          <section className="px-6 lg:px-12 py-14">
-            <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-8">
-              Recent notes
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl">
-              {recentNotes.map((n) => {
-                const text = stripHtml(n.content)
-                const preview = text.length > 140 ? `${text.slice(0, 140).trim()}…` : text
-                return (
-                  <Link
-                    key={n.id}
-                    href={primaryCourse ? `/courses/${primaryCourse.id}/learn/${n.section_id}` : '#'}
-                    className="group block"
-                  >
-                    <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.18em] mb-2 group-hover:text-accent transition-colors">
-                      {n.section_title}
-                    </p>
-                    <p className="text-[13.5px] text-ink-soft leading-[1.5] line-clamp-4">
-                      {preview || 'Empty note'}
-                    </p>
-                  </Link>
-                )
-              })}
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ─── PITCH CONTEXT FOOTER ─── */}
-      {(snap.projectDescription || snap.competitiveAdvantage) && (
-        <>
-          <div className="px-6 lg:px-12">
-            <div className="border-t border-line" />
-          </div>
-          <section className="px-6 lg:px-12 py-14">
-            <p className="text-[11px] font-semibold tracking-[0.32em] text-ink-muted uppercase mb-8">
-              Your pitch, as you told us
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl">
-              {snap.projectDescription && (
-                <div>
-                  <p className="text-[10.5px] font-semibold text-ink uppercase tracking-[0.18em] mb-2">
-                    What you&rsquo;re building
-                  </p>
-                  <p className="text-[15px] text-ink-soft leading-[1.55] font-serif italic">
-                    &ldquo;{snap.projectDescription}&rdquo;
-                  </p>
+            {recentNotes.length > 0 && (
+              <div className={`${snap.biggestBlocker ? 'lg:col-span-1' : 'lg:col-span-3'} rounded-2xl border border-line bg-surface p-7`}>
+                <p className="text-[10.5px] font-semibold tracking-[0.28em] text-ink-muted uppercase mb-5">
+                  Recent notes
+                </p>
+                <div className={`${snap.biggestBlocker ? 'space-y-5' : 'grid grid-cols-1 md:grid-cols-3 gap-6'}`}>
+                  {recentNotes.map((n) => {
+                    const text = stripHtml(n.content)
+                    const preview = text.length > 120 ? `${text.slice(0, 120).trim()}…` : text
+                    return (
+                      <Link
+                        key={n.id}
+                        href={primaryCourse ? `/courses/${primaryCourse.id}/learn/${n.section_id}` : '#'}
+                        className="group block"
+                      >
+                        <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.18em] mb-1.5 group-hover:text-accent transition-colors">
+                          {n.section_title}
+                        </p>
+                        <p className="text-[12.5px] text-ink-soft leading-[1.5] line-clamp-3">
+                          {preview || 'Empty note'}
+                        </p>
+                      </Link>
+                    )
+                  })}
                 </div>
-              )}
-              {snap.competitiveAdvantage && (
-                <div>
-                  <p className="text-[10.5px] font-semibold text-ink uppercase tracking-[0.18em] mb-2">
-                    Your edge
-                  </p>
-                  <p className="text-[15px] text-ink-soft leading-[1.55] font-serif italic">
-                    &ldquo;{snap.competitiveAdvantage}&rdquo;
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-        </>
-      )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
