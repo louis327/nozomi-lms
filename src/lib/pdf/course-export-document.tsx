@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import {
   Document,
@@ -10,18 +10,23 @@ import {
 } from '@react-pdf/renderer'
 import type { ExtractedAnswer } from '@/lib/answer-extract'
 
-// Load a font file relative to this module and return a base64 data URL.
-// The `new URL(..., import.meta.url)` pattern is auto-traced by @vercel/nft
-// so the .ttf files get bundled into the serverless function.
-// Returning a data URL (not a Buffer) is required: newer @react-pdf/renderer
-// calls `.substring()` on `src`, which fails for Buffers.
-function loadFontDataUrl(name: string): string | null {
+// Resolve a font file path relative to this module. The
+// `new URL(..., import.meta.url)` pattern is auto-traced by @vercel/nft so
+// the .ttf files get bundled into the serverless function. We return the
+// path string (not a data URL) because @react-pdf/font's data-URL decode
+// path expands base64 into per-char arrays and blows memory on multi-font
+// PDFs. Passing a file path lets fontkit stream the TTF from disk.
+function loadFontPath(name: string): string | null {
   try {
     const url = new URL(`./fonts/${name}`, import.meta.url)
-    const buf = readFileSync(fileURLToPath(url))
-    return `data:font/ttf;base64,${buf.toString('base64')}`
+    const path = fileURLToPath(url)
+    if (!existsSync(path)) {
+      console.error(`[pdf-export] font missing at ${path}`)
+      return null
+    }
+    return path
   } catch (err) {
-    console.error(`[pdf-export] failed to load font ${name}:`, err)
+    console.error(`[pdf-export] failed to resolve font ${name}:`, err)
     return null
   }
 }
@@ -72,7 +77,7 @@ export function registerFontsOnce(): FontDiagnostics {
     const failed: string[] = []
     const fonts: FontEntry[] = []
     for (const e of entries) {
-      const src = loadFontDataUrl(e.file)
+      const src = loadFontPath(e.file)
       if (src) {
         fonts.push({ src, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
         loaded.push(e.file)
