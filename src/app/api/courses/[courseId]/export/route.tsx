@@ -147,9 +147,26 @@ export async function GET(
     modules: exportModules,
   }
 
-  const pdfBuffer = await renderToBuffer(
-    <CourseExportDocument data={data} />,
-  )
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await renderToBuffer(<CourseExportDocument data={data} />)
+  } catch (err) {
+    console.error('[course-export] renderToBuffer failed', {
+      courseId,
+      userId: user.id,
+      error:
+        err instanceof Error
+          ? { name: err.name, message: err.message, stack: err.stack }
+          : err,
+    })
+    return Response.json(
+      {
+        error: 'Failed to render workbook PDF',
+        detail: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
+    )
+  }
 
   const safeTitle = (course as any).title.replace(/[^\w\s-]/g, '').trim()
   const filename = `${safeTitle} — Nozomi workbook.pdf`

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Check, Lock, PlayCircle, Clock, BookOpen, Download } from 'lucide-react'
+import { Check, Lock, PlayCircle, Clock, BookOpen, Download, FileText } from 'lucide-react'
 import { PageTopbar } from '@/components/layout/page-topbar'
 import { CourseThumb } from '@/components/ui/course-thumb'
 import { Badge } from '@/components/ui/badge'
@@ -132,13 +132,22 @@ export default async function CourseOverviewPage({
               <EnrollButton courseId={courseId} firstSectionId={allSectionIds[0] ?? null} isLoggedIn={true} />
             )}
             {isEnrolled && pct === 100 && (
-              <a
-                href={`/api/courses/${courseId}/export`}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-medium border border-line-strong text-ink rounded-full hover:bg-surface-muted transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" strokeWidth={2} />
-                Download workbook
-              </a>
+              <>
+                <Link
+                  href={`/courses/${courseId}/workbook`}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-medium border border-line-strong text-ink rounded-full hover:bg-surface-muted transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5" strokeWidth={2} />
+                  View workbook
+                </Link>
+                <a
+                  href={`/api/courses/${courseId}/export`}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-medium text-ink-soft hover:text-ink transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" strokeWidth={2} />
+                  Download PDF
+                </a>
+              </>
             )}
             {isEnrolled && pct !== 100 && <Badge variant="accent">Enrolled</Badge>}
             {isEnrolled && pct === 100 && <Badge variant="success">Complete</Badge>}

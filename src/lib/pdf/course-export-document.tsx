@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   Document,
   Page,
@@ -10,26 +10,46 @@ import {
 } from '@react-pdf/renderer'
 import type { ExtractedAnswer } from '@/lib/answer-extract'
 
-const FONTS_DIR = join(process.cwd(), 'src/lib/pdf/fonts')
-const loadFont = (file: string) => readFileSync(join(FONTS_DIR, file))
+// Load a font file relative to this module. The `new URL(..., import.meta.url)`
+// pattern is auto-traced by @vercel/nft so the .ttf files get bundled into the
+// serverless function without needing manual outputFileTracingIncludes entries.
+function loadFont(name: string): Buffer | null {
+  try {
+    const url = new URL(`./fonts/${name}`, import.meta.url)
+    return readFileSync(fileURLToPath(url))
+  } catch (err) {
+    console.error(`[pdf-export] failed to load font ${name}:`, err)
+    return null
+  }
+}
 
-Font.register({
-  family: 'Open Sans',
-  fonts: [
-    { src: loadFont('OpenSans-Regular.ttf') as unknown as string, fontWeight: 400, fontStyle: 'normal' },
-    { src: loadFont('OpenSans-Italic.ttf') as unknown as string, fontWeight: 400, fontStyle: 'italic' },
-    { src: loadFont('OpenSans-SemiBold.ttf') as unknown as string, fontWeight: 600, fontStyle: 'normal' },
-    { src: loadFont('OpenSans-Bold.ttf') as unknown as string, fontWeight: 700, fontStyle: 'normal' },
-    { src: loadFont('OpenSans-BoldItalic.ttf') as unknown as string, fontWeight: 700, fontStyle: 'italic' },
-  ],
-})
+type FontEntry = { src: Buffer; fontWeight: number; fontStyle: 'normal' | 'italic' }
 
-Font.register({
-  family: 'JetBrains Mono',
-  fonts: [
-    { src: loadFont('JetBrainsMono-Medium.ttf') as unknown as string, fontWeight: 500 },
-  ],
-})
+function registerFamily(family: string, entries: Array<{ file: string; fontWeight: number; fontStyle: 'normal' | 'italic' }>) {
+  const fonts: FontEntry[] = []
+  for (const e of entries) {
+    const buf = loadFont(e.file)
+    if (buf) fonts.push({ src: buf, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
+  }
+  if (fonts.length === 0) {
+    console.error(`[pdf-export] no fonts loaded for family ${family}`)
+    return
+  }
+  // @react-pdf/renderer's Font.register accepts Buffer in src but its types say string
+  Font.register({ family, fonts } as unknown as Parameters<typeof Font.register>[0])
+}
+
+registerFamily('Open Sans', [
+  { file: 'OpenSans-Regular.ttf', fontWeight: 400, fontStyle: 'normal' },
+  { file: 'OpenSans-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
+  { file: 'OpenSans-SemiBold.ttf', fontWeight: 600, fontStyle: 'normal' },
+  { file: 'OpenSans-Bold.ttf', fontWeight: 700, fontStyle: 'normal' },
+  { file: 'OpenSans-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
+])
+
+registerFamily('JetBrains Mono', [
+  { file: 'JetBrainsMono-Medium.ttf', fontWeight: 500, fontStyle: 'normal' },
+])
 
 const COLOR = {
   ink: '#141414',
