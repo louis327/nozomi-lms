@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { extractSectionAnswers, type WorkbookData } from '@/lib/answer-extract'
 import {
   CourseExportDocument,
+  registerFontsOnce,
   type ExportData,
   type ExportModule,
   type ExportSection,
@@ -15,10 +16,11 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ courseId: string }> },
 ) {
   const { courseId } = await ctx.params
+  const debug = req.nextUrl.searchParams.get('debug') === '1'
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -147,6 +149,33 @@ export async function GET(
     modules: exportModules,
   }
 
+  let fontDiag
+  try {
+    fontDiag = registerFontsOnce()
+  } catch (err) {
+    console.error('[course-export] font registration threw', err)
+    return Response.json(
+      {
+        error: 'Font registration failed',
+        detail: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
+    )
+  }
+
+  if (debug) {
+    return Response.json(
+      {
+        courseId,
+        userId: user.id,
+        fontDiag,
+        sectionCount: allSectionIds.length,
+        moduleCount: exportModules.length,
+      },
+      { status: 200 },
+    )
+  }
+
   let pdfBuffer: Buffer
   try {
     pdfBuffer = await renderToBuffer(<CourseExportDocument data={data} />)
@@ -154,6 +183,7 @@ export async function GET(
     console.error('[course-export] renderToBuffer failed', {
       courseId,
       userId: user.id,
+      fontDiag,
       error:
         err instanceof Error
           ? { name: err.name, message: err.message, stack: err.stack }
@@ -163,6 +193,7 @@ export async function GET(
       {
         error: 'Failed to render workbook PDF',
         detail: err instanceof Error ? err.message : String(err),
+        fontDiag,
       },
       { status: 500 },
     )

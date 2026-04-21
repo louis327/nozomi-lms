@@ -28,30 +28,78 @@ function loadFontDataUrl(name: string): string | null {
 
 type FontEntry = { src: string; fontWeight: number; fontStyle: 'normal' | 'italic' }
 
-function registerFamily(family: string, entries: Array<{ file: string; fontWeight: number; fontStyle: 'normal' | 'italic' }>) {
-  const fonts: FontEntry[] = []
-  for (const e of entries) {
-    const src = loadFontDataUrl(e.file)
-    if (src) fonts.push({ src, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
-  }
-  if (fonts.length === 0) {
-    console.error(`[pdf-export] no fonts loaded for family ${family}`)
-    return
-  }
-  Font.register({ family, fonts })
+const FAMILIES: Array<{
+  family: string
+  entries: Array<{ file: string; fontWeight: number; fontStyle: 'normal' | 'italic' }>
+}> = [
+  {
+    family: 'Open Sans',
+    entries: [
+      { file: 'OpenSans-Regular.ttf', fontWeight: 400, fontStyle: 'normal' },
+      { file: 'OpenSans-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
+      { file: 'OpenSans-SemiBold.ttf', fontWeight: 600, fontStyle: 'normal' },
+      { file: 'OpenSans-Bold.ttf', fontWeight: 700, fontStyle: 'normal' },
+      { file: 'OpenSans-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
+    ],
+  },
+  {
+    family: 'JetBrains Mono',
+    entries: [
+      { file: 'JetBrainsMono-Medium.ttf', fontWeight: 500, fontStyle: 'normal' },
+    ],
+  },
+]
+
+export type FontDiagnostics = {
+  families: Array<{
+    family: string
+    registered: boolean
+    loaded: string[]
+    failed: string[]
+    error?: string
+  }>
 }
 
-registerFamily('Open Sans', [
-  { file: 'OpenSans-Regular.ttf', fontWeight: 400, fontStyle: 'normal' },
-  { file: 'OpenSans-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
-  { file: 'OpenSans-SemiBold.ttf', fontWeight: 600, fontStyle: 'normal' },
-  { file: 'OpenSans-Bold.ttf', fontWeight: 700, fontStyle: 'normal' },
-  { file: 'OpenSans-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
-])
+let fontsReady = false
+let fontDiag: FontDiagnostics = { families: [] }
 
-registerFamily('JetBrains Mono', [
-  { file: 'JetBrainsMono-Medium.ttf', fontWeight: 500, fontStyle: 'normal' },
-])
+export function registerFontsOnce(): FontDiagnostics {
+  if (fontsReady) return fontDiag
+  fontsReady = true
+  const diag: FontDiagnostics = { families: [] }
+  for (const { family, entries } of FAMILIES) {
+    const loaded: string[] = []
+    const failed: string[] = []
+    const fonts: FontEntry[] = []
+    for (const e of entries) {
+      const src = loadFontDataUrl(e.file)
+      if (src) {
+        fonts.push({ src, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
+        loaded.push(e.file)
+      } else {
+        failed.push(e.file)
+      }
+    }
+    if (fonts.length === 0) {
+      diag.families.push({ family, registered: false, loaded, failed, error: 'no fonts loaded' })
+      continue
+    }
+    try {
+      Font.register({ family, fonts })
+      diag.families.push({ family, registered: true, loaded, failed })
+    } catch (err) {
+      diag.families.push({
+        family,
+        registered: false,
+        loaded,
+        failed,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+  fontDiag = diag
+  return diag
+}
 
 const COLOR = {
   ink: '#141414',
