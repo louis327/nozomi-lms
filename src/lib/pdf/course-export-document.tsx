@@ -10,33 +10,35 @@ import {
 } from '@react-pdf/renderer'
 import type { ExtractedAnswer } from '@/lib/answer-extract'
 
-// Load a font file relative to this module. The `new URL(..., import.meta.url)`
-// pattern is auto-traced by @vercel/nft so the .ttf files get bundled into the
-// serverless function without needing manual outputFileTracingIncludes entries.
-function loadFont(name: string): Buffer | null {
+// Load a font file relative to this module and return a base64 data URL.
+// The `new URL(..., import.meta.url)` pattern is auto-traced by @vercel/nft
+// so the .ttf files get bundled into the serverless function.
+// Returning a data URL (not a Buffer) is required: newer @react-pdf/renderer
+// calls `.substring()` on `src`, which fails for Buffers.
+function loadFontDataUrl(name: string): string | null {
   try {
     const url = new URL(`./fonts/${name}`, import.meta.url)
-    return readFileSync(fileURLToPath(url))
+    const buf = readFileSync(fileURLToPath(url))
+    return `data:font/ttf;base64,${buf.toString('base64')}`
   } catch (err) {
     console.error(`[pdf-export] failed to load font ${name}:`, err)
     return null
   }
 }
 
-type FontEntry = { src: Buffer; fontWeight: number; fontStyle: 'normal' | 'italic' }
+type FontEntry = { src: string; fontWeight: number; fontStyle: 'normal' | 'italic' }
 
 function registerFamily(family: string, entries: Array<{ file: string; fontWeight: number; fontStyle: 'normal' | 'italic' }>) {
   const fonts: FontEntry[] = []
   for (const e of entries) {
-    const buf = loadFont(e.file)
-    if (buf) fonts.push({ src: buf, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
+    const src = loadFontDataUrl(e.file)
+    if (src) fonts.push({ src, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
   }
   if (fonts.length === 0) {
     console.error(`[pdf-export] no fonts loaded for family ${family}`)
     return
   }
-  // @react-pdf/renderer's Font.register accepts Buffer in src but its types say string
-  Font.register({ family, fonts } as unknown as Parameters<typeof Font.register>[0])
+  Font.register({ family, fonts })
 }
 
 registerFamily('Open Sans', [

@@ -101,13 +101,8 @@ export default async function WorkbookOnlinePage({
       })
     : null
 
-  const founderName =
-    (profile?.full_name as string | null) ||
-    user.email?.split('@')[0] ||
-    'Founder'
-
   return (
-    <div className="px-6 lg:px-10 pb-20">
+    <div className="px-6 lg:px-10 pb-24">
       <PageTopbar
         breadcrumb={[
           { label: 'Nozomi', href: '/dashboard' },
@@ -117,137 +112,110 @@ export default async function WorkbookOnlinePage({
         ]}
       />
 
-      {/* Hero */}
-      <section className="mt-6 mb-10 max-w-3xl">
-        <p className="eyebrow mb-5">Your workbook</p>
-        <h1 className="display text-[40px] md:text-[52px] mb-5 leading-[1.02]">
-          {(course as any).title.split(' ').slice(0, -1).join(' ')}{' '}
-          <em>{(course as any).title.split(' ').slice(-1)}</em>.
-        </h1>
-        <p className="text-[15px] text-ink-soft leading-relaxed">
-          A complete record of the prompts, frameworks and responses you worked
-          through. Your answers autosave as you go.
-        </p>
+      {/* Top toolbar */}
+      <div className="flex items-center justify-between mt-4 mb-12 max-w-[640px] mx-auto">
+        <Link
+          href={`/courses/${courseId}`}
+          className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-muted hover:text-ink transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
+          Back to course
+        </Link>
+        <a
+          href={`/api/courses/${courseId}/export`}
+          className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-muted hover:text-ink transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" strokeWidth={2} />
+          Download PDF
+        </a>
+      </div>
 
-        <div className="mt-6 flex items-center gap-5 flex-wrap">
-          <div className="flex items-center gap-2 text-[11.5px] font-mono tabular-nums tracking-wider uppercase text-ink-muted">
-            <span>Founder</span>
-            <span className="text-ink font-semibold">{founderName}</span>
-          </div>
+      {/* Title */}
+      <article className="max-w-[640px] mx-auto">
+        <header className="mb-16 text-center">
+          <h1
+            className="text-ink"
+            style={{
+              fontFamily: 'var(--font-serif, Georgia, serif)',
+              fontWeight: 400,
+              fontStyle: 'italic',
+              fontSize: 'clamp(34px, 4.2cqi, 48px)',
+              lineHeight: 1.1,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {(course as any).title}
+          </h1>
           {completedOn && (
-            <>
-              <span className="w-px h-4 bg-line" />
-              <div className="flex items-center gap-2 text-[11.5px] font-mono tabular-nums tracking-wider uppercase text-ink-muted">
-                <span>Last completed</span>
-                <span className="text-ink font-semibold">{completedOn}</span>
-              </div>
-            </>
+            <p className="mt-5 text-[13px] text-ink-muted">
+              Completed {completedOn}
+            </p>
           )}
-          <span className="w-px h-4 bg-line" />
-          <div className="flex items-center gap-2 text-[11.5px] font-mono tabular-nums tracking-wider uppercase text-ink-muted">
-            <span>Modules</span>
-            <span className="text-ink font-semibold">{modules.length}</span>
-          </div>
-        </div>
+        </header>
 
-        <div className="mt-7 flex items-center gap-3 flex-wrap">
-          <Link
-            href={`/courses/${courseId}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
-            Back to course
-          </Link>
-          <a
-            href={`/api/courses/${courseId}/export`}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-medium border border-line-strong text-ink rounded-full hover:bg-surface-muted transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" strokeWidth={2} />
-            Download PDF
-          </a>
-        </div>
-      </section>
-
-      {/* Modules */}
-      <div className="space-y-10 max-w-3xl">
-        {modules.map((mod: any, mi: number) => {
-          const sections = [...(mod.sections ?? [])].sort(
-            (a: any, b: any) => a.sort_order - b.sort_order,
-          )
-          return (
-            <section key={mod.id}>
-              <div className="pb-3 mb-6 border-b border-line">
-                <p className="eyebrow text-[10px] mb-1">
-                  Module {String(mi + 1).padStart(2, '0')}
-                </p>
-                <h2 className="font-serif italic text-[26px] text-ink leading-tight">
-                  {mod.title}
+        <div className="space-y-20">
+          {modules.map((mod: any, mi: number) => {
+            const sections = [...(mod.sections ?? [])].sort(
+              (a: any, b: any) => a.sort_order - b.sort_order,
+            )
+            return (
+              <section key={mod.id}>
+                <h2
+                  className="text-ink mb-10"
+                  style={{
+                    fontFamily: 'var(--font-serif, Georgia, serif)',
+                    fontWeight: 400,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(24px, 2.8cqi, 30px)',
+                    lineHeight: 1.15,
+                    letterSpacing: '-0.015em',
+                  }}
+                >
+                  {mi + 1}. {mod.title}
                 </h2>
-              </div>
 
-              {sections.length === 0 ? (
-                <p className="text-[13px] text-ink-faint italic">
-                  No sections in this module.
-                </p>
-              ) : (
-                <div className="space-y-10">
-                  {sections.map((sec: any, si: number) => {
-                    const blocks = [...((sec as any).content_blocks ?? [])].sort(
-                      (a: ContentBlock, b: ContentBlock) =>
-                        a.sort_order - b.sort_order,
-                    ) as ContentBlock[]
-                    const prog = progressById[sec.id]
-                    const answers = extractSectionAnswers(
-                      blocks,
-                      prog?.workbook_data ?? null,
-                    )
-                    const dateLabel = prog?.completed_at
-                      ? new Date(prog.completed_at).toLocaleDateString('en-GB', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : null
+                {sections.length === 0 ? (
+                  <p className="text-[13.5px] text-ink-faint italic">
+                    No sections in this module.
+                  </p>
+                ) : (
+                  <div className="space-y-14">
+                    {sections.map((sec: any) => {
+                      const blocks = [
+                        ...((sec as any).content_blocks ?? []),
+                      ].sort(
+                        (a: ContentBlock, b: ContentBlock) =>
+                          a.sort_order - b.sort_order,
+                      ) as ContentBlock[]
+                      const prog = progressById[sec.id]
+                      const answers = extractSectionAnswers(
+                        blocks,
+                        prog?.workbook_data ?? null,
+                      )
 
-                    return (
-                      <div key={sec.id}>
-                        <div className="mb-5">
-                          <p className="text-[10px] font-semibold tracking-[0.22em] text-accent uppercase mb-1.5">
-                            Section {String(si + 1).padStart(2, '0')}
-                            {dateLabel && (
-                              <span className="text-ink-muted font-normal normal-case tracking-normal">
-                                {' '}
-                                · Completed {dateLabel}
-                              </span>
-                            )}
-                            {!dateLabel && (
-                              <span className="text-ink-muted font-normal normal-case tracking-normal">
-                                {' '}
-                                · In progress
-                              </span>
-                            )}
-                          </p>
-                          <h3 className="font-serif italic text-[20px] text-ink leading-snug">
+                      return (
+                        <div key={sec.id}>
+                          <h3 className="text-[17px] font-semibold text-ink mb-6">
                             {sec.title}
                           </h3>
-                        </div>
 
-                        {answers.length === 0 ? (
-                          <p className="text-[13px] text-ink-faint italic">
-                            This section had no prompts to respond to.
-                          </p>
-                        ) : (
-                          <WorkbookAnswers answers={answers} />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </section>
-          )
-        })}
-      </div>
+                          {answers.length === 0 ? (
+                            <p className="text-[13.5px] text-ink-faint italic">
+                              No prompts in this section.
+                            </p>
+                          ) : (
+                            <WorkbookAnswers answers={answers} />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      </article>
     </div>
   )
 }
