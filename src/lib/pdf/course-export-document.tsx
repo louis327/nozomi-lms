@@ -1,110 +1,18 @@
-import { existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import {
   Document,
   Page,
   Text,
   View,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer'
 import type { ExtractedAnswer } from '@/lib/answer-extract'
 
-// Resolve a font file path relative to this module. The
-// `new URL(..., import.meta.url)` pattern is auto-traced by @vercel/nft so
-// the .ttf files get bundled into the serverless function. We return the
-// path string (not a data URL) because @react-pdf/font's data-URL decode
-// path expands base64 into per-char arrays and blows memory on multi-font
-// PDFs. Passing a file path lets fontkit stream the TTF from disk.
-function loadFontPath(name: string): string | null {
-  try {
-    const url = new URL(`./fonts/${name}`, import.meta.url)
-    const path = fileURLToPath(url)
-    if (!existsSync(path)) {
-      console.error(`[pdf-export] font missing at ${path}`)
-      return null
-    }
-    return path
-  } catch (err) {
-    console.error(`[pdf-export] failed to resolve font ${name}:`, err)
-    return null
-  }
-}
-
-type FontEntry = { src: string; fontWeight: number; fontStyle: 'normal' | 'italic' }
-
-const FAMILIES: Array<{
-  family: string
-  entries: Array<{ file: string; fontWeight: number; fontStyle: 'normal' | 'italic' }>
-}> = [
-  {
-    family: 'Open Sans',
-    entries: [
-      { file: 'OpenSans-Regular.ttf', fontWeight: 400, fontStyle: 'normal' },
-      { file: 'OpenSans-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
-      { file: 'OpenSans-SemiBold.ttf', fontWeight: 600, fontStyle: 'normal' },
-      { file: 'OpenSans-Bold.ttf', fontWeight: 700, fontStyle: 'normal' },
-      { file: 'OpenSans-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-  },
-  {
-    family: 'JetBrains Mono',
-    entries: [
-      { file: 'JetBrainsMono-Medium.ttf', fontWeight: 500, fontStyle: 'normal' },
-    ],
-  },
-]
-
-export type FontDiagnostics = {
-  families: Array<{
-    family: string
-    registered: boolean
-    loaded: string[]
-    failed: string[]
-    error?: string
-  }>
-}
-
-let fontsReady = false
-let fontDiag: FontDiagnostics = { families: [] }
-
-export function registerFontsOnce(): FontDiagnostics {
-  if (fontsReady) return fontDiag
-  fontsReady = true
-  const diag: FontDiagnostics = { families: [] }
-  for (const { family, entries } of FAMILIES) {
-    const loaded: string[] = []
-    const failed: string[] = []
-    const fonts: FontEntry[] = []
-    for (const e of entries) {
-      const src = loadFontPath(e.file)
-      if (src) {
-        fonts.push({ src, fontWeight: e.fontWeight, fontStyle: e.fontStyle })
-        loaded.push(e.file)
-      } else {
-        failed.push(e.file)
-      }
-    }
-    if (fonts.length === 0) {
-      diag.families.push({ family, registered: false, loaded, failed, error: 'no fonts loaded' })
-      continue
-    }
-    try {
-      Font.register({ family, fonts })
-      diag.families.push({ family, registered: true, loaded, failed })
-    } catch (err) {
-      diag.families.push({
-        family,
-        registered: false,
-        loaded,
-        failed,
-        error: err instanceof Error ? err.message : String(err),
-      })
-    }
-  }
-  fontDiag = diag
-  return diag
-}
+// Uses only the 14 PDF Standard Fonts (Helvetica, Times-Roman, Courier) which
+// ship with PDFKit. No custom fonts = no file loading, no data URLs, no
+// serverless font bundling issues.
+const SERIF = 'Times-Roman'
+const SANS = 'Helvetica'
+const MONO = 'Courier'
 
 const COLOR = {
   ink: '#141414',
@@ -124,7 +32,7 @@ const COLOR = {
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Open Sans',
+    fontFamily: SANS,
     fontSize: 10.5,
     color: COLOR.ink,
     paddingTop: 54,
@@ -134,7 +42,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR.surface,
   },
   coverPage: {
-    fontFamily: 'Open Sans',
+    fontFamily: SANS,
     color: COLOR.ink,
     backgroundColor: COLOR.canvas,
     padding: 64,
@@ -142,14 +50,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   coverBrand: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 9.5,
     letterSpacing: 3,
     textTransform: 'uppercase',
     color: COLOR.inkMuted,
   },
   coverEyebrow: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 9,
     letterSpacing: 3,
     textTransform: 'uppercase',
@@ -157,7 +65,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   coverTitle: {
-    fontFamily: 'Open Sans',
+    fontFamily: SERIF,
     fontStyle: 'italic',
     fontWeight: 700,
     fontSize: 52,
@@ -179,7 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   coverMetaLabel: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 8.5,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -201,7 +109,7 @@ const styles = StyleSheet.create({
     borderBottom: `1pt solid ${COLOR.line}`,
   },
   moduleEyebrow: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 8.5,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -209,7 +117,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   moduleTitle: {
-    fontFamily: 'Open Sans',
+    fontFamily: SERIF,
     fontStyle: 'italic',
     fontWeight: 700,
     fontSize: 22,
@@ -222,7 +130,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionEyebrow: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 8,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -230,7 +138,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionTitle: {
-    fontFamily: 'Open Sans',
+    fontFamily: SERIF,
     fontStyle: 'italic',
     fontWeight: 700,
     fontSize: 15.5,
@@ -243,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   promptLabel: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 7.5,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -289,7 +197,7 @@ const styles = StyleSheet.create({
   },
   tableHeaderCell: {
     flex: 1,
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 7.5,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
@@ -351,7 +259,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ccMeta: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 7.5,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
@@ -359,7 +267,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   ccGroupHeading: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 7.5,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -387,7 +295,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 8,
     letterSpacing: 1.5,
     color: COLOR.inkFaint,
@@ -396,7 +304,7 @@ const styles = StyleSheet.create({
     borderTop: `0.5pt solid ${COLOR.lineSoft}`,
   },
   contentsTitle: {
-    fontFamily: 'Open Sans',
+    fontFamily: SERIF,
     fontStyle: 'italic',
     fontWeight: 700,
     fontSize: 26,
@@ -405,7 +313,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   contentsEyebrow: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 8.5,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -418,7 +326,7 @@ const styles = StyleSheet.create({
     borderBottom: `0.5pt solid ${COLOR.lineSoft}`,
   },
   tocIndex: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 9,
     letterSpacing: 1.5,
     color: COLOR.inkMuted,
@@ -431,7 +339,7 @@ const styles = StyleSheet.create({
     color: COLOR.ink,
   },
   tocSectionCount: {
-    fontFamily: 'JetBrains Mono',
+    fontFamily: MONO,
     fontSize: 9,
     color: COLOR.inkMuted,
   },
