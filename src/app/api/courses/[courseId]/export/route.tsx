@@ -169,13 +169,14 @@ export async function GET(
   }
 
   const safeTitle = (course as any).title.replace(/[^\w\s-]/g, '').trim()
-  const filename = `${safeTitle} — Nozomi workbook.pdf`
+  const asciiFilename = `${safeTitle} - Nozomi workbook.pdf`
+  const utf8Filename = `${safeTitle} — Nozomi workbook.pdf`
 
   return new Response(new Uint8Array(pdfBuffer), {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      'Content-Disposition': `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(utf8Filename)}`,
       'Cache-Control': 'private, no-store',
     },
   })
