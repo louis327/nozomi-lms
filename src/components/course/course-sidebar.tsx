@@ -141,7 +141,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                   <p className="text-[9.5px] text-white/40 font-semibold uppercase tracking-[0.14em]">
                     Module {String(modIdx + 1).padStart(2, '0')}
                   </p>
-                  <p className="text-[12.5px] text-white/90 font-medium truncate group-hover:text-white transition-colors mt-0.5" title={mod.title}>
+                  <p className="text-[12.5px] text-white/90 font-medium leading-snug break-words group-hover:text-white transition-colors mt-0.5" title={mod.title}>
                     {mod.title}
                   </p>
                 </div>
@@ -173,7 +173,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                         ) : (
                           <span className={`w-3 h-3 rounded-full border shrink-0 ${isCurrent ? 'border-white/80' : 'border-white/20'}`} />
                         )}
-                        <span className="truncate" title={section.title}>{section.title}</span>
+                        <span className="leading-snug break-words min-w-0" title={section.title} style={{ overflowWrap: 'anywhere' }}>{section.title}</span>
                       </Link>
                     )
                   })}

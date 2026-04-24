@@ -1,8 +1,18 @@
 import { ReactNode } from 'react'
 
-const calloutConfig = {
+type CalloutStyle = {
+  color: string
+  bg: string
+  border: string
+  defaultLabel: string
+  icon: ReactNode
+}
+
+const calloutConfig: Record<string, CalloutStyle> = {
   tip: {
     color: 'var(--nz-info)',
+    bg: '#eff6ff',
+    border: '#bfdbfe',
     defaultLabel: 'Tip',
     icon: (
       <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -12,6 +22,8 @@ const calloutConfig = {
   },
   warning: {
     color: 'var(--nz-warning)',
+    bg: '#fffbeb',
+    border: '#fde68a',
     defaultLabel: 'Heads up',
     icon: (
       <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -21,6 +33,8 @@ const calloutConfig = {
   },
   formula: {
     color: 'var(--nz-accent)',
+    bg: '#fdf2f8',
+    border: '#fbcfe8',
     defaultLabel: 'Formula',
     icon: (
       <svg className="w-[16px] h-[16px]" fill="currentColor" viewBox="0 0 24 24">
@@ -30,6 +44,8 @@ const calloutConfig = {
   },
   'key-insight': {
     color: 'var(--nz-success)',
+    bg: '#f0fdf4',
+    border: '#bbf7d0',
     defaultLabel: 'Key insight',
     icon: (
       <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -37,7 +53,7 @@ const calloutConfig = {
       </svg>
     ),
   },
-} as const
+}
 
 type CalloutProps = {
   type: keyof typeof calloutConfig
@@ -46,13 +62,16 @@ type CalloutProps = {
 }
 
 export function Callout({ type, title, children }: CalloutProps) {
-  const config = calloutConfig[type]
+  const config = calloutConfig[type] ?? calloutConfig.tip
   const label = title ?? config.defaultLabel
 
   return (
     <aside
-      className="my-7 pl-5 border-l-2"
-      style={{ borderColor: config.color }}
+      className="my-5 rounded-xl px-5 py-4 border"
+      style={{
+        background: config.bg,
+        borderColor: config.border,
+      }}
     >
       <div className="flex items-center gap-2 mb-2">
         <span style={{ color: config.color }} className="shrink-0">
@@ -65,7 +84,7 @@ export function Callout({ type, title, children }: CalloutProps) {
           {label}
         </p>
       </div>
-      <div className="text-[15px] text-ink-soft leading-[1.65]">
+      <div className="text-[15px] leading-[1.65]" style={{ color: 'var(--nz-ink)' }}>
         {children}
       </div>
     </aside>

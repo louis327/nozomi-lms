@@ -18,6 +18,7 @@ import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'rich_text', label: 'Rich Text' },
   { type: 'callout', label: 'Callout' },
+  { type: 'image', label: 'Image' },
   { type: 'table', label: 'Table' },
   { type: 'workbook_prompt', label: 'Workbook Prompt' },
   { type: 'checklist', label: 'Checklist' },
@@ -54,15 +55,43 @@ function InsertBlockButton({ onInsert }: { onInsert: (type: ContentBlock['type']
   )
 }
 
-function DoBlock({ label, children }: { label: string; children: ReactNode }) {
+function DoBlock({
+  label,
+  question,
+  example,
+  children,
+}: {
+  label: string
+  question?: string
+  example?: string
+  children: ReactNode
+}) {
   return (
-    <div className="my-7 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="my-5 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
+      <div className="flex items-center gap-2 mb-3">
         <Pencil className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
         <p className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent">
           {label}
         </p>
       </div>
+      {question && (
+        <p
+          className="text-[15px] leading-[1.55] mb-3"
+          style={{ color: '#000', fontWeight: 500 }}
+        >
+          {question}
+        </p>
+      )}
+      {example && (
+        <div className="mb-3 rounded-lg border border-line-soft bg-white/60 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted mb-1">
+            Example
+          </p>
+          <p className="text-[13px] text-ink-soft italic leading-[1.55]">
+            {example}
+          </p>
+        </div>
+      )}
       {children}
     </div>
   )
@@ -270,14 +299,17 @@ export function SectionContent({
         const headers = rows[0] ?? []
         const bodyRows = rows.slice(1)
         return (
-          <div key={block.id} className="my-7 overflow-x-auto rounded-xl border border-line bg-surface">
-            <table className="w-full text-[14px]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+          <div key={block.id} className="my-5 overflow-x-auto rounded-lg border border-line bg-white">
+            <table
+              className="w-full text-[14px]"
+              style={{ borderCollapse: 'collapse' }}
+            >
               <thead>
                 <tr>
                   {headers.map((h: string, i: number) => (
                     <th
                       key={i}
-                      className="px-5 py-3 text-left text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-muted border-b border-line"
+                      className="px-4 py-2.5 text-left text-[13px] font-semibold text-ink bg-surface-muted border border-line"
                     >
                       {h}
                     </th>
@@ -286,13 +318,11 @@ export function SectionContent({
               </thead>
               <tbody>
                 {bodyRows.map((row: string[], ri: number) => (
-                  <tr key={ri} className="border-b border-line-soft last:border-0">
+                  <tr key={ri}>
                     {row.map((cell: string, ci: number) => (
                       <td
                         key={ci}
-                        className={`px-5 py-4 text-[14px] leading-[1.55] ${
-                          ci === 0 ? 'text-ink font-medium' : 'text-ink-soft'
-                        }`}
+                        className="px-4 py-2.5 text-[14px] leading-[1.55] text-ink border border-line align-top"
                       >
                         {cell}
                       </td>
@@ -305,12 +335,42 @@ export function SectionContent({
         )
       }
 
+      case 'image': {
+        const url = (block.content.url as string) || ''
+        const alt = (block.content.alt as string) || ''
+        const caption = (block.content.caption as string) || ''
+        if (!url) return null
+        return (
+          <figure key={block.id} className="my-5">
+            <img
+              src={url}
+              alt={alt}
+              className="w-full rounded-lg border border-line-soft"
+              loading="lazy"
+            />
+            {caption && (
+              <figcaption className="mt-2 text-[12.5px] text-ink-muted text-center italic">
+                {caption}
+              </figcaption>
+            )}
+          </figure>
+        )
+      }
+
       case 'workbook_prompt':
         return (
           <div key={block.id}>
-            <DoBlock label={(block.content.label as string) ?? (block.content.prompt as string) ?? 'Your response'}>
+            <DoBlock
+              label="Your response"
+              question={
+                (block.content.label as string) ??
+                (block.content.prompt as string) ??
+                ''
+              }
+              example={(block.content.example as string) || ''}
+            >
               <textarea
-                className="w-full min-h-[120px] bg-surface border border-line rounded-lg px-4 py-3 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent/40 transition-colors resize-y leading-[1.6]"
+                className="w-full min-h-[120px] bg-white border border-line rounded-lg px-4 py-3 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent/40 transition-colors resize-y leading-[1.6]"
                 placeholder={(block.content.placeholder as string) || 'Type your response here…'}
                 value={workbookData[block.id] ?? ''}
                 onChange={(e) =>
@@ -515,7 +575,7 @@ export function SectionContent({
 
       case 'video':
         return (
-          <div key={block.id} className="my-7 rounded-xl overflow-hidden border border-line bg-surface">
+          <div key={block.id} className="my-5">
             {block.content.url && <VideoEmbed url={block.content.url as string} />}
           </div>
         )
@@ -665,7 +725,7 @@ export function SectionContent({
     }
 
     return (
-      <div className="space-y-7">
+      <div>
         {blocks.map((block) => (
           <div key={block.id}>{renderBlock(block)}</div>
         ))}

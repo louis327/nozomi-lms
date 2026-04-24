@@ -228,7 +228,7 @@ export default async function CourseOverviewPage({
                         <span className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.12em] tabular-nums shrink-0 w-8">
                           {String(secIdx + 1).padStart(2, '0')}
                         </span>
-                        <span className={`text-[13.5px] flex-1 truncate ${isEnrolled ? 'text-ink-soft group-hover:text-ink' : 'text-ink-muted'} transition-colors`}>
+                        <span className={`text-[13.5px] flex-1 leading-snug break-words ${isEnrolled ? 'text-ink-soft group-hover:text-ink' : 'text-ink-muted'} transition-colors`} style={{ overflowWrap: 'anywhere' }}>
                           {sec.title}
                         </span>
                         <span className="text-[11px] text-ink-faint shrink-0">

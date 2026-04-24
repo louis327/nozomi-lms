@@ -129,7 +129,7 @@ function DoBlockShell({
   children: ReactNode
 }) {
   return (
-    <div className="my-7 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
+    <div className="my-5 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
       <div className="flex items-center gap-2 mb-4">
         <Pencil className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
         <EditableText
@@ -258,18 +258,18 @@ export function EditableBlockRender({ block, onChange }: Props) {
       }
 
       return (
-        <div className="my-7">
-          <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+        <div className="my-5">
+          <div className="overflow-x-auto rounded-lg border border-line bg-white">
             <table
               className="w-full text-[14px]"
-              style={{ borderCollapse: 'separate', borderSpacing: 0 }}
+              style={{ borderCollapse: 'collapse' }}
             >
               <thead>
                 <tr>
                   {headers.map((h, i) => (
                     <th
                       key={i}
-                      className="px-5 py-3 text-left border-b border-line relative group"
+                      className="px-4 py-2.5 text-left border border-line bg-surface-muted relative group"
                     >
                       <div className="flex items-center gap-1">
                         <EditableText
@@ -277,11 +277,9 @@ export function EditableBlockRender({ block, onChange }: Props) {
                           onChange={(v) => setCell(0, i, v)}
                           placeholder="Header"
                           style={{
-                            fontSize: '10.5px',
+                            fontSize: '13px',
                             fontWeight: 600,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.18em',
-                            color: 'var(--nz-ink-muted)',
+                            color: 'var(--nz-ink)',
                           }}
                           inheritFont={false}
                         />
@@ -303,16 +301,11 @@ export function EditableBlockRender({ block, onChange }: Props) {
                 {bodyRows.map((row, bi) => {
                   const ri = bi + 1
                   return (
-                    <tr
-                      key={ri}
-                      className="border-b border-line-soft last:border-0 group"
-                    >
+                    <tr key={ri} className="group">
                       {row.map((cell, ci) => (
                         <td
                           key={ci}
-                          className={`px-5 py-3 ${
-                            ci === 0 ? 'text-ink font-medium' : 'text-ink-soft'
-                          }`}
+                          className="px-4 py-2.5 border border-line text-ink align-top"
                         >
                           <div className="flex items-center gap-1">
                             <EditableText
@@ -353,27 +346,53 @@ export function EditableBlockRender({ block, onChange }: Props) {
         (block.content.prompt as string) ||
         ''
       const placeholder = (block.content.placeholder as string) || ''
+      const example = (block.content.example as string) || ''
       return (
         <DoBlockShell
-          labelValue={label}
-          onLabelChange={(v) => update({ label: v, prompt: v })}
+          labelValue="Your response"
+          onLabelChange={() => {}}
         >
+          <EditableText
+            value={label}
+            onChange={(v) => update({ label: v, prompt: v })}
+            placeholder="Question (shown in black to students)"
+            multiline
+            rows={2}
+            style={{ fontSize: '15px', color: '#000', fontWeight: 500 }}
+            inheritFont={false}
+          />
+          <div className="mt-3 rounded-lg border border-line-soft bg-white/60 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted mb-1">
+              Example (optional — shown separate from question)
+            </p>
+            <EditableText
+              value={example}
+              onChange={(v) => update({ example: v })}
+              placeholder="e.g. I grew up watching my grandmother..."
+              multiline
+              rows={2}
+              style={{
+                fontSize: '13px',
+                color: 'var(--nz-ink-soft)',
+                fontStyle: 'italic',
+              }}
+              inheritFont={false}
+            />
+          </div>
           <EditableText
             value={placeholder}
             onChange={(v) => update({ placeholder: v })}
-            placeholder="Placeholder text students see..."
-            multiline
-            rows={4}
-            className="min-h-[100px]"
+            placeholder="Textarea placeholder (what students see inside the empty box)"
+            className="mt-3"
             style={{
-              fontSize: '14px',
-              color: 'var(--nz-ink-muted)',
+              fontSize: '13px',
+              color: 'var(--nz-ink-faint)',
               fontStyle: 'italic',
             }}
             inheritFont={false}
           />
           <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            This is what students type their response into.
+            Question in black · Example distinguished · Placeholder = inside the empty box
           </p>
         </DoBlockShell>
       )
@@ -671,10 +690,101 @@ export function EditableBlockRender({ block, onChange }: Props) {
       )
     }
 
+    case 'image': {
+      const url = (block.content.url as string) || ''
+      const alt = (block.content.alt as string) || ''
+      const caption = (block.content.caption as string) || ''
+
+      const handleFile = async (file: File) => {
+        const fd = new FormData()
+        fd.append('file', file)
+        try {
+          const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            alert(err.error || 'Upload failed')
+            return
+          }
+          const data = await res.json()
+          if (data.url) update({ url: data.url })
+        } catch {
+          alert('Upload failed')
+        }
+      }
+
+      return (
+        <figure className="my-5 space-y-3">
+          {url ? (
+            <div className="relative">
+              <img
+                src={url}
+                alt={alt}
+                className="w-full rounded-lg border border-line-soft"
+              />
+              <button
+                type="button"
+                onClick={() => update({ url: '' })}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface border border-line flex items-center justify-center hover:bg-surface-muted cursor-pointer"
+                title="Remove image"
+              >
+                <X className="w-3.5 h-3.5 text-ink-muted" strokeWidth={2} />
+              </button>
+            </div>
+          ) : (
+            <label className="block aspect-[16/9] rounded-lg border border-dashed border-line bg-surface-muted/60 flex items-center justify-center cursor-pointer hover:bg-surface-muted transition-colors">
+              <div className="text-center">
+                <p className="text-[13px] font-medium text-ink-soft">
+                  Click to upload an image
+                </p>
+                <p className="text-[11px] text-ink-muted mt-1">
+                  PNG, JPG, GIF, WebP, or SVG — up to 50MB
+                </p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) handleFile(f)
+                }}
+              />
+            </label>
+          )}
+          <EditableText
+            value={url}
+            onChange={(v) => update({ url: v })}
+            placeholder="Or paste an image URL (https://...)"
+            style={{ fontSize: '12px', color: 'var(--nz-ink-muted)' }}
+            inheritFont={false}
+          />
+          <EditableText
+            value={alt}
+            onChange={(v) => update({ alt: v })}
+            placeholder="Alt text (for accessibility)"
+            style={{ fontSize: '12px', color: 'var(--nz-ink-muted)' }}
+            inheritFont={false}
+          />
+          <EditableText
+            value={caption}
+            onChange={(v) => update({ caption: v })}
+            placeholder="Optional caption (shown under the image)"
+            style={{
+              fontSize: '12.5px',
+              color: 'var(--nz-ink-soft)',
+              fontStyle: 'italic',
+              textAlign: 'center',
+            }}
+            inheritFont={false}
+          />
+        </figure>
+      )
+    }
+
     case 'video': {
       const url = (block.content.url as string) || ''
       return (
-        <div className="my-7 space-y-3">
+        <div className="my-5 space-y-3">
           <EditableText
             value={url}
             onChange={(v) => update({ url: v })}

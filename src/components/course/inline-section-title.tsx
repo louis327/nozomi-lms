@@ -40,21 +40,30 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
 
   if (!editMode) {
     return (
-      <h1 className="display text-[40px] sm:text-[48px] mb-10 leading-[1.1]">
+      <h1
+        className="display text-[28px] sm:text-[34px] mb-8 leading-[1.15] break-words"
+        style={{ overflowWrap: 'anywhere' }}
+      >
         {title}
       </h1>
     )
   }
 
   return (
-    <div className="relative mb-10 group">
-      <input
-        type="text"
+    <div className="relative mb-8 group">
+      <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={handleBlur}
-        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-        className="w-full display text-[40px] sm:text-[48px] leading-[1.1] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            e.currentTarget.blur()
+          }
+        }}
+        rows={1}
+        className="w-full display text-[28px] sm:text-[34px] leading-[1.15] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none resize-none break-words"
+        style={{ overflowWrap: 'anywhere' }}
       />
       {saving && (
         <div className="absolute right-0 top-1/2 -translate-y-1/2">

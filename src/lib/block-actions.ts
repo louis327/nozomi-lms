@@ -70,7 +70,8 @@ export function getDefaultContent(type: ContentBlock['type']): Record<string, un
     case 'rich_text': return { html: '' }
     case 'callout': return { calloutType: 'tip', callout_type: 'tip', title: '', body: '', html: '' }
     case 'table': return { rows: [['', ''], ['', '']] }
-    case 'workbook_prompt': return { label: '', placeholder: '', prompt: '' }
+    case 'workbook_prompt': return { label: '', placeholder: '', prompt: '', example: '' }
+    case 'image': return { url: '', alt: '', caption: '' }
     case 'checklist': return { items: [''] }
     case 'completion_checklist': return {
       title: '',
