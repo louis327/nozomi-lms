@@ -231,10 +231,13 @@ export function EditableBlockRender({ block, onChange }: Props) {
       const text = (block.content.text as string) || (block.content.html as string) || ''
       const attribution = (block.content.attribution as string) || ''
       return (
-        <figure className="my-6">
+        <figure
+          className="my-6 rounded-xl border border-line-soft px-6 py-5"
+          style={{ background: 'var(--nz-surface-muted)', borderLeft: '3px solid var(--nz-ink)' }}
+        >
           <blockquote
-            className="relative pl-6 pr-2 py-1 text-[17px] leading-[1.55] text-ink italic"
-            style={{ borderLeft: '3px solid var(--nz-ink)', fontFamily: 'var(--font-sans)' }}
+            className="text-[17px] leading-[1.55] text-ink italic"
+            style={{ fontFamily: 'var(--font-sans)' }}
           >
             <RichTextEditor
               content={text}
@@ -242,7 +245,7 @@ export function EditableBlockRender({ block, onChange }: Props) {
               placeholder="Quote text…"
             />
           </blockquote>
-          <figcaption className="mt-2 pl-6 text-[13px] text-ink-muted">
+          <figcaption className="mt-3 text-[13px] text-ink-muted">
             <EditableText
               value={attribution}
               onChange={(v) => update({ attribution: v })}

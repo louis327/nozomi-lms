@@ -300,10 +300,14 @@ export function SectionContent({
         const attribution = (block.content.attribution as string) || ''
         const isHtml = /<[a-z][\s\S]*>/i.test(text)
         return (
-          <figure key={block.id} className="my-6">
+          <figure
+            key={block.id}
+            className="my-6 rounded-xl border border-line-soft px-6 py-5"
+            style={{ background: 'var(--nz-surface-muted)', borderLeft: '3px solid var(--nz-ink)' }}
+          >
             <blockquote
-              className="relative pl-6 pr-2 py-1 text-[17px] leading-[1.55] text-ink italic"
-              style={{ borderLeft: '3px solid var(--nz-ink)', fontFamily: 'var(--font-sans)' }}
+              className="text-[17px] leading-[1.55] text-ink italic"
+              style={{ fontFamily: 'var(--font-sans)' }}
             >
               {isHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: text }} />
@@ -312,7 +316,7 @@ export function SectionContent({
               )}
             </blockquote>
             {attribution && (
-              <figcaption className="mt-2 pl-6 text-[13px] text-ink-muted not-italic">
+              <figcaption className="mt-3 text-[13px] text-ink-muted not-italic">
                 — {attribution}
               </figcaption>
             )}
