@@ -302,25 +302,11 @@ export function SectionContent({
         return (
           <figure
             key={block.id}
-            className="my-8 relative rounded-2xl overflow-hidden px-10 pt-12 pb-10 lg:px-12 lg:pt-14 lg:pb-12"
-            style={{ background: 'var(--nz-ink)', color: 'var(--nz-ink-inverted)' }}
+            className="my-6 rounded-xl px-6 py-4"
+            style={{ background: 'var(--nz-ink)' }}
           >
-            <span
-              aria-hidden
-              className="absolute top-3 left-5 select-none pointer-events-none"
-              style={{
-                fontFamily: 'Georgia, "Times New Roman", serif',
-                fontSize: '120px',
-                lineHeight: '1',
-                color: 'var(--nz-accent)',
-                fontStyle: 'italic',
-                fontWeight: 700,
-              }}
-            >
-              “
-            </span>
             <blockquote
-              className="relative text-[19px] lg:text-[21px] leading-[1.5] italic"
+              className="text-[15px] leading-[1.55] italic"
               style={{ fontFamily: 'var(--font-sans)', color: '#fafafa' }}
             >
               {isHtml ? (
@@ -331,8 +317,8 @@ export function SectionContent({
             </blockquote>
             {attribution && (
               <figcaption
-                className="mt-5 text-[12px] uppercase tracking-[0.18em] not-italic"
-                style={{ color: 'var(--nz-accent)', fontWeight: 600 }}
+                className="mt-2 text-[12px] not-italic"
+                style={{ color: '#a3a3a3' }}
               >
                 — {attribution}
               </figcaption>
