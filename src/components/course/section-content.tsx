@@ -68,32 +68,24 @@ function DoBlock({
   children: ReactNode
 }) {
   return (
-    <div className="my-5 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
-      <div className="flex items-center gap-2 mb-3">
-        <Pencil className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent">
-          {label}
-        </p>
-      </div>
+    <div className="my-8">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-accent mb-2">
+        {label}
+      </p>
       {question && (
         <p
-          className="text-[15px] leading-[1.55] mb-3"
-          style={{ color: '#000', fontWeight: 500 }}
+          className="text-[17px] leading-[1.5] mb-2 text-ink"
+          style={{ fontWeight: 600 }}
         >
           {question}
         </p>
       )}
       {example && (
-        <div className="mb-3 rounded-lg border border-line-soft bg-white/60 px-3 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted mb-1">
-            Example
-          </p>
-          <p className="text-[13px] text-ink-soft italic leading-[1.55]">
-            {example}
-          </p>
-        </div>
+        <p className="text-[13px] text-ink-muted italic leading-[1.5] mb-4 pl-3 border-l-2 border-line">
+          e.g. {example}
+        </p>
       )}
-      {children}
+      <div className="mt-3">{children}</div>
     </div>
   )
 }
@@ -407,7 +399,7 @@ export function SectionContent({
               example={(block.content.example as string) || ''}
             >
               <textarea
-                className="w-full min-h-[120px] bg-white border border-line rounded-lg px-4 py-3 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-accent/40 transition-colors resize-y leading-[1.6]"
+                className="w-full min-h-[88px] bg-transparent border-0 border-b border-line px-0 py-2 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-ink transition-colors resize-y leading-[1.6]"
                 placeholder={(block.content.placeholder as string) || 'Type your response here…'}
                 value={workbookData[block.id] ?? ''}
                 onChange={(e) =>

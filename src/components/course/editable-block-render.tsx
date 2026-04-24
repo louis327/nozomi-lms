@@ -129,24 +129,21 @@ function DoBlockShell({
   children: ReactNode
 }) {
   return (
-    <div className="my-5 rounded-xl border border-line-soft border-l-[3px] border-l-accent bg-surface-muted/60 p-5 lg:p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Pencil className="w-3.5 h-3.5 text-accent" strokeWidth={1.8} />
-        <EditableText
-          value={labelValue}
-          onChange={onLabelChange}
-          placeholder="Prompt label"
-          className="flex-1"
-          style={{
-            fontSize: '10.5px',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.22em',
-            color: 'var(--nz-accent)',
-          }}
-          inheritFont={false}
-        />
-      </div>
+    <div className="my-8">
+      <EditableText
+        value={labelValue}
+        onChange={onLabelChange}
+        placeholder="Prompt label"
+        className="mb-3"
+        style={{
+          fontSize: '10px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.22em',
+          color: 'var(--nz-accent)',
+        }}
+        inheritFont={false}
+      />
       {children}
     </div>
   )
@@ -393,45 +390,43 @@ export function EditableBlockRender({ block, onChange }: Props) {
           <EditableText
             value={label}
             onChange={(v) => update({ label: v, prompt: v })}
-            placeholder="Question (shown in black to students)"
+            placeholder="Question text"
             multiline
             rows={2}
-            style={{ fontSize: '15px', color: '#000', fontWeight: 500 }}
+            style={{ fontSize: '17px', color: 'var(--nz-ink)', fontWeight: 600, lineHeight: '1.5' }}
             inheritFont={false}
           />
-          <div className="mt-3 rounded-lg border border-line-soft bg-white/60 px-3 py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-muted mb-1">
-              Example (optional — shown separate from question)
-            </p>
+          <div className="mt-2 pl-3 border-l-2 border-line">
+            <span className="text-[13px] text-ink-muted italic">e.g. </span>
             <EditableText
               value={example}
               onChange={(v) => update({ example: v })}
-              placeholder="e.g. I grew up watching my grandmother..."
+              placeholder="add an example (optional)"
               multiline
-              rows={2}
+              rows={1}
               style={{
                 fontSize: '13px',
-                color: 'var(--nz-ink-soft)',
+                color: 'var(--nz-ink-muted)',
+                fontStyle: 'italic',
+                lineHeight: '1.5',
+                display: 'inline',
+              }}
+              inheritFont={false}
+            />
+          </div>
+          <div className="mt-4 border-b border-line pb-2">
+            <EditableText
+              value={placeholder}
+              onChange={(v) => update({ placeholder: v })}
+              placeholder="Placeholder text for the student's answer line"
+              style={{
+                fontSize: '14px',
+                color: 'var(--nz-ink-faint)',
                 fontStyle: 'italic',
               }}
               inheritFont={false}
             />
           </div>
-          <EditableText
-            value={placeholder}
-            onChange={(v) => update({ placeholder: v })}
-            placeholder="Textarea placeholder (what students see inside the empty box)"
-            className="mt-3"
-            style={{
-              fontSize: '13px',
-              color: 'var(--nz-ink-faint)',
-              fontStyle: 'italic',
-            }}
-            inheritFont={false}
-          />
-          <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            Question in black · Example distinguished · Placeholder = inside the empty box
-          </p>
         </DoBlockShell>
       )
     }
