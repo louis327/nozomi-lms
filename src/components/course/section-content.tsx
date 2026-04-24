@@ -399,7 +399,7 @@ export function SectionContent({
               example={(block.content.example as string) || ''}
             >
               <textarea
-                className="w-full min-h-[88px] bg-transparent border-0 border-b border-line px-0 py-2 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-ink transition-colors resize-y leading-[1.6]"
+                className="w-full min-h-[100px] bg-white border border-line rounded-lg px-4 py-3 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none focus:border-line-strong transition-colors resize-y leading-[1.6]"
                 placeholder={(block.content.placeholder as string) || 'Type your response here…'}
                 value={workbookData[block.id] ?? ''}
                 onChange={(e) =>
