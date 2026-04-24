@@ -227,6 +227,34 @@ export function EditableBlockRender({ block, onChange }: Props) {
       )
     }
 
+    case 'quote': {
+      const text = (block.content.text as string) || (block.content.html as string) || ''
+      const attribution = (block.content.attribution as string) || ''
+      return (
+        <figure className="my-6">
+          <blockquote
+            className="relative pl-6 pr-2 py-1 text-[17px] leading-[1.55] text-ink italic"
+            style={{ borderLeft: '3px solid var(--nz-ink)', fontFamily: 'var(--font-sans)' }}
+          >
+            <RichTextEditor
+              content={text}
+              onChange={(html) => update({ text: html, html })}
+              placeholder="Quote text…"
+            />
+          </blockquote>
+          <figcaption className="mt-2 pl-6 text-[13px] text-ink-muted">
+            <EditableText
+              value={attribution}
+              onChange={(v) => update({ attribution: v })}
+              placeholder="— attribution (optional)"
+              inheritFont={false}
+              style={{ fontSize: '13px' }}
+            />
+          </figcaption>
+        </figure>
+      )
+    }
+
     case 'table': {
       const rows = (block.content.rows as string[][]) || [
         ['Column 1', 'Column 2'],

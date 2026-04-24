@@ -18,6 +18,7 @@ import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'rich_text', label: 'Rich Text' },
   { type: 'callout', label: 'Callout' },
+  { type: 'quote', label: 'Quote' },
   { type: 'image', label: 'Image' },
   { type: 'table', label: 'Table' },
   { type: 'workbook_prompt', label: 'Workbook Prompt' },
@@ -293,6 +294,31 @@ export function SectionContent({
             <div dangerouslySetInnerHTML={{ __html: block.content.body ?? block.content.html ?? block.content.text ?? '' }} />
           </Callout>
         )
+
+      case 'quote': {
+        const text = (block.content.text as string) || (block.content.html as string) || ''
+        const attribution = (block.content.attribution as string) || ''
+        const isHtml = /<[a-z][\s\S]*>/i.test(text)
+        return (
+          <figure key={block.id} className="my-6">
+            <blockquote
+              className="relative pl-6 pr-2 py-1 text-[17px] leading-[1.55] text-ink italic"
+              style={{ borderLeft: '3px solid var(--nz-ink)', fontFamily: 'var(--font-sans)' }}
+            >
+              {isHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: text }} />
+              ) : (
+                <p>{text}</p>
+              )}
+            </blockquote>
+            {attribution && (
+              <figcaption className="mt-2 pl-6 text-[13px] text-ink-muted not-italic">
+                — {attribution}
+              </figcaption>
+            )}
+          </figure>
+        )
+      }
 
       case 'table': {
         const rows = (block.content.rows as string[][] ?? [])
@@ -618,7 +644,30 @@ export function SectionContent({
 
       case 'fillable_table': {
         const ftColumns = (block.content.columns as string[]) ?? []
-        const ftRows = (block.content.rows as Array<{ cells: Array<{ value: string; editable: boolean; prefix?: string; suffix?: string; placeholder?: string }> }>) ?? []
+        const ftRows = (block.content.rows as Array<{ cells: Array<{ value: string; editable: boolean; prefix?: string; suffix?: string; placeholder?: string; computed?: 'sum' }> }>) ?? []
+
+        const parseNum = (s: string): number => {
+          if (!s) return 0
+          const cleaned = String(s).replace(/[^0-9.\-]/g, '')
+          const n = parseFloat(cleaned)
+          return isNaN(n) ? 0 : n
+        }
+
+        const computeSum = (colIdx: number, upToRow: number): number => {
+          let total = 0
+          for (let ri = 0; ri < upToRow; ri++) {
+            const row = ftRows[ri]
+            const cell = row?.cells?.[colIdx]
+            if (!cell) continue
+            if (cell.editable) {
+              total += parseNum(workbookData[`${block.id}_r${ri}_c${colIdx}`] ?? '')
+            } else if (cell.computed !== 'sum') {
+              total += parseNum(cell.value)
+            }
+          }
+          return total
+        }
+
         return (
           <div key={block.id}>
             <DoBlock label={(block.content.label as string) || 'Fill in the table'}>
@@ -639,43 +688,64 @@ export function SectionContent({
                     </thead>
                   )}
                   <tbody>
-                    {ftRows.map((row, ri) => (
-                      <tr key={ri} className="border-b border-line-soft last:border-0">
-                        {row.cells.map((cell, ci) => {
-                          const cellKey = `${block.id}_r${ri}_c${ci}`
-                          if (!cell.editable) {
+                    {ftRows.map((row, ri) => {
+                      const isTotalRow = row.cells.some((c) => c.computed === 'sum')
+                      return (
+                        <tr
+                          key={ri}
+                          className={`border-b border-line-soft last:border-0 ${isTotalRow ? 'bg-surface-muted/70 font-semibold' : ''}`}
+                        >
+                          {row.cells.map((cell, ci) => {
+                            const cellKey = `${block.id}_r${ri}_c${ci}`
+
+                            if (cell.computed === 'sum') {
+                              const sum = computeSum(ci, ri)
+                              const formatted = sum.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                              return (
+                                <td
+                                  key={ci}
+                                  className="px-4 py-3 text-ink border-r border-line-soft last:border-r-0 tabular-nums"
+                                >
+                                  {cell.prefix || ''}{formatted}{cell.suffix || ''}
+                                </td>
+                              )
+                            }
+
+                            if (!cell.editable) {
+                              return (
+                                <td
+                                  key={ci}
+                                  className="px-4 py-3 text-ink font-medium border-r border-line-soft last:border-r-0"
+                                >
+                                  {cell.value}
+                                </td>
+                              )
+                            }
                             return (
-                              <td
-                                key={ci}
-                                className="px-4 py-3 text-ink font-medium border-r border-line-soft last:border-r-0"
-                              >
-                                {cell.value}
+                              <td key={ci} className="px-2 py-1.5 border-r border-line-soft last:border-r-0">
+                                <div className="flex items-center gap-0 bg-surface border border-line rounded-md overflow-hidden focus-within:border-accent/40 transition-colors">
+                                  {cell.prefix && (
+                                    <span className="pl-2.5 pr-0.5 text-[13px] text-ink-faint select-none">{cell.prefix}</span>
+                                  )}
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="flex-1 bg-transparent px-2 py-2 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none min-w-[60px] tabular-nums"
+                                    placeholder={cell.placeholder || '…'}
+                                    value={workbookData[cellKey] ?? ''}
+                                    onChange={(e) => setWorkbookData((prev) => ({ ...prev, [cellKey]: e.target.value }))}
+                                    disabled={saved}
+                                  />
+                                  {cell.suffix && (
+                                    <span className="pr-2.5 pl-0.5 text-[13px] text-ink-faint select-none">{cell.suffix}</span>
+                                  )}
+                                </div>
                               </td>
                             )
-                          }
-                          return (
-                            <td key={ci} className="px-2 py-1.5 border-r border-line-soft last:border-r-0">
-                              <div className="flex items-center gap-0 bg-surface border border-line rounded-md overflow-hidden focus-within:border-accent/40 transition-colors">
-                                {cell.prefix && (
-                                  <span className="pl-2.5 pr-0.5 text-[13px] text-ink-faint select-none">{cell.prefix}</span>
-                                )}
-                                <input
-                                  type="text"
-                                  className="flex-1 bg-transparent px-2 py-2 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none min-w-[60px]"
-                                  placeholder={cell.placeholder || '…'}
-                                  value={workbookData[cellKey] ?? ''}
-                                  onChange={(e) => setWorkbookData((prev) => ({ ...prev, [cellKey]: e.target.value }))}
-                                  disabled={saved}
-                                />
-                                {cell.suffix && (
-                                  <span className="pr-2.5 pl-0.5 text-[13px] text-ink-faint select-none">{cell.suffix}</span>
-                                )}
-                              </div>
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
+                          })}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

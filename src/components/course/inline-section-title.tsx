@@ -41,8 +41,8 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
   if (!editMode) {
     return (
       <h1
-        className="display text-[28px] sm:text-[34px] mb-8 leading-[1.15] break-words"
-        style={{ overflowWrap: 'anywhere' }}
+        className="display text-[28px] sm:text-[34px] mb-6 leading-[1.15] break-words text-left"
+        style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left' }}
       >
         {title}
       </h1>
@@ -50,7 +50,7 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
   }
 
   return (
-    <div className="relative mb-8 group">
+    <div className="relative mb-6 group">
       <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -62,8 +62,8 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
           }
         }}
         rows={1}
-        className="w-full display text-[28px] sm:text-[34px] leading-[1.15] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none resize-none break-words"
-        style={{ overflowWrap: 'anywhere' }}
+        className="w-full display text-[28px] sm:text-[34px] leading-[1.15] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none resize-none break-words text-left"
+        style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left' }}
       />
       {saving && (
         <div className="absolute right-0 top-1/2 -translate-y-1/2">
