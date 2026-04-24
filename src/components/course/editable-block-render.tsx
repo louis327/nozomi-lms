@@ -232,8 +232,8 @@ export function EditableBlockRender({ block, onChange }: Props) {
       const attribution = (block.content.attribution as string) || ''
       return (
         <figure
-          className="my-6 rounded-xl border border-line-soft px-6 py-5"
-          style={{ background: 'var(--nz-surface-muted)', borderLeft: '3px solid var(--nz-ink)' }}
+          className="my-6 rounded-xl px-6 py-5"
+          style={{ background: '#f1f2f4' }}
         >
           <blockquote
             className="text-[17px] leading-[1.55] text-ink italic"

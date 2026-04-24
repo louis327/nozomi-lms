@@ -235,11 +235,12 @@ body {
   font-family: var(--font-sans);
   color: var(--nz-ink);
   font-weight: 700;
-  font-style: italic;
+  font-style: normal;
   letter-spacing: -0.02em;
   text-align: left;
   margin-left: 0;
   padding-left: 0;
+  text-indent: -0.04em;
 }
 .prose-nozomi h1 { font-size: 30px; line-height: 1.15; margin-top: 2rem; margin-bottom: 0.75rem; }
 .prose-nozomi h2 { font-size: 22px; line-height: 1.2; margin-top: 2rem; margin-bottom: 0.6rem; }

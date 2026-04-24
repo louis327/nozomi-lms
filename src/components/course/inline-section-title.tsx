@@ -42,7 +42,14 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
     return (
       <h1
         className="display text-[28px] sm:text-[34px] mb-6 leading-[1.15] break-words text-left"
-        style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left' }}
+        style={{
+          overflowWrap: 'anywhere',
+          marginLeft: 0,
+          paddingLeft: 0,
+          textAlign: 'left',
+          textIndent: '-0.04em',
+          fontStyle: 'normal',
+        }}
       >
         {title}
       </h1>
@@ -63,7 +70,7 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
         }}
         rows={1}
         className="w-full display text-[28px] sm:text-[34px] leading-[1.15] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none resize-none break-words text-left"
-        style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left' }}
+        style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left', textIndent: '-0.04em', fontStyle: 'normal' }}
       />
       {saving && (
         <div className="absolute right-0 top-1/2 -translate-y-1/2">
