@@ -232,12 +232,16 @@ export function EditableBlockRender({ block, onChange }: Props) {
       const attribution = (block.content.attribution as string) || ''
       return (
         <figure
-          className="my-6 rounded-xl px-6 py-4"
-          style={{ background: 'var(--nz-ink)' }}
+          className="my-6 px-6 py-4"
+          style={{
+            background: '#faf1df',
+            borderLeft: '6px solid #c69a3f',
+            borderRadius: '2px',
+          }}
         >
           <blockquote
-            className="text-[15px] leading-[1.55] italic"
-            style={{ fontFamily: 'var(--font-sans)', color: '#fafafa' }}
+            className="text-[16px] leading-[1.55] italic"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif', color: '#2a2a2a' }}
           >
             <RichTextEditor
               content={text}
@@ -246,15 +250,15 @@ export function EditableBlockRender({ block, onChange }: Props) {
             />
           </blockquote>
           <figcaption
-            className="mt-2 text-[12px] not-italic"
-            style={{ color: '#a3a3a3' }}
+            className="mt-2 text-[13px] not-italic"
+            style={{ color: '#6b6b6b', fontFamily: 'Georgia, "Times New Roman", serif' }}
           >
             <EditableText
               value={attribution}
               onChange={(v) => update({ attribution: v })}
               placeholder="— attribution (optional)"
               inheritFont={false}
-              style={{ fontSize: '12px', color: '#a3a3a3' }}
+              style={{ fontSize: '13px', color: '#6b6b6b', fontFamily: 'Georgia, "Times New Roman", serif' }}
             />
           </figcaption>
         </figure>
