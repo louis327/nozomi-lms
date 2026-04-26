@@ -1074,7 +1074,7 @@ export function SectionContent({
         sectionTitle={section.title}
         answers={recapAnswers}
         completedAt={recapCompletedAt}
-        primaryLabel={nextSectionId ? 'Next section' : 'Back to course'}
+        primaryLabel={nextSectionId ? 'Continue' : 'Back to course'}
         onPrimary={() => {
           setRecapOpen(false)
           goNext()

@@ -179,25 +179,16 @@ export default async function SectionPage({
           nextSectionId={nextSectionId}
         />
 
-        {/* Section nav */}
-        <div className="mt-14 pt-6 border-t border-line flex items-center justify-between gap-3">
-          {prevSectionId ? (
+        {prevSectionId && (
+          <div className="mt-10">
             <Link
               href={`/courses/${courseId}/learn/${prevSectionId}`}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium text-ink-soft hover:text-ink border border-line rounded-full hover:border-line-strong transition-colors"
             >
-              <span aria-hidden>←</span> Previous
+              <span aria-hidden>←</span> Previous section
             </Link>
-          ) : <span />}
-          {nextSectionId && (
-            <Link
-              href={`/courses/${courseId}/learn/${nextSectionId}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium bg-ink text-white rounded-full hover:bg-black transition-colors"
-            >
-              Next section <span aria-hidden>→</span>
-            </Link>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="mt-12">
           <SectionNotes
