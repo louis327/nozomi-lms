@@ -70,6 +70,7 @@ export function getDefaultContent(type: ContentBlock['type']): Record<string, un
     case 'rich_text': return { html: '' }
     case 'callout': return { calloutType: 'tip', callout_type: 'tip', title: '', body: '', html: '' }
     case 'quote': return { text: '', attribution: '' }
+    case 'bucket': return { number: 1, eyebrow: 'Bucket 1', title: '', body: '', html: '' }
     case 'table': return { rows: [['', ''], ['', '']] }
     case 'workbook_prompt': return { label: '', placeholder: '', prompt: '', example: '' }
     case 'image': return { url: '', alt: '', caption: '' }

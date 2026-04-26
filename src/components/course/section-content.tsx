@@ -19,6 +19,7 @@ const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'rich_text', label: 'Rich Text' },
   { type: 'callout', label: 'Callout' },
   { type: 'quote', label: 'Quote' },
+  { type: 'bucket', label: 'Bucket' },
   { type: 'image', label: 'Image' },
   { type: 'table', label: 'Table' },
   { type: 'workbook_prompt', label: 'Workbook Prompt' },
@@ -328,6 +329,47 @@ export function SectionContent({
               </figcaption>
             )}
           </figure>
+        )
+      }
+
+      case 'bucket': {
+        const number = block.content.number as number | undefined
+        const eyebrow = (block.content.eyebrow as string) ||
+          (number ? `Bucket ${number}` : 'Bucket')
+        const title = (block.content.title as string) || ''
+        const body = (block.content.body as string) || (block.content.html as string) || ''
+        return (
+          <section
+            key={block.id}
+            className="my-6 rounded-[2px] px-7 py-6"
+            style={{
+              background: '#faf1df',
+              borderLeft: '6px solid #c69a3f',
+            }}
+          >
+            <p
+              className="text-[10.5px] font-semibold uppercase tracking-[0.22em] mb-2"
+              style={{ color: '#a07a18' }}
+            >
+              {eyebrow}
+            </p>
+            {title && (
+              <h3
+                className="text-[24px] sm:text-[26px] font-bold leading-[1.2] tracking-tight mb-3"
+                style={{
+                  fontFamily: 'Georgia, "Times New Roman", serif',
+                  color: '#2a2a2a',
+                }}
+              >
+                {title}
+              </h3>
+            )}
+            <div
+              className="prose-nozomi"
+              style={{ color: '#2a2a2a' }}
+              dangerouslySetInnerHTML={{ __html: body }}
+            />
+          </section>
         )
       }
 

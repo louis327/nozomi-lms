@@ -263,6 +263,63 @@ export function EditableBlockRender({ block, onChange }: Props) {
       )
     }
 
+    case 'bucket': {
+      const number = (block.content.number as number | undefined)
+      const eyebrow =
+        (block.content.eyebrow as string) ||
+        (number ? `Bucket ${number}` : 'Bucket')
+      const title = (block.content.title as string) || ''
+      const body = (block.content.body as string) || (block.content.html as string) || ''
+      return (
+        <section
+          className="my-6 rounded-[2px] px-7 py-6"
+          style={{
+            background: '#faf1df',
+            borderLeft: '6px solid #c69a3f',
+          }}
+        >
+          <div className="mb-2">
+            <EditableText
+              value={eyebrow}
+              onChange={(v) => update({ eyebrow: v })}
+              placeholder="Bucket eyebrow (e.g. BUCKET 1)"
+              inheritFont={false}
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.22em',
+                color: '#a07a18',
+              }}
+            />
+          </div>
+          <div className="mb-3">
+            <EditableText
+              value={title}
+              onChange={(v) => update({ title: v })}
+              placeholder="Bucket title"
+              inheritFont={false}
+              style={{
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontSize: '26px',
+                fontWeight: 700,
+                lineHeight: 1.2,
+                color: '#2a2a2a',
+                letterSpacing: '-0.01em',
+              }}
+            />
+          </div>
+          <div className="prose-nozomi" style={{ color: '#2a2a2a' }}>
+            <RichTextEditor
+              content={body}
+              onChange={(html) => update({ body: html, html })}
+              placeholder="Bucket body — describe what this stage covers, common mistakes, etc."
+            />
+          </div>
+        </section>
+      )
+    }
+
     case 'table': {
       const rows = (block.content.rows as string[][]) || [
         ['Column 1', 'Column 2'],
