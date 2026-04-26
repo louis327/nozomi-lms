@@ -124,7 +124,10 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
       <div className="flex-1 overflow-y-auto py-3">
         {modules.map((mod, modIdx) => {
           const sections = [...(mod.sections ?? [])].sort((a, b) => a.sort_order - b.sort_order)
-          const modCompleted = sections.length > 0 && sections.every((s) => progress[s.id])
+          const modTotal = sections.length
+          const modDone = sections.filter((s) => progress[s.id]).length
+          const modPct = modTotal > 0 ? Math.round((modDone / modTotal) * 100) : 0
+          const modCompleted = modTotal > 0 && modDone === modTotal
           const isExpanded = expandedModules.has(mod.id)
 
           return (
@@ -138,12 +141,25 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                   strokeWidth={2}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[9.5px] text-white/40 font-semibold uppercase tracking-[0.14em]">
-                    Module {String(modIdx + 1).padStart(2, '0')}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[9.5px] text-white/40 font-semibold uppercase tracking-[0.14em]">
+                      Module {String(modIdx + 1).padStart(2, '0')}
+                    </p>
+                    <span className="text-[9.5px] text-white/40 font-mono tabular-nums shrink-0">
+                      {modDone}/{modTotal}
+                    </span>
+                  </div>
                   <p className="text-[12.5px] text-white/90 font-medium leading-snug break-words group-hover:text-white transition-colors mt-0.5" title={mod.title}>
                     {mod.title}
                   </p>
+                  {modTotal > 0 && (
+                    <div className="mt-2 w-full h-[2px] rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${modCompleted ? 'bg-accent' : 'bg-accent/70'}`}
+                        style={{ width: `${modPct}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
                 {modCompleted && <Check className="w-3.5 h-3.5 text-accent shrink-0" strokeWidth={2} />}
               </button>
