@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   BookOpen,
   Users,
+  MessageSquare,
+  TrendingDown,
   Settings,
   LogOut,
   Menu,
@@ -19,6 +21,8 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
   { href: '/admin/students', label: 'Students', icon: Users },
+  { href: '/admin/responses', label: 'Responses', icon: MessageSquare },
+  { href: '/admin/analytics', label: 'Analytics', icon: TrendingDown },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
