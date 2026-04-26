@@ -4,6 +4,7 @@ import { ReactNode } from 'react'
 import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
+import { CellRichText } from '@/components/admin/cell-rich-text'
 import {
   Check,
   ChevronDown,
@@ -301,19 +302,14 @@ export function EditableBlockRender({ block, onChange }: Props) {
                   {headers.map((h, i) => (
                     <th key={i} className="relative group">
                       <div className="flex items-start gap-1">
-                        <EditableText
-                          value={h}
-                          onChange={(v) => setCell(0, i, v)}
-                          placeholder="Header"
-                          style={{
-                            fontSize: '12.5px',
-                            fontWeight: 600,
-                            color: '#fafafa',
-                            letterSpacing: '0.01em',
-                          }}
-                          inheritFont={false}
-                          className="!border-white/20 hover:!border-white/40 focus:!border-white/60 hover:!bg-white/5 focus:!bg-white/10"
-                        />
+                        <div className="flex-1 min-w-0">
+                          <CellRichText
+                            value={h}
+                            onChange={(v) => setCell(0, i, v)}
+                            placeholder="Header"
+                            variant="header"
+                          />
+                        </div>
                         {headers.length > 1 && (
                           <button
                             type="button"
@@ -337,14 +333,14 @@ export function EditableBlockRender({ block, onChange }: Props) {
                       {row.map((cell, ci) => (
                         <td key={ci}>
                           <div className="flex items-start gap-1">
-                            <EditableText
-                              value={cell}
-                              onChange={(v) => setCell(ri, ci, v)}
-                              placeholder="Cell content (plain text or HTML — use <strong>, <small>, <em>, <br/>)"
-                              multiline
-                              rows={2}
-                              inheritFont={true}
-                            />
+                            <div className="flex-1 min-w-0">
+                              <CellRichText
+                                value={cell}
+                                onChange={(v) => setCell(ri, ci, v)}
+                                placeholder="Cell content"
+                                variant="body"
+                              />
+                            </div>
                             {ci === row.length - 1 && rows.length > 2 && (
                               <SmallButton
                                 onClick={() => removeRow(ri)}
@@ -368,7 +364,7 @@ export function EditableBlockRender({ block, onChange }: Props) {
             <AddButton onClick={addCol} label="Add column" />
           </div>
           <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            Tip: wrap a label with <span className="font-mono">&lt;strong&gt;</span>, follow it with <span className="font-mono">&lt;small&gt;</span> for the muted subtitle
+            Tip: select cell text to format it — bold, italic, underline, or subtitle (small muted line)
           </p>
         </div>
       )

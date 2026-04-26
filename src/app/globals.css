@@ -363,3 +363,18 @@ body {
   pointer-events: none;
   height: 0;
 }
+
+/* Tiptap inside table cells — compact, no padding, no min-height */
+.nz-table .tiptap {
+  min-height: 0;
+  padding: 0;
+}
+.nz-table .tiptap p {
+  margin: 0 0 0.4em 0;
+}
+.nz-table .tiptap p:last-child {
+  margin-bottom: 0;
+}
+.nz-table thead .tiptap p.is-editor-empty:first-child::before {
+  color: rgba(255, 255, 255, 0.4);
+}
