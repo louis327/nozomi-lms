@@ -39,30 +39,99 @@ const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'video', label: 'Video' },
 ]
 
-function EmptyAddButton({ onInsert }: { onInsert: (type: ContentBlock['type']) => void }) {
+function EmptyAddButton({
+  onInsert,
+  onInsertTemplate,
+}: {
+  onInsert: (type: ContentBlock['type']) => void
+  onInsertTemplate: (tpl: { block_type: ContentBlock['type']; content: unknown }) => void
+}) {
   const [open, setOpen] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [templates, setTemplates] = useState<Array<{
+    id: string
+    name: string
+    block_type: ContentBlock['type']
+    content: unknown
+  }>>([])
+  const [templatesLoaded, setTemplatesLoaded] = useState(false)
+
+  const loadTemplates = async () => {
+    if (templatesLoaded) return
+    try {
+      const res = await fetch('/api/admin/block-templates')
+      if (res.ok) setTemplates(await res.json())
+    } finally {
+      setTemplatesLoaded(true)
+    }
+  }
+
   return (
     <div className="py-12 text-center bg-surface-muted border border-line rounded-2xl">
       <p className="text-ink-muted text-sm mb-3">No content blocks yet.</p>
       <div className="relative inline-block">
         <button
-          onClick={() => setOpen(!open)}
+          onClick={() => { setOpen(!open); setShowTemplates(false) }}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ink text-ink-inverted text-[12px] font-semibold hover:bg-accent transition-colors cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={2.25} />
           Add a block
         </button>
         {open && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-30 w-48 bg-surface border border-line rounded-xl overflow-hidden shadow-xl py-1">
-            {blockTypeOptions.map((bt) => (
-              <button
-                key={bt.type}
-                onClick={() => { onInsert(bt.type); setOpen(false) }}
-                className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-              >
-                {bt.label}
-              </button>
-            ))}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-30 w-52 bg-surface border border-line rounded-xl overflow-hidden shadow-xl py-1 max-h-[60vh] overflow-y-auto text-left">
+            {showTemplates ? (
+              <>
+                <button
+                  onClick={() => setShowTemplates(false)}
+                  className="block w-full px-3 py-1 text-left text-[10.5px] uppercase tracking-[0.18em] text-ink-faint hover:text-ink-soft cursor-pointer"
+                >
+                  ← Block types
+                </button>
+                <div className="my-1 h-px bg-line-soft" />
+                {templates.length === 0 ? (
+                  <p className="px-3 py-2 text-[11.5px] text-ink-faint italic">
+                    No saved templates yet.
+                  </p>
+                ) : (
+                  templates.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        onInsertTemplate({ block_type: t.block_type, content: t.content })
+                        setOpen(false)
+                        setShowTemplates(false)
+                      }}
+                      className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer truncate"
+                      title={t.name}
+                    >
+                      {t.name}
+                      <span className="block text-[10px] text-ink-faint uppercase tracking-wider">
+                        {t.block_type.replace('_', ' ')}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </>
+            ) : (
+              <>
+                {blockTypeOptions.map((bt) => (
+                  <button
+                    key={bt.type}
+                    onClick={() => { onInsert(bt.type); setOpen(false) }}
+                    className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
+                  >
+                    {bt.label}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-line-soft" />
+                <button
+                  onClick={() => { loadTemplates(); setShowTemplates(true) }}
+                  className="block w-full px-3 py-1.5 text-left text-[12.5px] text-accent hover:bg-accent/5 transition-colors cursor-pointer"
+                >
+                  Templates…
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -397,6 +466,51 @@ export function SectionContent({
       addToast('Failed to copy link', 'error')
     }
   }, [addToast])
+
+  const handleSaveAsTemplate = useCallback(async (block: ContentBlock) => {
+    const name = window.prompt('Template name?')
+    if (!name?.trim()) return
+    try {
+      const res = await fetch('/api/admin/block-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          block_type: block.type,
+          content: block.content,
+        }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to save')
+      addToast('Saved as template', 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to save template', 'error')
+    }
+  }, [addToast])
+
+  const handleInsertTemplate = useCallback(async (
+    template: { block_type: ContentBlock['type']; content: unknown },
+    atIndex: number,
+  ) => {
+    try {
+      const newBlock = await createBlock(
+        section.id,
+        template.block_type,
+        (template.content as Record<string, unknown>) ?? {},
+        atIndex,
+      )
+      setBlocks((prev) => {
+        const next = [...prev]
+        next.splice(atIndex, 0, newBlock)
+        persistOrder(next)
+        return next
+      })
+      setFocusedBlockId(newBlock.id)
+      pushUndo({ kind: 'insert', newBlockId: newBlock.id })
+      addToast('Template inserted', 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to insert template', 'error')
+    }
+  }, [section.id, addToast, persistOrder, pushUndo])
 
   // Keyboard shortcuts (student mode)
   useEffect(() => {
@@ -1137,7 +1251,10 @@ export function SectionContent({
       if (blocks.length === 0) {
         return (
           <div className="pl-12">
-            <EmptyAddButton onInsert={(type) => handleInsertBlock(type, 0)} />
+            <EmptyAddButton
+              onInsert={(type) => handleInsertBlock(type, 0)}
+              onInsertTemplate={(tpl) => handleInsertTemplate(tpl, 0)}
+            />
           </div>
         )
       }
@@ -1182,6 +1299,8 @@ export function SectionContent({
                             onMoveDown={() => handleMove(block.id, 1)}
                             onConvert={(t) => handleConvert(block, t)}
                             onCopyLink={() => handleCopyLink(block.id)}
+                            onSaveAsTemplate={() => handleSaveAsTemplate(block)}
+                            onInsertTemplate={(tpl) => handleInsertTemplate(tpl, index + 1)}
                           />
                         }
                       />
@@ -1270,27 +1389,70 @@ function FooterBar({
       : hasWorkbookPrompts
         ? 'Mark complete & continue'
         : 'Complete & continue'
+  const buttonLabelShort = saving
+    ? 'Saving…'
+    : saved
+      ? nextSectionId
+        ? 'Continue'
+        : 'Done'
+      : hasWorkbookPrompts
+        ? 'Complete'
+        : 'Continue'
 
   return (
-    <div className="flex items-center gap-4 px-6 lg:px-10 py-4">
+    <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-10 py-3 sm:py-4">
       <div className="shrink-0">
         {prevHref ? (
           <Link
             href={prevHref}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12.5px] font-medium text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-full text-[12.5px] font-medium text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors"
+            aria-label="Previous section"
           >
             <ArrowLeft className="w-4 h-4" strokeWidth={2} />
-            Previous
+            <span className="hidden sm:inline">Previous</span>
           </Link>
         ) : (
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[12.5px] font-medium text-ink-faint cursor-not-allowed">
+          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-[12.5px] font-medium text-ink-faint cursor-not-allowed">
             <ArrowLeft className="w-4 h-4" strokeWidth={2} />
-            Previous
+            <span className="hidden sm:inline">Previous</span>
           </span>
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-3 min-w-0 flex-1">
+      <div className="flex sm:hidden items-center justify-center min-w-0 flex-1">
+        {hasWorkbookPrompts && !saved && autosaveStatus !== 'idle' && (
+          <span
+            className={`inline-flex items-center gap-1 text-[10px] font-mono tabular-nums tracking-wider uppercase ${
+              autosaveStatus === 'error'
+                ? 'text-error'
+                : autosaveStatus === 'saving'
+                  ? 'text-ink-muted'
+                  : 'text-ink-faint'
+            }`}
+          >
+            {autosaveStatus === 'saving' && (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-ink-muted animate-pulse" />
+                Saving
+              </>
+            )}
+            {autosaveStatus === 'saved' && (
+              <>
+                <Check className="w-3 h-3" strokeWidth={2.5} />
+                Saved
+              </>
+            )}
+            {autosaveStatus === 'error' && 'Retrying'}
+          </span>
+        )}
+        {saved && (
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success">
+            <Check className="w-3 h-3" strokeWidth={2.5} />
+          </span>
+        )}
+      </div>
+
+      <div className="hidden sm:flex items-center justify-center gap-3 min-w-0 flex-1">
         {saved ? (
           <div className="flex items-center gap-2 text-[12.5px] text-ink-soft min-w-0">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success shrink-0">
@@ -1346,9 +1508,10 @@ function FooterBar({
       <button
         onClick={onContinue}
         disabled={saving}
-        className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
+        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-ink text-ink-inverted text-[12.5px] sm:text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
       >
-        {buttonLabel}
+        <span className="hidden sm:inline">{buttonLabel}</span>
+        <span className="sm:hidden">{buttonLabelShort}</span>
         {!saving && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
       </button>
     </div>

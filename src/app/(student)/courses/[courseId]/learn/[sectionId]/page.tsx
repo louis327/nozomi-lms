@@ -6,6 +6,7 @@ import { SectionContent } from '@/components/course/section-content'
 import { ModuleChecklist } from '@/components/course/module-checklist'
 import { InlineSectionTitle } from '@/components/course/inline-section-title'
 import { ModuleHero } from '@/components/course/module-hero'
+import { SectionHighlights } from '@/components/course/section-highlights'
 
 export default async function SectionPage({
   params,
@@ -136,7 +137,7 @@ export default async function SectionPage({
   const isFirstSectionInModule = !prevSiblings?.length
 
   return (
-    <div className="px-6 lg:px-10 pt-10">
+    <div className="px-4 sm:px-6 lg:px-10 pt-16 lg:pt-10">
       <div className="max-w-[680px] mx-auto" id="nz-section-content-column">
         {isFirstSectionInModule && moduleMeta ? (
           <ModuleHero
@@ -185,8 +186,10 @@ export default async function SectionPage({
 
       <div
         id="nz-section-footer-slot"
-        className="mt-16 -mx-6 lg:-mx-10 border-t border-line bg-surface"
+        className="mt-16 -mx-4 sm:-mx-6 lg:-mx-10 border-t border-line bg-surface"
       />
+
+      <SectionHighlights sectionId={sectionId} />
     </div>
   )
 }

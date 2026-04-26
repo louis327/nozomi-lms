@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import {
   ArrowDown,
   ArrowUp,
+  Bookmark,
   Copy,
   Link2,
   Repeat,
@@ -37,6 +38,7 @@ type Props = {
   onMoveDown: () => void
   onConvert: (target: ConvertTarget) => void
   onCopyLink: () => void
+  onSaveAsTemplate: () => void
 }
 
 export function BlockActionsMenu({
@@ -51,6 +53,7 @@ export function BlockActionsMenu({
   onMoveDown,
   onConvert,
   onCopyLink,
+  onSaveAsTemplate,
 }: Props) {
   const [showConvert, setShowConvert] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -174,6 +177,11 @@ export function BlockActionsMenu({
             Icon={Link2}
             label="Copy link"
             onClick={() => { onCopyLink(); onClose() }}
+          />
+          <Item
+            Icon={Bookmark}
+            label="Save as template"
+            onClick={() => { onSaveAsTemplate(); onClose() }}
           />
           <div className="my-1 h-px bg-line-soft" />
           <Item

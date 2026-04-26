@@ -61,7 +61,7 @@ export function SectionRecapModal({
 
       <div className="relative w-full max-w-[680px] max-h-[90vh] bg-surface rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-line">
         {/* Header */}
-        <div className="shrink-0 relative px-8 py-6 border-b border-line-soft">
+        <div className="shrink-0 relative px-5 sm:px-8 py-5 sm:py-6 border-b border-line-soft">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-surface-muted flex items-center justify-center text-ink-muted hover:text-ink transition-colors cursor-pointer"
@@ -101,7 +101,7 @@ export function SectionRecapModal({
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-8 py-6">
+        <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-5 sm:py-6">
           {answers.length > 0 && (
             <p className="text-[10.5px] font-semibold tracking-[0.22em] text-ink-muted uppercase mb-7">
               Your responses
@@ -111,7 +111,7 @@ export function SectionRecapModal({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-8 py-5 border-t border-line-soft flex items-center justify-between gap-3 bg-surface-muted/40">
+        <div className="shrink-0 px-5 sm:px-8 py-4 sm:py-5 border-t border-line-soft flex items-center justify-between gap-3 bg-surface-muted/40">
           <button
             onClick={onClose}
             className="text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors cursor-pointer"

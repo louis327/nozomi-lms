@@ -33,6 +33,8 @@ type Props = {
   onMoveDown: () => void
   onConvert: (type: 'rich_text' | 'callout' | 'quote') => void
   onCopyLink: () => void
+  onSaveAsTemplate: () => void
+  onInsertTemplate: (template: { block_type: ContentBlock['type']; content: unknown }) => void
 }
 
 export function BlockGutter({
@@ -49,21 +51,43 @@ export function BlockGutter({
   onMoveDown,
   onConvert,
   onCopyLink,
+  onSaveAsTemplate,
+  onInsertTemplate,
 }: Props) {
   const [insertOpen, setInsertOpen] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
   const [actionsRect, setActionsRect] = useState<DOMRect | null>(null)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [templates, setTemplates] = useState<Array<{
+    id: string
+    name: string
+    block_type: ContentBlock['type']
+    content: unknown
+  }>>([])
+  const [templatesLoaded, setTemplatesLoaded] = useState(false)
   const insertBtnRef = useRef<HTMLButtonElement>(null)
   const actionsBtnRef = useRef<HTMLButtonElement>(null)
   const insertMenuRef = useRef<HTMLDivElement>(null)
 
+  const loadTemplates = async () => {
+    if (templatesLoaded) return
+    try {
+      const res = await fetch('/api/admin/block-templates')
+      if (res.ok) setTemplates(await res.json())
+    } finally {
+      setTemplatesLoaded(true)
+    }
+  }
+
   // Click-outside for insert menu
   const handleInsertOpen = () => {
     setInsertOpen(true)
+    setShowTemplates(false)
     setTimeout(() => {
       const close = (e: MouseEvent) => {
         if (insertMenuRef.current && !insertMenuRef.current.contains(e.target as Node)) {
           setInsertOpen(false)
+          setShowTemplates(false)
           document.removeEventListener('mousedown', close)
         }
       }
@@ -79,7 +103,7 @@ export function BlockGutter({
   }
 
   return (
-    <div className="absolute -left-12 top-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+    <div className="absolute -left-12 top-1.5 hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
       {/* + insert after */}
       <div className="relative">
         <button
@@ -94,21 +118,68 @@ export function BlockGutter({
         {insertOpen && (
           <div
             ref={insertMenuRef}
-            className="absolute left-0 top-full mt-1 z-30 w-44 bg-surface border border-line rounded-xl shadow-xl overflow-hidden py-1"
+            className="absolute left-0 top-full mt-1 z-30 w-52 bg-surface border border-line rounded-xl shadow-xl overflow-hidden py-1 max-h-[60vh] overflow-y-auto"
           >
-            {blockTypeOptions.map((bt) => (
-              <button
-                key={bt.type}
-                type="button"
-                onClick={() => {
-                  onInsertAfter(bt.type)
-                  setInsertOpen(false)
-                }}
-                className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-              >
-                {bt.label}
-              </button>
-            ))}
+            {showTemplates ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplates(false)}
+                  className="block w-full px-3 py-1 text-left text-[10.5px] uppercase tracking-[0.18em] text-ink-faint hover:text-ink-soft cursor-pointer"
+                >
+                  ← Block types
+                </button>
+                <div className="my-1 h-px bg-line-soft" />
+                {templates.length === 0 ? (
+                  <p className="px-3 py-2 text-[11.5px] text-ink-faint italic">
+                    No saved templates yet.
+                  </p>
+                ) : (
+                  templates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        onInsertTemplate({ block_type: t.block_type, content: t.content })
+                        setInsertOpen(false)
+                        setShowTemplates(false)
+                      }}
+                      className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer truncate"
+                      title={t.name}
+                    >
+                      {t.name}
+                      <span className="block text-[10px] text-ink-faint uppercase tracking-wider">
+                        {t.block_type.replace('_', ' ')}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </>
+            ) : (
+              <>
+                {blockTypeOptions.map((bt) => (
+                  <button
+                    key={bt.type}
+                    type="button"
+                    onClick={() => {
+                      onInsertAfter(bt.type)
+                      setInsertOpen(false)
+                    }}
+                    className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
+                  >
+                    {bt.label}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-line-soft" />
+                <button
+                  type="button"
+                  onClick={() => { loadTemplates(); setShowTemplates(true) }}
+                  className="block w-full px-3 py-1.5 text-left text-[12.5px] text-accent hover:bg-accent/5 transition-colors cursor-pointer"
+                >
+                  Templates…
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -149,6 +220,7 @@ export function BlockGutter({
           onMoveDown={onMoveDown}
           onConvert={onConvert}
           onCopyLink={onCopyLink}
+          onSaveAsTemplate={onSaveAsTemplate}
         />
       )}
     </div>
