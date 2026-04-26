@@ -111,24 +111,29 @@ function SortableSectionRow({
   sectionsLength,
   moduleId,
   loading,
+  otherModules,
   onMoveUp,
   onMoveDown,
   onRename,
   onDuplicate,
   onDelete,
+  onMoveToModule,
 }: {
   section: Section
   secIdx: number
   sectionsLength: number
   moduleId: string
   loading: string | null
+  otherModules: { id: string; title: string }[]
   onMoveUp: () => void
   onMoveDown: () => void
   onRename: (title: string) => void
   onDuplicate: () => void
   onDelete: () => void
+  onMoveToModule: (toModuleId: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id })
+  const [menuOpen, setMenuOpen] = useState(false)
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -136,6 +141,13 @@ function SortableSectionRow({
     zIndex: isDragging ? 10 : undefined,
     position: 'relative' as const,
   }
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = () => setMenuOpen(false)
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [menuOpen])
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-2 px-4 py-2 group">
@@ -189,6 +201,39 @@ function SortableSectionRow({
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
         </svg>
       </button>
+      {otherModules.length > 0 && (
+        <div className="relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
+            disabled={loading === `move-sec-${section.id}`}
+            className="p-1 rounded-lg text-nz-text-muted hover:text-nz-sakura hover:bg-nz-sakura/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+            title="Move to module"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <div
+              className="absolute right-0 top-full mt-1 z-20 min-w-[180px] max-h-64 overflow-y-auto rounded-lg border border-nz-border bg-nz-bg-elevated shadow-xl py-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-nz-text-muted">
+                Move to module
+              </p>
+              {otherModules.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { setMenuOpen(false); onMoveToModule(m.id) }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-nz-text-secondary hover:bg-nz-sakura/10 hover:text-nz-sakura transition-colors cursor-pointer truncate"
+                >
+                  {m.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <button
         onClick={onDelete}
         disabled={loading === `del-sec-${section.id}`}
@@ -433,6 +478,51 @@ export function StructureEditorPanel({ open, onClose, course, courseId }: Struct
     }
   }, [modules, refreshAndClose, addToast])
 
+  const handleMoveSectionToModule = useCallback(async (fromModuleId: string, sectionId: string, toModuleId: string) => {
+    if (fromModuleId === toModuleId) return
+    setLoading(`move-sec-${sectionId}`)
+    const snapshot = modules
+    const fromMod = modules.find((m) => m.id === fromModuleId)
+    const toMod = modules.find((m) => m.id === toModuleId)
+    if (!fromMod || !toMod) { setLoading(null); return }
+    const section = fromMod.sections.find((s) => s.id === sectionId)
+    if (!section) { setLoading(null); return }
+
+    const newFromSections = fromMod.sections
+      .filter((s) => s.id !== sectionId)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((s, i) => ({ ...s, sort_order: i }))
+    const newToSections = [
+      ...[...toMod.sections].sort((a, b) => a.sort_order - b.sort_order),
+      { ...section, module_id: toModuleId, sort_order: toMod.sections.length },
+    ].map((s, i) => ({ ...s, sort_order: i }))
+
+    setModules((prev) => prev.map((m) => {
+      if (m.id === fromModuleId) return { ...m, sections: newFromSections }
+      if (m.id === toModuleId) return { ...m, sections: newToSections }
+      return m
+    }))
+
+    try {
+      const payload = [
+        ...newFromSections.map((s) => ({ id: s.id, sort_order: s.sort_order })),
+        ...newToSections.map((s) => ({
+          id: s.id,
+          sort_order: s.sort_order,
+          ...(s.id === sectionId ? { module_id: toModuleId } : {}),
+        })),
+      ]
+      await apiPatch('/api/admin/sections', { sections: payload })
+      refreshAndClose()
+      addToast(`Moved to "${toMod.title}"`, 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to move section', 'error')
+      setModules(snapshot)
+    } finally {
+      setLoading(null)
+    }
+  }, [modules, refreshAndClose, addToast])
+
   const handleMoveSection = useCallback(async (moduleId: string, sectionId: string, direction: 'up' | 'down') => {
     const mod = modules.find((m) => m.id === moduleId)
     if (!mod) return
@@ -561,11 +651,13 @@ export function StructureEditorPanel({ open, onClose, course, courseId }: Struct
                         sectionsLength={sections.length}
                         moduleId={mod.id}
                         loading={loading}
+                        otherModules={modules.filter((m) => m.id !== mod.id).map((m) => ({ id: m.id, title: m.title }))}
                         onMoveUp={() => handleMoveSection(mod.id, section.id, 'up')}
                         onMoveDown={() => handleMoveSection(mod.id, section.id, 'down')}
                         onRename={(title) => handleRenameSection(section.id, title)}
                         onDuplicate={() => handleDuplicateSection(mod.id, section.id)}
                         onDelete={() => handleDeleteSection(mod.id, section.id)}
+                        onMoveToModule={(toModuleId) => handleMoveSectionToModule(mod.id, section.id, toModuleId)}
                       />
                     ))}
                   </ModuleSectionsDnd>

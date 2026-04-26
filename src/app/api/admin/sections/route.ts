@@ -49,16 +49,20 @@ export async function PATCH(request: NextRequest) {
   if (!adminClient) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await request.json()
-  const { sections } = body as { sections: { id: string; sort_order: number }[] }
+  const { sections } = body as {
+    sections: { id: string; sort_order: number; module_id?: string }[]
+  }
 
   if (!sections?.length) {
     return NextResponse.json({ error: 'No sections provided' }, { status: 400 })
   }
 
   for (const sec of sections) {
+    const updates: Record<string, unknown> = { sort_order: sec.sort_order }
+    if (sec.module_id) updates.module_id = sec.module_id
     const { error } = await adminClient
       .from('sections')
-      .update({ sort_order: sec.sort_order })
+      .update(updates)
       .eq('id', sec.id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
