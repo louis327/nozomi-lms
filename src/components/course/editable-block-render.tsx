@@ -900,6 +900,8 @@ export function EditableBlockRender({ block, onChange }: Props) {
           label: string
           prefix?: string
           suffix?: string
+          computed?: 'sum'
+          sum_of?: string[]
         }>) || []
 
       const setField = (i: number, patch: Partial<(typeof fields)[number]>) =>
@@ -915,6 +917,20 @@ export function EditableBlockRender({ block, onChange }: Props) {
         })
       const removeField = (i: number) =>
         update({ fields: fields.filter((_, idx) => idx !== i) })
+
+      const toggleComputed = (i: number) => {
+        const f = fields[i]
+        if (f.computed === 'sum') {
+          const { computed: _c, sum_of: _s, ...rest } = f
+          update({ fields: fields.map((x, idx) => (idx === i ? rest : x)) })
+        } else {
+          const defaultSumOf = fields
+            .slice(0, i)
+            .filter((x) => x.computed !== 'sum')
+            .map((x) => x.key)
+          setField(i, { computed: 'sum', sum_of: defaultSumOf })
+        }
+      }
 
       return (
         <DoBlockShell
@@ -947,7 +963,11 @@ export function EditableBlockRender({ block, onChange }: Props) {
                     inheritFont={false}
                   />
                 </div>
-                <div className="flex-1 flex items-center gap-1 bg-surface border border-line rounded-lg px-2 py-1">
+                <div className={`flex-1 flex items-center gap-1 border rounded-lg px-2 py-1 ${
+                  field.computed === 'sum'
+                    ? 'bg-surface-muted/70 border-line'
+                    : 'bg-surface border-line'
+                }`}>
                   <EditableText
                     value={field.prefix || ''}
                     onChange={(v) => setField(i, { prefix: v })}
@@ -956,9 +976,16 @@ export function EditableBlockRender({ block, onChange }: Props) {
                     style={{ fontSize: '13px', color: 'var(--nz-ink-faint)' }}
                     inheritFont={false}
                   />
-                  <span className="flex-1 text-[13px] text-ink-faint italic px-2">
-                    student input
-                  </span>
+                  {field.computed === 'sum' ? (
+                    <span className="flex-1 text-[12px] text-ink-muted px-2 inline-flex items-center gap-1">
+                      <span className="font-mono">Σ</span>
+                      auto-sum of {(field.sum_of ?? []).join(', ') || '(none)'}
+                    </span>
+                  ) : (
+                    <span className="flex-1 text-[13px] text-ink-faint italic px-2">
+                      student input
+                    </span>
+                  )}
                   <EditableText
                     value={field.suffix || ''}
                     onChange={(v) => setField(i, { suffix: v })}
@@ -968,6 +995,18 @@ export function EditableBlockRender({ block, onChange }: Props) {
                     inheritFont={false}
                   />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => toggleComputed(i)}
+                  title={field.computed === 'sum' ? 'Make editable' : 'Auto-sum the fields above'}
+                  className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md border transition-colors cursor-pointer text-[13px] font-mono ${
+                    field.computed === 'sum'
+                      ? 'border-accent/40 bg-accent/15 text-accent'
+                      : 'border-line text-ink-muted hover:text-ink hover:bg-surface-muted'
+                  }`}
+                >
+                  Σ
+                </button>
                 <SmallButton
                   onClick={() => removeField(i)}
                   tone="danger"

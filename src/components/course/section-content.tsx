@@ -656,13 +656,55 @@ export function SectionContent({
         )
 
       case 'structured_prompt': {
-        const spFields = (block.content.fields as Array<{ key: string; label: string; prefix?: string; suffix?: string; type?: string }>) ?? []
+        const spFields = (block.content.fields as Array<{ key: string; label: string; prefix?: string; suffix?: string; type?: string; computed?: 'sum'; sum_of?: string[] }>) ?? []
+
+        const parseNum = (s: string): number => {
+          if (!s) return 0
+          const cleaned = String(s).replace(/[^0-9.\-]/g, '')
+          const n = parseFloat(cleaned)
+          return isNaN(n) ? 0 : n
+        }
+
+        const resolveValue = (key: string, seen: Set<string>): number => {
+          if (seen.has(key)) return 0
+          seen.add(key)
+          const f = spFields.find((x) => x.key === key)
+          if (!f) return 0
+          if (f.computed === 'sum') {
+            const targets = f.sum_of ?? []
+            return targets.reduce((acc, k) => acc + resolveValue(k, seen), 0)
+          }
+          return parseNum(workbookData[`${block.id}_${f.key}`] ?? '')
+        }
+
+        const formatNum = (n: number) =>
+          n.toLocaleString(undefined, { maximumFractionDigits: 2 })
+
         return (
           <div key={block.id}>
             <DoBlock label={(block.content.label as string) || 'Your responses'}>
               <div className="space-y-3">
                 {spFields.map((field) => {
                   const fieldKey = `${block.id}_${field.key}`
+                  if (field.computed === 'sum') {
+                    const sum = resolveValue(field.key, new Set())
+                    return (
+                      <div key={field.key} className="flex items-center gap-3">
+                        <label className="text-[13px] font-semibold text-ink w-2/5 shrink-0">{field.label}</label>
+                        <div className="flex-1 flex items-center gap-0 bg-surface-muted/70 border border-line rounded-lg overflow-hidden">
+                          {field.prefix && (
+                            <span className="pl-3 pr-1 text-[13px] text-ink-muted select-none">{field.prefix}</span>
+                          )}
+                          <span className="flex-1 px-3 py-2.5 text-[13px] font-semibold text-ink tabular-nums">
+                            {formatNum(sum)}
+                          </span>
+                          {field.suffix && (
+                            <span className="pr-3 pl-1 text-[13px] text-ink-muted select-none">{field.suffix}</span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  }
                   return (
                     <div key={field.key} className="flex items-center gap-3">
                       <label className="text-[13px] text-ink-soft w-2/5 shrink-0">{field.label}</label>
@@ -672,6 +714,7 @@ export function SectionContent({
                         )}
                         <input
                           type="text"
+                          inputMode="decimal"
                           className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none"
                           placeholder="…"
                           value={workbookData[fieldKey] ?? ''}
