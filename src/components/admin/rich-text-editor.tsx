@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -20,16 +20,22 @@ import {
   Check,
   X,
 } from 'lucide-react'
+import { SlashMenu, type SlashItem } from '@/components/admin/slash-menu'
 
 interface RichTextEditorProps {
   content: string
   onChange: (html: string) => void
   placeholder?: string
+  onSlashSelect?: (item: SlashItem) => void
 }
 
-export function RichTextEditor({ content, onChange, placeholder = 'Start writing...' }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, placeholder = 'Start writing...', onSlashSelect }: RichTextEditorProps) {
   const [showLinkInput, setShowLinkInput] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
+  const [slashOpen, setSlashOpen] = useState(false)
+  const [slashQuery, setSlashQuery] = useState('')
+  const [slashRect, setSlashRect] = useState<{ top: number; left: number; bottom: number } | null>(null)
+  const [slashFrom, setSlashFrom] = useState<number | null>(null)
 
   const editor = useEditor({
     extensions: [
@@ -46,6 +52,25 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
     content,
     onUpdate: ({ editor: ed }) => {
       onChange(ed.getHTML())
+      if (!onSlashSelect) return
+      // Detect a slash query: "/" or "/word" at the cursor, preceded by start-of-block or whitespace
+      const { from } = ed.state.selection
+      const $from = ed.state.doc.resolve(from)
+      const blockStart = $from.start($from.depth)
+      const before = ed.state.doc.textBetween(blockStart, from, '\n', '\n')
+      const match = before.match(/(?:^|\s)\/(\w*)$/)
+      if (match) {
+        const triggerLen = match[0].startsWith('/') ? match[0].length : match[0].length - 1
+        const triggerStart = from - triggerLen + (match[0].startsWith('/') ? 0 : 1)
+        setSlashFrom(triggerStart)
+        setSlashQuery(match[1])
+        setSlashOpen(true)
+        const coords = ed.view.coordsAtPos(from)
+        setSlashRect({ top: coords.top, left: coords.left, bottom: coords.bottom })
+      } else {
+        setSlashOpen(false)
+        setSlashFrom(null)
+      }
     },
     editorProps: {
       attributes: {
@@ -53,6 +78,22 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
       },
     },
   })
+
+  useEffect(() => {
+    if (!slashOpen) return
+    const close = () => setSlashOpen(false)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [slashOpen])
+
+  const handleSlashSelect = (item: SlashItem) => {
+    if (!editor || slashFrom === null) return
+    const to = editor.state.selection.from
+    editor.chain().focus().deleteRange({ from: slashFrom, to }).run()
+    setSlashOpen(false)
+    setSlashFrom(null)
+    onSlashSelect?.(item)
+  }
 
   if (!editor) return null
 
@@ -182,6 +223,15 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
 
       {/* Editor */}
       <EditorContent editor={editor} />
+
+      {slashOpen && (
+        <SlashMenu
+          rect={slashRect}
+          query={slashQuery}
+          onSelect={handleSlashSelect}
+          onClose={() => setSlashOpen(false)}
+        />
+      )}
     </div>
   )
 }

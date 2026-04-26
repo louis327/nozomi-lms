@@ -7,7 +7,15 @@ import { useEditMode } from '@/lib/edit-mode-context'
 import { useToast } from '@/components/ui/toast'
 import { InlineBlockEditor } from '@/components/course/inline-block-editor'
 import { SortableBlocksContainer, SortableBlockWrapper } from '@/components/course/sortable-blocks'
-import { createBlock, reorderBlocks, getDefaultContent } from '@/lib/block-actions'
+import { BlockGutter } from '@/components/course/block-gutter'
+import {
+  createBlock,
+  reorderBlocks,
+  getDefaultContent,
+  duplicateBlock,
+  convertBlockType,
+  deleteBlock,
+} from '@/lib/block-actions'
 import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionRecapModal } from '@/components/course/section-recap-modal'
@@ -29,30 +37,33 @@ const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'video', label: 'Video' },
 ]
 
-function InsertBlockButton({ onInsert }: { onInsert: (type: ContentBlock['type']) => void }) {
+function EmptyAddButton({ onInsert }: { onInsert: (type: ContentBlock['type']) => void }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="relative flex items-center justify-center py-1 group">
-      <div className="absolute inset-x-0 top-1/2 h-px bg-line group-hover:bg-accent/30 transition-colors" />
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative z-10 w-6 h-6 rounded-full bg-surface border border-line hover:border-accent/40 hover:bg-accent-soft flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-      >
-        <Plus className="w-3 h-3 text-ink-muted group-hover:text-accent" strokeWidth={2} />
-      </button>
-      {open && (
-        <div className="absolute top-full mt-1 bg-surface border border-line rounded-xl overflow-hidden shadow-xl z-30 w-48">
-          {blockTypeOptions.map((bt) => (
-            <button
-              key={bt.type}
-              onClick={() => { onInsert(bt.type); setOpen(false) }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-            >
-              {bt.label}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="py-12 text-center bg-surface-muted border border-line rounded-2xl">
+      <p className="text-ink-muted text-sm mb-3">No content blocks yet.</p>
+      <div className="relative inline-block">
+        <button
+          onClick={() => setOpen(!open)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ink text-ink-inverted text-[12px] font-semibold hover:bg-accent transition-colors cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" strokeWidth={2.25} />
+          Add a block
+        </button>
+        {open && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-30 w-48 bg-surface border border-line rounded-xl overflow-hidden shadow-xl py-1">
+            {blockTypeOptions.map((bt) => (
+              <button
+                key={bt.type}
+                onClick={() => { onInsert(bt.type); setOpen(false) }}
+                className="block w-full px-3 py-1.5 text-left text-[12.5px] text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
+              >
+                {bt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -237,13 +248,17 @@ export function SectionContent({
     }
   }, [workbookData, checklistData, section.id, router, supabase, hasPrompts, goNext])
 
+  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
+
   const handleBlockUpdate = useCallback((updated: ContentBlock) => {
     setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))
   }, [])
 
-  const handleBlockDelete = useCallback((blockId: string) => {
-    setBlocks((prev) => prev.filter((b) => b.id !== blockId))
-  }, [])
+  const persistOrder = useCallback((next: ContentBlock[]) => {
+    reorderBlocks(next.map((b, i) => ({ id: b.id, sort_order: i }))).catch(() => {
+      addToast('Failed to save order', 'error')
+    })
+  }, [addToast])
 
   const handleInsertBlock = useCallback(async (type: ContentBlock['type'], atIndex: number) => {
     try {
@@ -252,25 +267,146 @@ export function SectionContent({
       setBlocks((prev) => {
         const next = [...prev]
         next.splice(atIndex, 0, newBlock)
+        persistOrder(next)
         return next
       })
-      addToast('Block added', 'success')
+      setFocusedBlockId(newBlock.id)
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to add block', 'error')
     }
-  }, [section.id, addToast])
+  }, [section.id, addToast, persistOrder])
+
+  const handleDuplicate = useCallback(async (block: ContentBlock) => {
+    try {
+      const idx = blocks.findIndex((b) => b.id === block.id)
+      if (idx === -1) return
+      const newBlock = await duplicateBlock(section.id, block, idx + 1)
+      setBlocks((prev) => {
+        const next = [...prev]
+        next.splice(idx + 1, 0, newBlock)
+        persistOrder(next)
+        return next
+      })
+      setFocusedBlockId(newBlock.id)
+      addToast('Block duplicated', 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to duplicate', 'error')
+    }
+  }, [blocks, section.id, addToast, persistOrder])
+
+  const handleMove = useCallback(async (blockId: string, dir: -1 | 1) => {
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b.id === blockId)
+      const target = idx + dir
+      if (idx === -1 || target < 0 || target >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(idx, 1)
+      next.splice(target, 0, moved)
+      persistOrder(next)
+      return next
+    })
+  }, [persistOrder])
+
+  const handleDelete = useCallback(async (blockId: string) => {
+    if (!confirm('Delete this content block?')) return
+    try {
+      await deleteBlock(blockId)
+      setBlocks((prev) => prev.filter((b) => b.id !== blockId))
+      setFocusedBlockId((id) => (id === blockId ? null : id))
+      addToast('Block deleted', 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to delete', 'error')
+    }
+  }, [addToast])
+
+  const handleConvert = useCallback(async (
+    block: ContentBlock,
+    target: 'rich_text' | 'callout' | 'quote',
+  ) => {
+    if (block.type === target) return
+    // Best-effort body extraction
+    const bodyHtml =
+      (block.content.html as string) ??
+      (block.content.body as string) ??
+      (block.content.text as string) ??
+      ''
+    let nextContent: Record<string, unknown>
+    if (target === 'rich_text') {
+      nextContent = { html: bodyHtml }
+    } else if (target === 'callout') {
+      nextContent = {
+        calloutType: 'tip',
+        callout_type: 'tip',
+        title: '',
+        body: bodyHtml,
+        html: bodyHtml,
+      }
+    } else {
+      nextContent = { text: bodyHtml, attribution: '' }
+    }
+    try {
+      const updated = await convertBlockType(block.id, target, nextContent)
+      setBlocks((prev) => prev.map((b) => (b.id === block.id ? updated : b)))
+      addToast(`Converted to ${target.replace('_', ' ')}`, 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to convert', 'error')
+    }
+  }, [addToast])
+
+  const handleCopyLink = useCallback(async (blockId: string) => {
+    try {
+      const url = `${window.location.origin}${window.location.pathname}#block-${blockId}`
+      await navigator.clipboard.writeText(url)
+      addToast('Link copied', 'success')
+    } catch {
+      addToast('Failed to copy link', 'error')
+    }
+  }, [addToast])
+
+  // Keyboard shortcuts (admin edit mode only)
+  useEffect(() => {
+    if (!editMode || !isAdmin) return
+    const handler = (e: KeyboardEvent) => {
+      const id = focusedBlockId
+      if (!id) return
+      const block = blocks.find((b) => b.id === id)
+      if (!block) return
+      const mod = e.metaKey || e.ctrlKey
+      if (e.key === 'Escape') {
+        const target = e.target as HTMLElement | null
+        target?.blur?.()
+        setFocusedBlockId(null)
+        return
+      }
+      if (mod && !e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault()
+        handleDuplicate(block)
+        return
+      }
+      if (mod && e.shiftKey && e.key === 'ArrowUp') {
+        e.preventDefault()
+        handleMove(id, -1)
+        return
+      }
+      if (mod && e.shiftKey && e.key === 'ArrowDown') {
+        e.preventDefault()
+        handleMove(id, 1)
+        return
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [editMode, isAdmin, focusedBlockId, blocks, handleDuplicate, handleMove])
 
   const handleReorder = useCallback((oldIndex: number, newIndex: number) => {
     setBlocks((prev) => {
       const next = [...prev]
       const [moved] = next.splice(oldIndex, 1)
       next.splice(newIndex, 0, moved)
-      reorderBlocks(next.map((b, i) => ({ id: b.id, sort_order: i }))).catch(() => {
-        addToast('Failed to reorder', 'error')
-      })
+      persistOrder(next)
       return next
     })
-  }, [addToast])
+  }, [persistOrder])
 
   function renderBlock(block: ContentBlock) {
     switch (block.type) {
@@ -859,35 +995,63 @@ export function SectionContent({
 
   const renderBlocks = () => {
     if (editMode && isAdmin) {
+      if (blocks.length === 0) {
+        return (
+          <div className="pl-12">
+            <EmptyAddButton onInsert={(type) => handleInsertBlock(type, 0)} />
+          </div>
+        )
+      }
       return (
-        <div className="space-y-1 pl-6">
+        <div className="space-y-1 pl-12">
           <SortableBlocksContainer
             blockIds={blocks.map((b) => b.id)}
             onReorder={handleReorder}
           >
-            {blocks.map((block, index) => (
-              <div key={block.id}>
-                <InsertBlockButton onInsert={(type) => handleInsertBlock(type, index)} />
-                <SortableBlockWrapper id={block.id}>
-                  <InlineBlockEditor
-                    block={block}
-                    onBlockUpdate={handleBlockUpdate}
-                    onBlockDelete={handleBlockDelete}
+            {({ insertAfterId }) => (
+              <>
+                {blocks.map((block, index) => (
+                  <SortableBlockWrapper
+                    key={block.id}
+                    id={block.id}
+                    showTopIndicator={
+                      insertAfterId === null && index === 0
+                    }
+                    showBottomIndicator={insertAfterId === block.id}
                   >
-                    {renderBlock(block)}
-                  </InlineBlockEditor>
-                </SortableBlockWrapper>
-              </div>
-            ))}
+                    {(handle) => (
+                      <InlineBlockEditor
+                        block={block}
+                        onBlockUpdate={handleBlockUpdate}
+                        isFocused={focusedBlockId === block.id}
+                        onFocus={() => setFocusedBlockId(block.id)}
+                        onSlashInsert={(type) => handleInsertBlock(type, index + 1)}
+                        gutter={
+                          <BlockGutter
+                            block={block}
+                            canMoveUp={index > 0}
+                            canMoveDown={index < blocks.length - 1}
+                            dragAttributes={handle.attributes}
+                            dragListeners={handle.listeners}
+                            setDragRef={handle.setActivatorNodeRef}
+                            onInsertAfter={(type) =>
+                              handleInsertBlock(type, index + 1)
+                            }
+                            onDuplicate={() => handleDuplicate(block)}
+                            onDelete={() => handleDelete(block.id)}
+                            onMoveUp={() => handleMove(block.id, -1)}
+                            onMoveDown={() => handleMove(block.id, 1)}
+                            onConvert={(t) => handleConvert(block, t)}
+                            onCopyLink={() => handleCopyLink(block.id)}
+                          />
+                        }
+                      />
+                    )}
+                  </SortableBlockWrapper>
+                ))}
+              </>
+            )}
           </SortableBlocksContainer>
-          <InsertBlockButton onInsert={(type) => handleInsertBlock(type, blocks.length)} />
-
-          {blocks.length === 0 && (
-            <div className="py-12 text-center bg-surface-muted border border-line rounded-2xl">
-              <p className="text-ink-muted text-sm mb-2">No content blocks yet.</p>
-              <p className="text-ink-faint text-xs">Hover between the lines above to add your first block.</p>
-            </div>
-          )}
         </div>
       )
     }
@@ -895,7 +1059,7 @@ export function SectionContent({
     return (
       <div>
         {blocks.map((block) => (
-          <div key={block.id}>{renderBlock(block)}</div>
+          <div key={block.id} id={`block-${block.id}`}>{renderBlock(block)}</div>
         ))}
       </div>
     )

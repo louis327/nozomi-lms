@@ -31,6 +31,32 @@ export async function createBlock(
   return res.json()
 }
 
+export async function duplicateBlock(
+  sectionId: string,
+  source: ContentBlock,
+  sortOrder: number,
+): Promise<ContentBlock> {
+  const clonedContent = JSON.parse(JSON.stringify(source.content))
+  return createBlock(sectionId, source.type, clonedContent, sortOrder)
+}
+
+export async function convertBlockType(
+  blockId: string,
+  type: ContentBlock['type'],
+  content: Record<string, unknown>,
+): Promise<ContentBlock> {
+  const res = await fetch(`/api/admin/blocks/${blockId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, content }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.error || 'Failed to convert block')
+  }
+  return res.json()
+}
+
 export async function deleteBlock(blockId: string): Promise<void> {
   const res = await fetch(`/api/admin/blocks/${blockId}`, {
     method: 'DELETE',

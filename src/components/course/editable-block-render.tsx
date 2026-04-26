@@ -18,6 +18,7 @@ import type { ContentBlock } from '@/lib/types'
 type Props = {
   block: ContentBlock
   onChange: (content: Record<string, unknown>) => void
+  onSlashInsert?: (type: ContentBlock['type']) => void
 }
 
 const inheritStyle: React.CSSProperties = {
@@ -150,7 +151,7 @@ function DoBlockShell({
   )
 }
 
-export function EditableBlockRender({ block, onChange }: Props) {
+export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
   const update = (partial: Record<string, unknown>) =>
     onChange({ ...block.content, ...partial })
 
@@ -161,7 +162,8 @@ export function EditableBlockRender({ block, onChange }: Props) {
           <RichTextEditor
             content={(block.content.html as string) || ''}
             onChange={(html) => update({ html })}
-            placeholder="Write your content..."
+            placeholder="Write your content, or type / for blocks…"
+            onSlashSelect={onSlashInsert ? (item) => onSlashInsert(item.type) : undefined}
           />
         </div>
       )

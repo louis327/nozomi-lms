@@ -31,6 +31,7 @@ export async function PATCH(
 
   if (body.content !== undefined) updates.content = body.content
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order
+  if (body.type !== undefined) updates.type = body.type
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
