@@ -374,6 +374,52 @@ export function SectionContent({
     }
   }, [addToast])
 
+  // Keyboard shortcuts (student mode)
+  useEffect(() => {
+    if (editMode) return
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (recapOpen) return
+
+      if (e.key === 'ArrowRight') {
+        if (nextSectionId) {
+          e.preventDefault()
+          router.push(`/courses/${courseId}/learn/${nextSectionId}`)
+        }
+        return
+      }
+      if (e.key === 'ArrowLeft') {
+        if (prevSectionId) {
+          e.preventDefault()
+          router.push(`/courses/${courseId}/learn/${prevSectionId}`)
+        }
+        return
+      }
+      if (e.key === 'j' || e.key === 'J') {
+        e.preventDefault()
+        window.scrollBy({ top: 240, behavior: 'smooth' })
+        return
+      }
+      if (e.key === 'k' || e.key === 'K') {
+        e.preventDefault()
+        window.scrollBy({ top: -240, behavior: 'smooth' })
+        return
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault()
+        handleContinue()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [editMode, router, courseId, nextSectionId, prevSectionId, handleContinue, recapOpen])
+
   // Keyboard shortcuts (admin edit mode only)
   useEffect(() => {
     if (!editMode || !isAdmin) return
