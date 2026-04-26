@@ -1144,12 +1144,12 @@ function FooterBar({
         : 'Complete & continue'
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5 rounded-2xl border border-line bg-surface-muted/40">
+    <div className="flex items-center gap-4 px-6 lg:px-10 py-4">
       <div className="shrink-0">
         {prevHref ? (
           <Link
             href={prevHref}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12.5px] font-medium text-ink-soft hover:text-ink hover:bg-surface transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12.5px] font-medium text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors"
           >
             <ArrowLeft className="w-4 h-4" strokeWidth={2} />
             Previous

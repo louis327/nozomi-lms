@@ -198,7 +198,10 @@ export default async function SectionPage({
         )}
       </div>
 
-      <div id="nz-section-footer-slot" className="mt-16" />
+      <div
+        id="nz-section-footer-slot"
+        className="mt-20 -mx-6 lg:-mx-10 border-t border-line bg-surface/60"
+      />
     </div>
   )
 }
