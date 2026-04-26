@@ -261,6 +261,19 @@ export function SectionContent({
 
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
 
+  // Block-level undo stack (admin edit mode only)
+  type UndoAction =
+    | { kind: 'delete'; block: ContentBlock; index: number }
+    | { kind: 'convert'; blockId: string; prevType: ContentBlock['type']; prevContent: Record<string, unknown> }
+    | { kind: 'move'; blockId: string; fromIndex: number }
+    | { kind: 'duplicate'; newBlockId: string }
+    | { kind: 'insert'; newBlockId: string }
+  const undoStack = useRef<UndoAction[]>([])
+  const pushUndo = useCallback((a: UndoAction) => {
+    undoStack.current.push(a)
+    if (undoStack.current.length > 50) undoStack.current.shift()
+  }, [])
+
   const handleBlockUpdate = useCallback((updated: ContentBlock) => {
     setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)))
   }, [])
@@ -282,10 +295,11 @@ export function SectionContent({
         return next
       })
       setFocusedBlockId(newBlock.id)
+      pushUndo({ kind: 'insert', newBlockId: newBlock.id })
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to add block', 'error')
     }
-  }, [section.id, addToast, persistOrder])
+  }, [section.id, addToast, persistOrder, pushUndo])
 
   const handleDuplicate = useCallback(async (block: ContentBlock) => {
     try {
@@ -299,11 +313,12 @@ export function SectionContent({
         return next
       })
       setFocusedBlockId(newBlock.id)
+      pushUndo({ kind: 'duplicate', newBlockId: newBlock.id })
       addToast('Block duplicated', 'success')
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to duplicate', 'error')
     }
-  }, [blocks, section.id, addToast, persistOrder])
+  }, [blocks, section.id, addToast, persistOrder, pushUndo])
 
   const handleMove = useCallback(async (blockId: string, dir: -1 | 1) => {
     setBlocks((prev) => {
@@ -314,27 +329,35 @@ export function SectionContent({
       const [moved] = next.splice(idx, 1)
       next.splice(target, 0, moved)
       persistOrder(next)
+      pushUndo({ kind: 'move', blockId, fromIndex: idx })
       return next
     })
-  }, [persistOrder])
+  }, [persistOrder, pushUndo])
 
   const handleDelete = useCallback(async (blockId: string) => {
     if (!confirm('Delete this content block?')) return
+    const idx = blocks.findIndex((b) => b.id === blockId)
+    const block = blocks[idx]
     try {
       await deleteBlock(blockId)
       setBlocks((prev) => prev.filter((b) => b.id !== blockId))
       setFocusedBlockId((id) => (id === blockId ? null : id))
+      if (block && idx !== -1) {
+        pushUndo({ kind: 'delete', block, index: idx })
+      }
       addToast('Block deleted', 'success')
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to delete', 'error')
     }
-  }, [addToast])
+  }, [blocks, addToast, pushUndo])
 
   const handleConvert = useCallback(async (
     block: ContentBlock,
     target: 'rich_text' | 'callout' | 'quote',
   ) => {
     if (block.type === target) return
+    const prevType = block.type
+    const prevContent = { ...block.content }
     // Best-effort body extraction
     const bodyHtml =
       (block.content.html as string) ??
@@ -358,11 +381,12 @@ export function SectionContent({
     try {
       const updated = await convertBlockType(block.id, target, nextContent)
       setBlocks((prev) => prev.map((b) => (b.id === block.id ? updated : b)))
+      pushUndo({ kind: 'convert', blockId: block.id, prevType, prevContent })
       addToast(`Converted to ${target.replace('_', ' ')}`, 'success')
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to convert', 'error')
     }
-  }, [addToast])
+  }, [addToast, pushUndo])
 
   const handleCopyLink = useCallback(async (blockId: string) => {
     try {
@@ -419,6 +443,64 @@ export function SectionContent({
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [editMode, router, courseId, nextSectionId, prevSectionId, handleContinue, recapOpen])
+
+  // Block-level undo (admin edit mode only). Bails out when inside a text editor.
+  useEffect(() => {
+    if (!editMode || !isAdmin) return
+    const handler = async (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod || e.shiftKey || (e.key !== 'z' && e.key !== 'Z')) return
+      const target = e.target as HTMLElement | null
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) return
+      const action = undoStack.current.pop()
+      if (!action) return
+      e.preventDefault()
+      try {
+        if (action.kind === 'delete') {
+          const recreated = await createBlock(
+            section.id,
+            action.block.type,
+            action.block.content,
+            action.index,
+          )
+          setBlocks((prev) => {
+            const next = [...prev]
+            next.splice(action.index, 0, recreated)
+            persistOrder(next)
+            return next
+          })
+          addToast('Restored block', 'success')
+        } else if (action.kind === 'convert') {
+          const reverted = await convertBlockType(action.blockId, action.prevType, action.prevContent)
+          setBlocks((prev) => prev.map((b) => (b.id === action.blockId ? reverted : b)))
+          addToast('Reverted conversion', 'success')
+        } else if (action.kind === 'move') {
+          setBlocks((prev) => {
+            const idx = prev.findIndex((b) => b.id === action.blockId)
+            if (idx === -1) return prev
+            const next = [...prev]
+            const [moved] = next.splice(idx, 1)
+            next.splice(action.fromIndex, 0, moved)
+            persistOrder(next)
+            return next
+          })
+          addToast('Move undone', 'success')
+        } else if (action.kind === 'duplicate' || action.kind === 'insert') {
+          await deleteBlock(action.newBlockId)
+          setBlocks((prev) => prev.filter((b) => b.id !== action.newBlockId))
+          addToast(action.kind === 'duplicate' ? 'Duplicate undone' : 'Block removed', 'success')
+        }
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : 'Undo failed', 'error')
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [editMode, isAdmin, section.id, addToast, persistOrder])
 
   // Keyboard shortcuts (admin edit mode only)
   useEffect(() => {
