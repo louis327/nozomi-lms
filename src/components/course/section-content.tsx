@@ -1067,35 +1067,8 @@ export function SectionContent({
     )
   }
 
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const [overflowing, setOverflowing] = useState(false)
-
-  useEffect(() => {
-    if (editMode) {
-      setOverflowing(false)
-      return
-    }
-    const check = () => {
-      const el = wrapRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      // Footer should stick when section content extends below viewport bottom
-      setOverflowing(rect.bottom > window.innerHeight + 40)
-    }
-    check()
-    const ro = new ResizeObserver(check)
-    if (wrapRef.current) ro.observe(wrapRef.current)
-    window.addEventListener('resize', check)
-    window.addEventListener('scroll', check, { passive: true })
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', check)
-      window.removeEventListener('scroll', check)
-    }
-  }, [editMode, blocks.length])
-
   return (
-    <div ref={wrapRef} className={overflowing && !editMode ? 'pb-24' : ''}>
+    <div>
       <SectionRecapModal
         open={recapOpen}
         sectionTitle={section.title}
@@ -1111,8 +1084,8 @@ export function SectionContent({
 
       {renderBlocks()}
 
-      {!editMode && !overflowing && (
-        <div className="mt-12 pt-6 border-t border-line-soft">
+      {!editMode && (
+        <div className="mt-14">
           <FooterBar
             saved={saved}
             saving={saving}
@@ -1123,30 +1096,6 @@ export function SectionContent({
             nextSectionId={nextSectionId}
             onContinue={handleContinue}
           />
-        </div>
-      )}
-
-      {!editMode && overflowing && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-30 border-t border-line/70"
-          style={{
-            background: 'rgba(255, 255, 255, 0.82)',
-            backdropFilter: 'saturate(180%) blur(14px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(14px)',
-          }}
-        >
-          <div className="mx-auto max-w-[760px] px-6 py-3">
-            <FooterBar
-              saved={saved}
-              saving={saving}
-              saveError={saveError}
-              recapCompletedAt={recapCompletedAt}
-              hasWorkbookPrompts={hasWorkbookPrompts}
-              autosaveStatus={autosaveStatus}
-              nextSectionId={nextSectionId}
-              onContinue={handleContinue}
-            />
-          </div>
         </div>
       )}
     </div>
@@ -1172,15 +1121,25 @@ function FooterBar({
   nextSectionId: string | null
   onContinue: () => void
 }) {
+  const buttonLabel = saving
+    ? 'Saving…'
+    : saved
+      ? nextSectionId
+        ? 'Continue'
+        : 'Back to course'
+      : hasWorkbookPrompts
+        ? 'Mark complete & continue'
+        : 'Complete & continue'
+
   return (
-    <div className="flex items-center justify-between flex-wrap gap-3">
-      <div className="flex items-center gap-3 flex-wrap min-w-0">
+    <div className="flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl border border-line bg-surface-muted/40">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {saved ? (
           <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success shrink-0">
               <Check className="w-3 h-3" strokeWidth={2.5} />
             </span>
-            <span>
+            <span className="truncate">
               Section complete
               {recapCompletedAt && (
                 <span className="text-ink-faint">
@@ -1191,7 +1150,7 @@ function FooterBar({
             </span>
           </div>
         ) : (
-          <p className="text-[12.5px] text-ink-muted">
+          <p className="text-[12.5px] text-ink-muted truncate">
             {hasWorkbookPrompts
               ? 'Fill in your responses above, then continue.'
               : 'Ready to move on?'}
@@ -1199,7 +1158,7 @@ function FooterBar({
         )}
         {hasWorkbookPrompts && !saved && autosaveStatus !== 'idle' && (
           <span
-            className={`inline-flex items-center gap-1.5 text-[11px] font-mono tabular-nums tracking-wider uppercase ${
+            className={`inline-flex items-center gap-1.5 text-[10.5px] font-mono tabular-nums tracking-wider uppercase shrink-0 ${
               autosaveStatus === 'error'
                 ? 'text-error'
                 : autosaveStatus === 'saving'
@@ -1219,29 +1178,21 @@ function FooterBar({
                 Saved
               </>
             )}
-            {autosaveStatus === 'error' && 'Save failed — will retry'}
+            {autosaveStatus === 'error' && 'Failed — retrying'}
           </span>
         )}
+        {saveError && (
+          <span className="text-[11.5px] text-error shrink-0">{saveError}</span>
+        )}
       </div>
-      <div className="flex items-center gap-3">
-        {saveError && <span className="text-[12px] text-error">{saveError}</span>}
-        <button
-          onClick={onContinue}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-        >
-          {saving
-            ? 'Saving…'
-            : saved
-              ? nextSectionId
-                ? 'Continue'
-                : 'Back to course'
-              : hasWorkbookPrompts
-                ? 'Mark complete & continue'
-                : 'Complete & continue'}
-          {!saving && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
-        </button>
-      </div>
+      <button
+        onClick={onContinue}
+        disabled={saving}
+        className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shrink-0"
+      >
+        {buttonLabel}
+        {!saving && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
+      </button>
     </div>
   )
 }
