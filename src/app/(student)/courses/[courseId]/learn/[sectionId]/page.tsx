@@ -6,6 +6,7 @@ import { SectionContent } from '@/components/course/section-content'
 import { ModuleChecklist } from '@/components/course/module-checklist'
 import { SectionNotes } from '@/components/course/section-notes'
 import { InlineSectionTitle } from '@/components/course/inline-section-title'
+import { ModuleHero } from '@/components/course/module-hero'
 
 export default async function SectionPage({
   params,
@@ -38,7 +39,7 @@ export default async function SectionPage({
 
   const { data: moduleMeta } = await supabase
     .from('modules')
-    .select('id, title, sort_order, course_id, courses ( id, title )')
+    .select('id, title, description, sort_order, course_id, courses ( id, title )')
     .eq('id', section.module_id)
     .single()
 
@@ -140,16 +141,26 @@ export default async function SectionPage({
   }
 
   const courseTitle = (moduleMeta as any)?.courses?.title ?? 'Course'
+  const isFirstSectionInModule = !prevSiblings?.length
 
   return (
     <div className="px-6 lg:px-10 py-10 pb-24">
       <div className="max-w-[680px] mx-auto">
-        {/* Eyebrow: course / module */}
-        <div className="flex items-center gap-2 mb-6 breadcrumb">
-          <Link href={`/courses/${courseId}`} className="hover:text-ink transition-colors">{courseTitle}</Link>
-          <span className="text-ink-faint">/</span>
-          <span className="text-ink font-semibold">{moduleMeta?.title ?? 'Module'}</span>
-        </div>
+        {isFirstSectionInModule && moduleMeta ? (
+          <ModuleHero
+            moduleId={moduleMeta.id}
+            moduleNumber={(moduleMeta.sort_order ?? 0) + 1}
+            moduleTitle={moduleMeta.title}
+            description={(moduleMeta as any).description ?? null}
+            courseTitle={courseTitle}
+          />
+        ) : (
+          <div className="flex items-center gap-2 mb-6 breadcrumb">
+            <Link href={`/courses/${courseId}`} className="hover:text-ink transition-colors">{courseTitle}</Link>
+            <span className="text-ink-faint">/</span>
+            <span className="text-ink font-semibold">{moduleMeta?.title ?? 'Module'}</span>
+          </div>
+        )}
 
         {section.video_url && !(section.content_blocks ?? []).some((b: any) => b.type === 'video') && (
           <div className="mb-8 rounded-xl overflow-hidden bg-surface border border-line">
@@ -157,7 +168,9 @@ export default async function SectionPage({
           </div>
         )}
 
-        <InlineSectionTitle sectionId={sectionId} title={section.title} />
+        {!isFirstSectionInModule && (
+          <InlineSectionTitle sectionId={sectionId} title={section.title} />
+        )}
 
         <SectionContent
           section={section as any}
