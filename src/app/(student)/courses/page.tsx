@@ -6,6 +6,7 @@ import { PageTopbar } from '@/components/layout/page-topbar'
 import { CourseThumb } from '@/components/ui/course-thumb'
 import { Badge } from '@/components/ui/badge'
 import { ProgressBar } from '@/components/ui/progress-bar'
+import { ArrowRight, Clock } from 'lucide-react'
 
 export const metadata = { title: 'My Courses — Nozomi' }
 
@@ -69,6 +70,83 @@ export default async function CoursesPage() {
   const completedCourses = enrolledCourses.filter((c) => c.sectionTotal > 0 && c.pct === 100)
   const otherCourses = coursesList.filter((c) => !c.isEnrolled)
 
+  // Resume banner — most recently touched in-progress section
+  const { data: lastProg } = await supabase
+    .from('section_progress')
+    .select('section_id, completed, updated_at')
+    .eq('user_id', user.id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  type ResumeInfo = {
+    courseId: string
+    courseTitle: string
+    moduleTitle: string
+    sectionTitle: string
+    sectionId: string
+    completed: boolean
+  }
+  let resume: ResumeInfo | null = null
+  if (lastProg?.section_id) {
+    const { data: secRow } = await supabase
+      .from('sections')
+      .select('id, title, modules(id, title, courses(id, title))')
+      .eq('id', lastProg.section_id)
+      .maybeSingle()
+    const mod = (secRow as any)?.modules
+    const crs = mod?.courses
+    if (secRow && mod && crs) {
+      // If completed, prefer the next incomplete section in same course
+      let targetId: string = secRow.id
+      let targetTitle: string = (secRow as any).title
+      let targetModuleTitle: string = mod.title
+      if (lastProg.completed) {
+        const { data: nextIncompleteList } = await supabase
+          .from('sections')
+          .select('id, title, sort_order, module_id, modules!inner(course_id, sort_order)')
+          .eq('modules.course_id', crs.id)
+          .order('sort_order', { ascending: true })
+        type NextRow = {
+          id: string; title: string; sort_order: number; module_id: string;
+          modules: { course_id: string; sort_order: number } | { course_id: string; sort_order: number }[]
+        }
+        const rawList = (nextIncompleteList ?? []) as unknown as NextRow[]
+        const normalize = (r: NextRow) => {
+          const m = Array.isArray(r.modules) ? r.modules[0] : r.modules
+          return { id: r.id, title: r.title, sort_order: r.sort_order, module_id: r.module_id, modSort: m?.sort_order ?? 0 }
+        }
+        const allOrdered = rawList.map(normalize)
+        allOrdered.sort((a, b) => {
+          if (a.modSort !== b.modSort) return a.modSort - b.modSort
+          return a.sort_order - b.sort_order
+        })
+        const completedIds = new Set(
+          (progress ?? []).filter((p) => p.completed).map((p) => p.section_id)
+        )
+        const nextIncomplete = allOrdered.find((s) => !completedIds.has(s.id))
+        if (nextIncomplete) {
+          targetId = nextIncomplete.id
+          targetTitle = nextIncomplete.title
+          const { data: nextMod } = await supabase
+            .from('modules')
+            .select('title')
+            .eq('id', nextIncomplete.module_id)
+            .maybeSingle()
+          if (nextMod?.title) targetModuleTitle = nextMod.title
+        }
+      }
+      resume = {
+        courseId: crs.id,
+        courseTitle: crs.title,
+        moduleTitle: targetModuleTitle,
+        sectionTitle: targetTitle,
+        sectionId: targetId,
+        completed: lastProg.completed,
+      }
+    }
+  }
+
   const summary = (() => {
     const parts: string[] = []
     if (inProgressCourses.length > 0) {
@@ -97,6 +175,34 @@ export default async function CoursesPage() {
         </h1>
         <p className="text-[14px] text-ink-soft max-w-lg">{summary}</p>
       </section>
+
+      {resume && (
+        <section className="mb-10">
+          <Link
+            href={`/courses/${resume.courseId}/learn/${resume.sectionId}`}
+            className="group flex items-center gap-5 p-5 rounded-2xl border border-line bg-surface hover:border-accent/40 transition-colors"
+          >
+            <div className="w-11 h-11 rounded-full bg-accent-soft text-accent-deep flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] font-semibold tracking-[0.2em] uppercase text-ink-muted mb-1">
+                {resume.completed ? 'Up next' : 'Pick up where you left off'}
+              </p>
+              <p className="text-[15px] font-semibold text-ink truncate">
+                {resume.sectionTitle}
+              </p>
+              <p className="text-[12.5px] text-ink-soft truncate">
+                {resume.courseTitle} <span className="text-ink-faint">·</span> {resume.moduleTitle}
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-ink text-ink-inverted text-[12.5px] font-semibold shrink-0 group-hover:bg-accent transition-colors">
+              {resume.completed ? 'Continue' : 'Resume'}
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+            </span>
+          </Link>
+        </section>
+      )}
 
       {inProgressCourses.length > 0 && (
         <section className="mb-12">
