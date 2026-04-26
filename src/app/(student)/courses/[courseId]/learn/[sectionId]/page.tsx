@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionContent } from '@/components/course/section-content'
 import { ModuleChecklist } from '@/components/course/module-checklist'
-import { SectionNotes } from '@/components/course/section-notes'
 import { InlineSectionTitle } from '@/components/course/inline-section-title'
 import { ModuleHero } from '@/components/course/module-hero'
 
@@ -101,13 +100,6 @@ export default async function SectionPage({
     }
   }
 
-  const { data: sectionNote } = await supabase
-    .from('section_notes')
-    .select('content')
-    .eq('user_id', user.id)
-    .eq('section_id', sectionId)
-    .single()
-
   const { data: allModuleSections } = await supabase
     .from('sections')
     .select('id, sort_order')
@@ -144,7 +136,7 @@ export default async function SectionPage({
   const isFirstSectionInModule = !prevSiblings?.length
 
   return (
-    <div className="px-6 lg:px-10 py-10 pb-24">
+    <div className="px-6 lg:px-10 pt-10">
       <div className="max-w-[680px] mx-auto" id="nz-section-content-column">
         {isFirstSectionInModule && moduleMeta ? (
           <ModuleHero
@@ -180,13 +172,6 @@ export default async function SectionPage({
           prevSectionId={prevSectionId}
         />
 
-        <div className="mt-12">
-          <SectionNotes
-            sectionId={sectionId}
-            initialContent={sectionNote?.content ?? ''}
-          />
-        </div>
-
         {isLastSectionInModule && moduleDeliverables.length > 0 && (
           <div className="mt-12">
             <ModuleChecklist
@@ -200,7 +185,7 @@ export default async function SectionPage({
 
       <div
         id="nz-section-footer-slot"
-        className="mt-20 -mx-6 lg:-mx-10 border-t border-line bg-surface/60"
+        className="mt-16 -mx-6 lg:-mx-10 border-t border-line bg-surface"
       />
     </div>
   )
