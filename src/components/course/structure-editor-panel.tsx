@@ -3,6 +3,22 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useToast } from '@/components/ui/toast'
 import type { Course, Module, Section } from '@/lib/types'
 
@@ -86,6 +102,139 @@ function EditableText({
       autoFocus
       className={`bg-transparent border-b border-nz-sakura/40 focus:outline-none ${className}`}
     />
+  )
+}
+
+function SortableSectionRow({
+  section,
+  secIdx,
+  sectionsLength,
+  moduleId,
+  loading,
+  onMoveUp,
+  onMoveDown,
+  onRename,
+  onDuplicate,
+  onDelete,
+}: {
+  section: Section
+  secIdx: number
+  sectionsLength: number
+  moduleId: string
+  loading: string | null
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onRename: (title: string) => void
+  onDuplicate: () => void
+  onDelete: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    position: 'relative' as const,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 px-4 py-2 group">
+      <button
+        {...attributes}
+        {...listeners}
+        className="p-0.5 rounded text-nz-text-muted hover:text-nz-sakura cursor-grab active:cursor-grabbing"
+        title="Drag to reorder"
+      >
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+        </svg>
+      </button>
+
+      <div className="flex flex-col gap-0.5">
+        <button
+          onClick={onMoveUp}
+          disabled={secIdx === 0}
+          className="p-0.5 rounded text-nz-text-muted hover:text-nz-text-primary disabled:opacity-20 cursor-pointer disabled:cursor-default transition-colors"
+        >
+          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+        <button
+          onClick={onMoveDown}
+          disabled={secIdx === sectionsLength - 1}
+          className="p-0.5 rounded text-nz-text-muted hover:text-nz-text-primary disabled:opacity-20 cursor-pointer disabled:cursor-default transition-colors"
+        >
+          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="w-2 h-2 rounded-full border border-nz-text-muted shrink-0" />
+
+      <EditableText
+        value={section.title}
+        onSave={onRename}
+        className="flex-1 text-sm text-nz-text-secondary truncate"
+      />
+
+      <button
+        onClick={onDuplicate}
+        disabled={loading === `dup-sec-${section.id}`}
+        className="p-1 rounded-lg text-nz-text-muted hover:text-nz-sakura hover:bg-nz-sakura/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+        title="Duplicate section"
+      >
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      </button>
+      <button
+        onClick={onDelete}
+        disabled={loading === `del-sec-${section.id}`}
+        className="p-1 rounded-lg text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+        title="Delete section"
+      >
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+function ModuleSectionsDnd({
+  moduleId,
+  sections,
+  onReorder,
+  children,
+}: {
+  moduleId: string
+  sections: Section[]
+  onReorder: (moduleId: string, oldIndex: number, newIndex: number) => void
+  children: React.ReactNode
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  )
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const ids = sections.map((s) => s.id)
+    const oldIndex = ids.indexOf(active.id as string)
+    const newIndex = ids.indexOf(over.id as string)
+    if (oldIndex !== -1 && newIndex !== -1) {
+      onReorder(moduleId, oldIndex, newIndex)
+    }
+  }, [moduleId, sections, onReorder])
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+        {children}
+      </SortableContext>
+    </DndContext>
   )
 }
 
@@ -261,6 +410,29 @@ export function StructureEditorPanel({ open, onClose, course, courseId }: Struct
     }
   }, [refreshAndClose, addToast])
 
+  const handleReorderSections = useCallback(async (moduleId: string, oldIndex: number, newIndex: number) => {
+    const mod = modules.find((m) => m.id === moduleId)
+    if (!mod) return
+    const sortedSections = [...mod.sections].sort((a, b) => a.sort_order - b.sort_order)
+    const reordered = arrayMove(sortedSections, oldIndex, newIndex).map((s, i) => ({ ...s, sort_order: i }))
+
+    setModules((prev) => prev.map((m) =>
+      m.id === moduleId ? { ...m, sections: reordered } : m
+    ))
+
+    try {
+      await apiPatch('/api/admin/sections', {
+        sections: reordered.map((s, i) => ({ id: s.id, sort_order: i })),
+      })
+      refreshAndClose()
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to reorder', 'error')
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? { ...m, sections: sortedSections } : m
+      ))
+    }
+  }, [modules, refreshAndClose, addToast])
+
   const handleMoveSection = useCallback(async (moduleId: string, sectionId: string, direction: 'up' | 'down') => {
     const mod = modules.find((m) => m.id === moduleId)
     if (!mod) return
@@ -376,60 +548,27 @@ export function StructureEditorPanel({ open, onClose, course, courseId }: Struct
 
                 {/* Sections */}
                 <div className="ml-6 border-l border-nz-border/40">
-                  {sections.map((section, secIdx) => (
-                    <div key={section.id} className="flex items-center gap-2 px-4 py-2 group">
-                      {/* Reorder arrows */}
-                      <div className="flex flex-col gap-0.5">
-                        <button
-                          onClick={() => handleMoveSection(mod.id, section.id, 'up')}
-                          disabled={secIdx === 0}
-                          className="p-0.5 rounded text-nz-text-muted hover:text-nz-text-primary disabled:opacity-20 cursor-pointer disabled:cursor-default transition-colors"
-                        >
-                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleMoveSection(mod.id, section.id, 'down')}
-                          disabled={secIdx === sections.length - 1}
-                          className="p-0.5 rounded text-nz-text-muted hover:text-nz-text-primary disabled:opacity-20 cursor-pointer disabled:cursor-default transition-colors"
-                        >
-                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div className="w-2 h-2 rounded-full border border-nz-text-muted shrink-0" />
-
-                      <EditableText
-                        value={section.title}
-                        onSave={(title) => handleRenameSection(section.id, title)}
-                        className="flex-1 text-sm text-nz-text-secondary truncate"
+                  <ModuleSectionsDnd
+                    moduleId={mod.id}
+                    sections={sections}
+                    onReorder={handleReorderSections}
+                  >
+                    {sections.map((section, secIdx) => (
+                      <SortableSectionRow
+                        key={section.id}
+                        section={section}
+                        secIdx={secIdx}
+                        sectionsLength={sections.length}
+                        moduleId={mod.id}
+                        loading={loading}
+                        onMoveUp={() => handleMoveSection(mod.id, section.id, 'up')}
+                        onMoveDown={() => handleMoveSection(mod.id, section.id, 'down')}
+                        onRename={(title) => handleRenameSection(section.id, title)}
+                        onDuplicate={() => handleDuplicateSection(mod.id, section.id)}
+                        onDelete={() => handleDeleteSection(mod.id, section.id)}
                       />
-
-                      <button
-                        onClick={() => handleDuplicateSection(mod.id, section.id)}
-                        disabled={loading === `dup-sec-${section.id}`}
-                        className="p-1 rounded-lg text-nz-text-muted hover:text-nz-sakura hover:bg-nz-sakura/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                        title="Duplicate section"
-                      >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSection(mod.id, section.id)}
-                        disabled={loading === `del-sec-${section.id}`}
-                        className="p-1 rounded-lg text-nz-text-muted hover:text-nz-error hover:bg-nz-error/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                        title="Delete section"
-                      >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </ModuleSectionsDnd>
 
                   {sections.length === 0 && (
                     <p className="px-4 py-2 text-xs text-nz-text-muted italic">No sections yet</p>
