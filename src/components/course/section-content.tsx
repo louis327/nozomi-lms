@@ -283,7 +283,10 @@ export function SectionContent({
             type={block.content.calloutType ?? block.content.callout_type ?? 'tip'}
             title={block.content.title}
           >
-            <div dangerouslySetInnerHTML={{ __html: block.content.body ?? block.content.html ?? block.content.text ?? '' }} />
+            <div
+              className="prose-nozomi"
+              dangerouslySetInnerHTML={{ __html: block.content.body ?? block.content.html ?? block.content.text ?? '' }}
+            />
           </Callout>
         )
 
@@ -302,8 +305,13 @@ export function SectionContent({
             }}
           >
             <blockquote
-              className="text-[16px] leading-[1.55] italic"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif', color: '#2a2a2a' }}
+              className="prose-nozomi italic"
+              style={{
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                color: '#2a2a2a',
+                fontSize: '16px',
+                lineHeight: 1.55,
+              }}
             >
               {isHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: text }} />
