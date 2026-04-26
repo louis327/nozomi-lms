@@ -204,37 +204,39 @@ export function SectionContent({
     }
   }, [router, courseId, nextSectionId])
 
-  const handleSubmit = useCallback(async () => {
+  const handleContinue = useCallback(async () => {
     setSaving(true)
     setSaveError(null)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!saved) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-      const mergedData = { ...workbookData, _checklists: checklistData }
-      const completedAt = new Date().toISOString()
+        const mergedData = { ...workbookData, _checklists: checklistData }
+        const completedAt = new Date().toISOString()
 
-      const { error } = await supabase.from('section_progress').upsert(
-        {
-          user_id: user.id,
-          section_id: section.id,
-          completed: true,
-          workbook_data: mergedData,
-          completed_at: completedAt,
-        },
-        { onConflict: 'user_id,section_id' }
-      )
+        const { error } = await supabase.from('section_progress').upsert(
+          {
+            user_id: user.id,
+            section_id: section.id,
+            completed: true,
+            workbook_data: mergedData,
+            completed_at: completedAt,
+          },
+          { onConflict: 'user_id,section_id' },
+        )
 
-      if (error) {
-        setSaveError('Failed to save your progress. Please try again.')
-        return
+        if (error) {
+          setSaveError('Failed to save your progress. Please try again.')
+          return
+        }
+
+        setSaved(true)
+        setRecapCompletedAt(completedAt)
+        lastSavedSerialized.current = JSON.stringify({ w: workbookData, c: checklistData })
+        setAutosaveStatus('saved')
+        router.refresh()
       }
-
-      setSaved(true)
-      setRecapCompletedAt(completedAt)
-      lastSavedSerialized.current = JSON.stringify({ w: workbookData, c: checklistData })
-      setAutosaveStatus('saved')
-      router.refresh()
 
       if (hasPrompts) {
         setRecapOpen(true)
@@ -246,7 +248,7 @@ export function SectionContent({
     } finally {
       setSaving(false)
     }
-  }, [workbookData, checklistData, section.id, router, supabase, hasPrompts, goNext])
+  }, [saved, workbookData, checklistData, section.id, router, supabase, hasPrompts, goNext])
 
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
 
@@ -1082,12 +1084,12 @@ export function SectionContent({
 
       {renderBlocks()}
 
-      {/* Complete / continue — lightweight */}
+      {/* Continue — single unified CTA */}
       {!editMode && (
         <div className="mt-12 pt-6 border-t border-line-soft">
-          {saved ? (
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {saved ? (
                 <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success">
                     <Check className="w-3 h-3" strokeWidth={2.5} />
@@ -1102,82 +1104,61 @@ export function SectionContent({
                     )}
                   </span>
                 </div>
-                {hasPrompts && (
-                  <button
-                    onClick={() => setRecapOpen(true)}
-                    className="text-[12px] font-medium text-accent hover:text-accent-deep underline underline-offset-4 decoration-accent/40 hover:decoration-accent cursor-pointer"
-                  >
-                    Review responses
-                  </button>
-                )}
-              </div>
-              {nextSectionId ? (
-                <button
-                  onClick={() => router.push(`/courses/${courseId}/learn/${nextSectionId}`)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors cursor-pointer"
-                >
-                  Next section
-                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
-                </button>
               ) : (
-                <button
-                  onClick={() => router.push(`/courses/${courseId}`)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors cursor-pointer"
-                >
-                  Back to course
-                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3 flex-wrap">
                 <p className="text-[12.5px] text-ink-muted">
                   {hasWorkbookPrompts
-                    ? 'Fill in your responses above, then mark this section complete.'
+                    ? 'Fill in your responses above, then continue.'
                     : 'Ready to move on?'}
                 </p>
-                {hasWorkbookPrompts && autosaveStatus !== 'idle' && (
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-mono tabular-nums tracking-wider uppercase ${
-                      autosaveStatus === 'error'
-                        ? 'text-error'
-                        : autosaveStatus === 'saving'
-                          ? 'text-ink-muted'
-                          : 'text-ink-faint'
-                    }`}
-                  >
-                    {autosaveStatus === 'saving' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-ink-muted animate-pulse" />
-                        Saving
-                      </>
-                    )}
-                    {autosaveStatus === 'saved' && (
-                      <>
-                        <Check className="w-3 h-3" strokeWidth={2.5} />
-                        Saved
-                      </>
-                    )}
-                    {autosaveStatus === 'error' && 'Save failed — will retry'}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {saveError && (
-                  <span className="text-[12px] text-error">{saveError}</span>
-                )}
-                <button
-                  onClick={handleSubmit}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              )}
+              {hasWorkbookPrompts && !saved && autosaveStatus !== 'idle' && (
+                <span
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-mono tabular-nums tracking-wider uppercase ${
+                    autosaveStatus === 'error'
+                      ? 'text-error'
+                      : autosaveStatus === 'saving'
+                        ? 'text-ink-muted'
+                        : 'text-ink-faint'
+                  }`}
                 >
-                  {saving ? 'Saving…' : hasWorkbookPrompts ? 'Submit & complete' : 'Complete section'}
-                  {!saving && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
-                </button>
-              </div>
+                  {autosaveStatus === 'saving' && (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-ink-muted animate-pulse" />
+                      Saving
+                    </>
+                  )}
+                  {autosaveStatus === 'saved' && (
+                    <>
+                      <Check className="w-3 h-3" strokeWidth={2.5} />
+                      Saved
+                    </>
+                  )}
+                  {autosaveStatus === 'error' && 'Save failed — will retry'}
+                </span>
+              )}
             </div>
-          )}
+            <div className="flex items-center gap-3">
+              {saveError && (
+                <span className="text-[12px] text-error">{saveError}</span>
+              )}
+              <button
+                onClick={handleContinue}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-ink text-ink-inverted text-[13px] font-semibold hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {saving
+                  ? 'Saving…'
+                  : saved
+                    ? nextSectionId
+                      ? 'Continue'
+                      : 'Back to course'
+                    : hasWorkbookPrompts
+                      ? 'Mark complete & continue'
+                      : 'Complete & continue'}
+                {!saving && <ArrowRight className="w-4 h-4" strokeWidth={2} />}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
