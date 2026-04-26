@@ -385,7 +385,7 @@ export function SectionContent({
         const bodyRows = rows.slice(1)
         const isHtml = (s: string) => /<[a-z][\s\S]*>/i.test(s ?? '')
         return (
-          <div key={block.id} className="my-6 overflow-x-auto rounded-lg border border-line">
+          <div key={block.id} className="my-6 overflow-x-auto">
             <table className="nz-table">
               <thead>
                 <tr>

@@ -352,7 +352,7 @@ export function EditableBlockRender({ block, onChange }: Props) {
 
       return (
         <div className="my-6">
-          <div className="overflow-x-auto rounded-lg border border-line">
+          <div className="overflow-x-auto">
             <table className="nz-table">
               <thead>
                 <tr>

@@ -317,9 +317,7 @@ body {
   letter-spacing: 0.01em;
   color: #fafafa;
   vertical-align: top;
-}
-.nz-table tbody tr + tr {
-  border-top: 1px solid var(--nz-border-soft);
+  border: 1px solid var(--nz-border);
 }
 .nz-table td {
   padding: 16px 20px;
@@ -327,6 +325,7 @@ body {
   line-height: 1.55;
   color: var(--nz-ink);
   vertical-align: top;
+  border: 1px solid var(--nz-border);
 }
 .nz-table td:first-child {
   font-weight: 600;
