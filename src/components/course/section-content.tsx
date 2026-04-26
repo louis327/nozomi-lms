@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode, useState, useCallback, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -252,6 +253,11 @@ export function SectionContent({
       setSaving(false)
     }
   }, [saved, workbookData, checklistData, section.id, router, supabase, hasPrompts, goNext])
+
+  const [footerSlot, setFooterSlot] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setFooterSlot(document.getElementById('nz-section-footer-slot'))
+  }, [])
 
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
 
@@ -1087,8 +1093,8 @@ export function SectionContent({
 
       {renderBlocks()}
 
-      {!editMode && (
-        <div className="mt-14">
+      {!editMode && footerSlot &&
+        createPortal(
           <FooterBar
             saved={saved}
             saving={saving}
@@ -1099,9 +1105,9 @@ export function SectionContent({
             nextSectionId={nextSectionId}
             prevHref={prevSectionId ? `/courses/${courseId}/learn/${prevSectionId}` : null}
             onContinue={handleContinue}
-          />
-        </div>
-      )}
+          />,
+          footerSlot,
+        )}
     </div>
   )
 }
