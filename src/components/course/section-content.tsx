@@ -69,10 +69,16 @@ function DoBlock({
   children: ReactNode
 }) {
   return (
-    <div className="my-8">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-accent mb-2">
-        {label}
-      </p>
+    <div
+      className="my-8 relative rounded-r-lg rounded-l-sm border-l-[3px] border-l-accent px-5 py-5"
+      style={{ background: 'rgba(198, 154, 63, 0.06)' }}
+    >
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <Pencil className="w-3 h-3 text-accent" strokeWidth={2.5} />
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-accent">
+          {label}
+        </p>
+      </div>
       {question && (
         <p
           className="text-[17px] leading-[1.5] mb-2 text-ink"
