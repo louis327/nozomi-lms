@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Settings, Layers, FileText, Blocks } from 'lucide-react'
+import { ArrowLeft, Settings, Layers, FileText, Blocks, Eye, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useEditMode } from '@/lib/edit-mode-context'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
@@ -16,6 +17,24 @@ export function AdminCourseBar({ course }: { course: CourseWithTree }) {
   const router = useRouter()
   const supabase = createClient()
   const { addToast } = useToast()
+  const { editMode, setEditMode } = useEditMode()
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.shiftKey && (e.key === 'P' || e.key === 'p') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement | null
+        if (
+          target?.tagName === 'INPUT' ||
+          target?.tagName === 'TEXTAREA' ||
+          target?.isContentEditable
+        ) return
+        e.preventDefault()
+        setEditMode(!editMode)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [editMode, setEditMode])
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [title, setTitle] = useState(course.title)
@@ -130,6 +149,28 @@ export function AdminCourseBar({ course }: { course: CourseWithTree }) {
               title="Click to toggle"
             >
               {status}
+            </button>
+
+            <button
+              onClick={() => setEditMode(!editMode)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-colors cursor-pointer ${
+                editMode
+                  ? 'text-[#555] hover:text-[#111] hover:bg-[#f5f5f5]'
+                  : 'bg-[#111] text-white hover:bg-black'
+              }`}
+              title={editMode ? 'Preview as student (Shift+P)' : 'Back to edit (Shift+P)'}
+            >
+              {editMode ? (
+                <>
+                  <Eye className="w-3.5 h-3.5" strokeWidth={2} />
+                  Preview
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
+                  Edit
+                </>
+              )}
             </button>
 
             <button
