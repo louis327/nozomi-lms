@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode, useState, useCallback, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useEditMode } from '@/lib/edit-mode-context'
@@ -20,7 +21,7 @@ import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionRecapModal } from '@/components/course/section-recap-modal'
 import { extractSectionAnswers, sectionHasPrompts } from '@/lib/answer-extract'
-import { ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
 const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
@@ -113,6 +114,7 @@ type SectionContentProps = {
   sectionProgress: SectionProgress | null
   courseId: string
   nextSectionId: string | null
+  prevSectionId?: string | null
 }
 
 export function SectionContent({
@@ -120,6 +122,7 @@ export function SectionContent({
   sectionProgress,
   courseId,
   nextSectionId,
+  prevSectionId = null,
 }: SectionContentProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -1094,6 +1097,7 @@ export function SectionContent({
             hasWorkbookPrompts={hasWorkbookPrompts}
             autosaveStatus={autosaveStatus}
             nextSectionId={nextSectionId}
+            prevHref={prevSectionId ? `/courses/${courseId}/learn/${prevSectionId}` : null}
             onContinue={handleContinue}
           />
         </div>
@@ -1110,6 +1114,7 @@ function FooterBar({
   hasWorkbookPrompts,
   autosaveStatus,
   nextSectionId,
+  prevHref,
   onContinue,
 }: {
   saved: boolean
@@ -1119,6 +1124,7 @@ function FooterBar({
   hasWorkbookPrompts: boolean
   autosaveStatus: 'idle' | 'saving' | 'saved' | 'error'
   nextSectionId: string | null
+  prevHref: string | null
   onContinue: () => void
 }) {
   const buttonLabel = saving
@@ -1132,10 +1138,27 @@ function FooterBar({
         : 'Complete & continue'
 
   return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl border border-line bg-surface-muted/40">
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+    <div className="flex items-center gap-4 px-5 py-3.5 rounded-2xl border border-line bg-surface-muted/40">
+      <div className="shrink-0">
+        {prevHref ? (
+          <Link
+            href={prevHref}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12.5px] font-medium text-ink-soft hover:text-ink hover:bg-surface transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+            Previous
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[12.5px] font-medium text-ink-faint cursor-not-allowed">
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+            Previous
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-center gap-3 min-w-0 flex-1">
         {saved ? (
-          <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
+          <div className="flex items-center gap-2 text-[12.5px] text-ink-soft min-w-0">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success/15 text-success shrink-0">
               <Check className="w-3 h-3" strokeWidth={2.5} />
             </span>
@@ -1150,7 +1173,7 @@ function FooterBar({
             </span>
           </div>
         ) : (
-          <p className="text-[12.5px] text-ink-muted truncate">
+          <p className="text-[12.5px] text-ink-muted truncate text-center">
             {hasWorkbookPrompts
               ? 'Fill in your responses above, then continue.'
               : 'Ready to move on?'}
@@ -1185,6 +1208,7 @@ function FooterBar({
           <span className="text-[11.5px] text-error shrink-0">{saveError}</span>
         )}
       </div>
+
       <button
         onClick={onContinue}
         disabled={saving}

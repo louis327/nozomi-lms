@@ -177,18 +177,8 @@ export default async function SectionPage({
           sectionProgress={sectionProgress as any}
           courseId={courseId}
           nextSectionId={nextSectionId}
+          prevSectionId={prevSectionId}
         />
-
-        {prevSectionId && (
-          <div className="mt-10">
-            <Link
-              href={`/courses/${courseId}/learn/${prevSectionId}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-[12.5px] font-medium text-ink-soft hover:text-ink border border-line rounded-full hover:border-line-strong transition-colors"
-            >
-              <span aria-hidden>←</span> Previous section
-            </Link>
-          </div>
-        )}
 
         <div className="mt-12">
           <SectionNotes
