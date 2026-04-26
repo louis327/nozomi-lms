@@ -293,39 +293,36 @@ export function EditableBlockRender({ block, onChange }: Props) {
       }
 
       return (
-        <div className="my-5">
-          <div className="overflow-x-auto rounded-lg border border-line bg-white">
-            <table
-              className="w-full text-[14px]"
-              style={{ borderCollapse: 'collapse' }}
-            >
+        <div className="my-6">
+          <div className="overflow-x-auto rounded-lg border border-line">
+            <table className="nz-table">
               <thead>
                 <tr>
                   {headers.map((h, i) => (
-                    <th
-                      key={i}
-                      className="px-4 py-2.5 text-left border border-line bg-surface-muted relative group"
-                    >
-                      <div className="flex items-center gap-1">
+                    <th key={i} className="relative group">
+                      <div className="flex items-start gap-1">
                         <EditableText
                           value={h}
                           onChange={(v) => setCell(0, i, v)}
                           placeholder="Header"
                           style={{
-                            fontSize: '13px',
+                            fontSize: '12.5px',
                             fontWeight: 600,
-                            color: 'var(--nz-ink)',
+                            color: '#fafafa',
+                            letterSpacing: '0.01em',
                           }}
                           inheritFont={false}
+                          className="!border-white/20 hover:!border-white/40 focus:!border-white/60 hover:!bg-white/5 focus:!bg-white/10"
                         />
                         {headers.length > 1 && (
-                          <SmallButton
+                          <button
+                            type="button"
                             onClick={() => removeCol(i)}
-                            tone="danger"
+                            className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                             title="Remove column"
                           >
                             <X className="w-3 h-3" strokeWidth={2} />
-                          </SmallButton>
+                          </button>
                         )}
                       </div>
                     </th>
@@ -338,15 +335,14 @@ export function EditableBlockRender({ block, onChange }: Props) {
                   return (
                     <tr key={ri} className="group">
                       {row.map((cell, ci) => (
-                        <td
-                          key={ci}
-                          className="px-4 py-2.5 border border-line text-ink align-top"
-                        >
-                          <div className="flex items-center gap-1">
+                        <td key={ci}>
+                          <div className="flex items-start gap-1">
                             <EditableText
                               value={cell}
                               onChange={(v) => setCell(ri, ci, v)}
-                              placeholder="Value"
+                              placeholder="Cell content (plain text or HTML — use <strong>, <small>, <em>, <br/>)"
+                              multiline
+                              rows={2}
                               inheritFont={true}
                             />
                             {ci === row.length - 1 && rows.length > 2 && (
@@ -371,6 +367,9 @@ export function EditableBlockRender({ block, onChange }: Props) {
             <AddButton onClick={addRow} label="Add row" />
             <AddButton onClick={addCol} label="Add column" />
           </div>
+          <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
+            Tip: wrap a label with <span className="font-mono">&lt;strong&gt;</span>, follow it with <span className="font-mono">&lt;small&gt;</span> for the muted subtitle
+          </p>
         </div>
       )
     }

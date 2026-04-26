@@ -335,20 +335,15 @@ export function SectionContent({
         const rows = (block.content.rows as string[][] ?? [])
         const headers = rows[0] ?? []
         const bodyRows = rows.slice(1)
+        const isHtml = (s: string) => /<[a-z][\s\S]*>/i.test(s ?? '')
         return (
-          <div key={block.id} className="my-5 overflow-x-auto rounded-lg border border-line bg-white">
-            <table
-              className="w-full text-[14px]"
-              style={{ borderCollapse: 'collapse' }}
-            >
+          <div key={block.id} className="my-6 overflow-x-auto rounded-lg border border-line">
+            <table className="nz-table">
               <thead>
                 <tr>
                   {headers.map((h: string, i: number) => (
-                    <th
-                      key={i}
-                      className="px-4 py-2.5 text-left text-[13px] font-semibold text-ink bg-surface-muted border border-line"
-                    >
-                      {h}
+                    <th key={i}>
+                      {isHtml(h) ? <span dangerouslySetInnerHTML={{ __html: h }} /> : h}
                     </th>
                   ))}
                 </tr>
@@ -357,11 +352,12 @@ export function SectionContent({
                 {bodyRows.map((row: string[], ri: number) => (
                   <tr key={ri}>
                     {row.map((cell: string, ci: number) => (
-                      <td
-                        key={ci}
-                        className="px-4 py-2.5 text-[14px] leading-[1.55] text-ink border border-line align-top"
-                      >
-                        {cell}
+                      <td key={ci}>
+                        {isHtml(cell) ? (
+                          <span dangerouslySetInnerHTML={{ __html: cell }} />
+                        ) : (
+                          cell
+                        )}
                       </td>
                     ))}
                   </tr>
