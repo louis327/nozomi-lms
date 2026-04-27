@@ -22,6 +22,7 @@ import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionRecapModal } from '@/components/course/section-recap-modal'
 import { extractSectionAnswers, sectionHasPrompts } from '@/lib/answer-extract'
+import { evaluateCell, formatNumber, isFormula } from '@/lib/table-formula'
 import { ArrowLeft, ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
@@ -788,15 +789,27 @@ export function SectionContent({
               <tbody>
                 {bodyRows.map((row: string[], ri: number) => (
                   <tr key={ri}>
-                    {row.map((cell: string, ci: number) => (
-                      <td key={ci}>
-                        {isHtml(cell) ? (
-                          <span dangerouslySetInnerHTML={{ __html: cell }} />
-                        ) : (
-                          cell
-                        )}
-                      </td>
-                    ))}
+                    {row.map((cell: string, ci: number) => {
+                      if (isFormula(cell)) {
+                        // ri is body-row index; +1 to skip header → 1-based row index
+                        const result = evaluateCell(rows, ri + 1, ci)
+                        const display = result.ok ? formatNumber(result.value) : result.error
+                        return (
+                          <td key={ci} title={cell} className={result.ok ? 'tabular-nums' : 'text-error tabular-nums'}>
+                            {display}
+                          </td>
+                        )
+                      }
+                      return (
+                        <td key={ci}>
+                          {isHtml(cell) ? (
+                            <span dangerouslySetInnerHTML={{ __html: cell }} />
+                          ) : (
+                            cell
+                          )}
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
               </tbody>

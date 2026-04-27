@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import type { ContentBlock } from '@/lib/types'
+import { evaluateCell, formatNumber, isFormula } from '@/lib/table-formula'
 
 type Props = {
   block: ContentBlock
@@ -389,29 +390,38 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
                   const ri = bi + 1
                   return (
                     <tr key={ri} className="group">
-                      {row.map((cell, ci) => (
-                        <td key={ci}>
-                          <div className="flex items-start gap-1">
-                            <div className="flex-1 min-w-0">
-                              <CellRichText
-                                value={cell}
-                                onChange={(v) => setCell(ri, ci, v)}
-                                placeholder="Cell content"
-                                variant="body"
-                              />
+                      {row.map((cell, ci) => {
+                        const formula = isFormula(cell)
+                        const evalResult = formula ? evaluateCell(rows, ri, ci) : null
+                        return (
+                          <td key={ci}>
+                            <div className="flex items-start gap-1">
+                              <div className="flex-1 min-w-0">
+                                <CellRichText
+                                  value={cell}
+                                  onChange={(v) => setCell(ri, ci, v)}
+                                  placeholder="Cell content"
+                                  variant="body"
+                                />
+                                {evalResult && (
+                                  <div className={`mt-0.5 text-[10.5px] tabular-nums ${evalResult.ok ? 'text-accent' : 'text-error'}`}>
+                                    {evalResult.ok ? `= ${formatNumber(evalResult.value)}` : evalResult.error}
+                                  </div>
+                                )}
+                              </div>
+                              {ci === row.length - 1 && rows.length > 2 && (
+                                <SmallButton
+                                  onClick={() => removeRow(ri)}
+                                  tone="danger"
+                                  title="Remove row"
+                                >
+                                  <X className="w-3 h-3" strokeWidth={2} />
+                                </SmallButton>
+                              )}
                             </div>
-                            {ci === row.length - 1 && rows.length > 2 && (
-                              <SmallButton
-                                onClick={() => removeRow(ri)}
-                                tone="danger"
-                                title="Remove row"
-                              >
-                                <X className="w-3 h-3" strokeWidth={2} />
-                              </SmallButton>
-                            )}
-                          </div>
-                        </td>
-                      ))}
+                          </td>
+                        )
+                      })}
                     </tr>
                   )
                 })}
@@ -423,7 +433,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
             <AddButton onClick={addCol} label="Add column" />
           </div>
           <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            Tip: select cell text to format it — bold, italic, underline, or subtitle (small muted line)
+            Tip: select cell text to format it. Start a cell with <span className="normal-case tracking-normal text-ink-soft">=</span> for a formula — e.g. <span className="normal-case tracking-normal text-ink-soft">=sum(B2:B6)</span>, <span className="normal-case tracking-normal text-ink-soft">=B7*0.3</span>.
           </p>
         </div>
       )

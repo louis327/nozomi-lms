@@ -471,7 +471,7 @@ You have tools to create, update, and manage courses, modules, sections, and con
 Content block types and their content structure:
 - rich_text: { html: "<p>HTML content</p>" } — use proper HTML with <p>, <h2>, <h3>, <strong>, <em>, <ul>/<li>, <ol>/<li> tags
 - callout: { calloutType: "tip"|"warning"|"formula"|"key-insight", title: "Title", body: "<p>HTML body</p>" }
-- table: { rows: [["Header1", "Header2"], ["Cell1", "Cell2"]] } — first row is header
+- table: { rows: [["Header1", "Header2"], ["Cell1", "Cell2"]] } — first row is header. Cells starting with "=" are formulas, evaluated at render time. Refs use A1 style (column letter, 1-indexed row INCLUDING the header row, so the first body row is row 2). Functions: sum, avg, min, max, count, product, round. Operators: + - * /, parens, unary minus. Trailing % means percent (30% → 0.3). Examples: "=sum(B2:B6)" totals a column, "=B7*0.3" computes 30% of B7, "=B7+B8" sums two cells. Always prefer formulas over pre-computed values for budget tables, totals, buffers, etc., so the math stays live when line items change.
 - workbook_prompt: { label: "Question text", placeholder: "Placeholder for student input" }
 - checklist: { title: "Checklist Title", description: "Optional description", items: ["Item 1", "Item 2"] }
 - video: { url: "https://youtube.com/..." }
