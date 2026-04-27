@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 2,
     textTransform: 'uppercase',
-    color: COLOR.accent,
+    color: COLOR.inkMuted,
     marginBottom: 4,
   },
   sectionTitle: {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     fontSize: 7.5,
     letterSpacing: 2,
     textTransform: 'uppercase',
-    color: COLOR.accent,
+    color: COLOR.inkMuted,
     marginBottom: 6,
   },
   answerText: {
@@ -235,8 +235,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: COLOR.accent,
-    borderColor: COLOR.accent,
+    backgroundColor: COLOR.ink,
+    borderColor: COLOR.ink,
   },
   checkboxTick: {
     color: COLOR.surface,
