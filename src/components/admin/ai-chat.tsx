@@ -40,9 +40,10 @@ const toolLabels: Record<string, string> = {
   delete_module: 'Deleting module',
   delete_section: 'Deleting section',
   delete_content_block: 'Deleting content block',
+  update_content_block: 'Updating content block',
 }
 
-export function AiChat() {
+export function AiChat({ rightOffset = 24 }: { rightOffset?: number } = {}) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -167,7 +168,8 @@ export function AiChat() {
       {/* Toggle button */}
       <button
         onClick={() => setOpen(!open)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 cursor-pointer ${
+        style={{ right: `${rightOffset}px` }}
+        className={`fixed bottom-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 cursor-pointer ${
           open
             ? 'bg-nz-bg-elevated border border-nz-border text-nz-text-secondary hover:text-nz-text-primary'
             : 'bg-nz-sakura text-white hover:bg-nz-sakura-deep sakura-glow-strong'
@@ -178,7 +180,10 @@ export function AiChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-h-[70vh] flex flex-col bg-nz-bg-card border border-nz-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+        <div
+          style={{ right: `${rightOffset}px` }}
+          className="fixed bottom-24 z-50 w-[420px] max-h-[70vh] flex flex-col bg-nz-bg-card border border-nz-border rounded-2xl shadow-xl overflow-hidden animate-fade-in"
+        >
           {/* Header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-nz-border bg-nz-bg-elevated/30">
             <div className="w-8 h-8 rounded-xl bg-nz-sakura/15 flex items-center justify-center">

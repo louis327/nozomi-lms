@@ -185,6 +185,27 @@ const tools: Anthropic.Tool[] = [
       required: ['block_id'],
     },
   },
+  {
+    name: 'update_content_block',
+    description: 'Update an existing content block in place. Preserves block_id, sort_order, and any progress/highlights tied to it. Use this instead of delete+create when fixing or rewriting a block. Pass the full new content object — it replaces the previous content. Optionally change the type or sort_order.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        block_id: { type: 'string', description: 'Content block ID' },
+        type: {
+          type: 'string',
+          enum: ['rich_text', 'callout', 'table', 'workbook_prompt', 'checklist', 'file', 'video'],
+          description: 'New block type (optional). Only set if converting type.',
+        },
+        content: {
+          type: 'object',
+          description: 'Full replacement content object (structure depends on type).',
+        },
+        sort_order: { type: 'number', description: 'New sort order (optional).' },
+      },
+      required: ['block_id', 'content'],
+    },
+  },
 ]
 
 type ToolInput = Record<string, unknown>
@@ -400,6 +421,23 @@ async function executeTool(name: string, input: ToolInput) {
       return { success: true }
     }
 
+    case 'update_content_block': {
+      const updates: Record<string, unknown> = {
+        content: input.content as Record<string, unknown>,
+        updated_at: new Date().toISOString(),
+      }
+      if (typeof input.type === 'string') updates.type = input.type
+      if (typeof input.sort_order === 'number') updates.sort_order = input.sort_order
+      const { data, error } = await supabase
+        .from('content_blocks')
+        .update(updates)
+        .eq('id', input.block_id as string)
+        .select()
+        .single()
+      if (error) return { error: error.message }
+      return { success: true, block: data }
+    }
+
     default:
       return { error: `Unknown tool: ${name}` }
   }
@@ -453,6 +491,8 @@ When creating rich_text blocks, format HTML properly:
 - Use <ul>/<li> for bullet lists, <ol>/<li> for numbered lists
 
 Use create_multiple_content_blocks when creating several blocks for a section — it's much faster.
+
+When the admin asks you to fix, rewrite, or modify an existing block, use update_content_block — never delete + recreate. Updating in place preserves the block ID, which keeps student highlights, progress, and copy-link anchors intact. If you don't know the block_id, call get_course_structure first.
 
 Be concise in your responses. After creating content, give a brief summary of what was created.
 
