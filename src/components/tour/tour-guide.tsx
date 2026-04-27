@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import Joyride, { type CallBackProps, type Step } from 'react-joyride'
+import { Joyride, type EventData, type Options, type Step } from 'react-joyride'
 import { TourContext } from '@/lib/tour-context'
 
 type Group = {
@@ -11,15 +11,16 @@ type Group = {
   nextHref?: string
 }
 
-const baseStepStyle = {
-  options: {
-    primaryColor: '#ff5fa3',
-    textColor: '#1a1a1a',
-    backgroundColor: '#ffffff',
-    arrowColor: '#ffffff',
-    overlayColor: 'rgba(0, 0, 0, 0.45)',
-    zIndex: 10000,
-  },
+const tourOptions: Partial<Options> = {
+  primaryColor: '#ff5fa3',
+  textColor: '#1a1a1a',
+  backgroundColor: '#ffffff',
+  arrowColor: '#ffffff',
+  overlayColor: 'rgba(0, 0, 0, 0.45)',
+  zIndex: 10000,
+  showProgress: true,
+  skipBeacon: true,
+  buttons: ['back', 'skip', 'primary'],
 }
 
 function buildGroups(opts: {
@@ -34,7 +35,6 @@ function buildGroups(opts: {
           target: '[data-tour="dashboard-greeting"]',
           content: "Welcome aboard. This is your home base — pick up here every time you log in.",
           placement: 'bottom',
-          disableBeacon: true,
         },
         {
           target: '[data-tour="dashboard-courses"]',
@@ -56,7 +56,6 @@ function buildGroups(opts: {
           target: '[data-tour="courses-grid"]',
           content: "All your enrolled courses. Let's open one.",
           placement: 'top',
-          disableBeacon: true,
         },
       ],
       nextHref: opts.firstCourseHref ?? '/dashboard',
@@ -68,7 +67,6 @@ function buildGroups(opts: {
           target: '[data-tour="course-modules"]',
           content: "Modules expand here. Each section is a focused lesson — let's open the first one.",
           placement: 'top',
-          disableBeacon: true,
         },
       ],
       nextHref: opts.firstSectionHref ?? '/dashboard',
@@ -80,7 +78,6 @@ function buildGroups(opts: {
           target: '[data-tour="section-content"]',
           content: "The lesson content goes here. Highlight any text — your notes save automatically.",
           placement: 'auto',
-          disableBeacon: true,
         },
         {
           target: '[data-tour="section-highlights"]',
@@ -166,11 +163,11 @@ export function TourGuide({
     } catch { /* best effort */ }
   }
 
-  const handleCallback = (data: CallBackProps) => {
+  const handleEvent = (data: EventData) => {
     const { status, type, index, action } = data
 
-    if (status === 'finished' || status === 'skipped' || action === 'close') {
-      if (action === 'close' || status === 'skipped') {
+    if (status === 'finished' || status === 'skipped' || action === 'close' || action === 'skip') {
+      if (action === 'close' || action === 'skip' || status === 'skipped') {
         markComplete()
         return
       }
@@ -207,9 +204,7 @@ export function TourGuide({
           run={run}
           stepIndex={stepIndex}
           continuous
-          showProgress
-          showSkipButton
-          disableScrollParentFix
+          options={tourOptions}
           locale={{
             back: 'Back',
             close: 'Close',
@@ -217,8 +212,7 @@ export function TourGuide({
             next: 'Next',
             skip: 'Skip tour',
           }}
-          styles={baseStepStyle}
-          callback={handleCallback}
+          onEvent={handleEvent}
         />
       )}
     </TourContext.Provider>

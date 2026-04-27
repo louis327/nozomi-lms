@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server'
-import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import { extractSectionAnswers, type WorkbookData } from '@/lib/answer-extract'
-import {
-  CourseExportDocument,
-  type ExportData,
-  type ExportModule,
-  type ExportSection,
+import type {
+  ExportData,
+  ExportModule,
+  ExportSection,
 } from '@/lib/pdf/course-export-document'
 import type { ContentBlock } from '@/lib/types'
 
@@ -149,6 +147,10 @@ export async function GET(
 
   let pdfBuffer: Buffer
   try {
+    const [{ renderToBuffer }, { CourseExportDocument }] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('@/lib/pdf/course-export-document'),
+    ])
     pdfBuffer = await renderToBuffer(<CourseExportDocument data={data} />)
   } catch (err) {
     console.error('[course-export] renderToBuffer failed', {
