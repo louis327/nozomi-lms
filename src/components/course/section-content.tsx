@@ -23,6 +23,7 @@ import { VideoEmbed } from '@/components/course/video-embed'
 import { SectionRecapModal } from '@/components/course/section-recap-modal'
 import { extractSectionAnswers, sectionHasPrompts } from '@/lib/answer-extract'
 import { evaluateCell, formatNumber, isFormula } from '@/lib/table-formula'
+import { imageFigureClass, normalizeImageAlign, normalizeImageWidth } from '@/lib/block-image'
 import { ArrowLeft, ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
@@ -822,13 +823,15 @@ export function SectionContent({
         const url = (block.content.url as string) || ''
         const alt = (block.content.alt as string) || ''
         const caption = (block.content.caption as string) || ''
+        const width = normalizeImageWidth(block.content.width)
+        const align = normalizeImageAlign(block.content.align)
         if (!url) return null
         return (
-          <figure key={block.id} className="my-5">
+          <figure key={block.id} className={`my-5 ${imageFigureClass(width, align)}`}>
             <img
               src={url}
               alt={alt}
-              className="w-full rounded-lg border border-line-soft"
+              className="w-full max-h-[70vh] object-contain rounded-lg border border-line-soft"
               loading="lazy"
             />
             {caption && (
@@ -839,6 +842,24 @@ export function SectionContent({
           </figure>
         )
       }
+
+      case 'spacer': {
+        const size = (block.content.size as string) || 'md'
+        const heightClass =
+          size === 'sm' ? 'h-4'
+            : size === 'lg' ? 'h-16'
+            : size === 'xl' ? 'h-24'
+            : 'h-8'
+        return <div key={block.id} className={heightClass} aria-hidden />
+      }
+
+      case 'divider':
+        return (
+          <hr
+            key={block.id}
+            className="my-8 border-0 border-t border-line"
+          />
+        )
 
       case 'workbook_prompt':
         return (

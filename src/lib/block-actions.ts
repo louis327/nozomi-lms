@@ -99,7 +99,9 @@ export function getDefaultContent(type: ContentBlock['type']): Record<string, un
     case 'bucket': return { number: 1, eyebrow: 'Bucket 1', title: '', body: '', html: '' }
     case 'table': return { rows: [['', ''], ['', '']] }
     case 'workbook_prompt': return { label: '', placeholder: '', prompt: '', example: '' }
-    case 'image': return { url: '', alt: '', caption: '' }
+    case 'image': return { url: '', alt: '', caption: '', width: 'md', align: 'center' }
+    case 'spacer': return { size: 'md' }
+    case 'divider': return {}
     case 'checklist': return { items: [''] }
     case 'completion_checklist': return {
       title: '',

@@ -15,6 +15,13 @@ import {
 } from 'lucide-react'
 import type { ContentBlock } from '@/lib/types'
 import { evaluateCell, formatNumber, isFormula } from '@/lib/table-formula'
+import {
+  imageFigureClass,
+  normalizeImageAlign,
+  normalizeImageWidth,
+  type ImageAlign,
+  type ImageWidth,
+} from '@/lib/block-image'
 
 type Props = {
   block: ContentBlock
@@ -791,6 +798,8 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
       const url = (block.content.url as string) || ''
       const alt = (block.content.alt as string) || ''
       const caption = (block.content.caption as string) || ''
+      const width = normalizeImageWidth(block.content.width)
+      const align = normalizeImageAlign(block.content.align)
 
       const handleFile = async (file: File) => {
         const fd = new FormData()
@@ -809,23 +818,37 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
         }
       }
 
+      const widthOpts: { value: ImageWidth; label: string }[] = [
+        { value: 'sm', label: 'S' },
+        { value: 'md', label: 'M' },
+        { value: 'lg', label: 'L' },
+        { value: 'full', label: 'Full' },
+      ]
+      const alignOpts: { value: ImageAlign; label: string }[] = [
+        { value: 'left', label: 'Left' },
+        { value: 'center', label: 'Center' },
+        { value: 'right', label: 'Right' },
+      ]
+
       return (
         <figure className="my-5 space-y-3">
           {url ? (
-            <div className="relative">
-              <img
-                src={url}
-                alt={alt}
-                className="w-full rounded-lg border border-line-soft"
-              />
-              <button
-                type="button"
-                onClick={() => update({ url: '' })}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface border border-line flex items-center justify-center hover:bg-surface-muted cursor-pointer"
-                title="Remove image"
-              >
-                <X className="w-3.5 h-3.5 text-ink-muted" strokeWidth={2} />
-              </button>
+            <div className={imageFigureClass(width, align)}>
+              <div className="relative">
+                <img
+                  src={url}
+                  alt={alt}
+                  className="w-full max-h-[70vh] object-contain rounded-lg border border-line-soft"
+                />
+                <button
+                  type="button"
+                  onClick={() => update({ url: '' })}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface border border-line flex items-center justify-center hover:bg-surface-muted cursor-pointer"
+                  title="Remove image"
+                >
+                  <X className="w-3.5 h-3.5 text-ink-muted" strokeWidth={2} />
+                </button>
+              </div>
             </div>
           ) : (
             <label className="block aspect-[16/9] rounded-lg border border-dashed border-line bg-surface-muted/60 flex items-center justify-center cursor-pointer hover:bg-surface-muted transition-colors">
@@ -847,6 +870,45 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
                 }}
               />
             </label>
+          )}
+          {url && (
+            <div className="flex flex-wrap items-center gap-3 text-[11px]">
+              <span className="text-ink-muted uppercase tracking-[0.1em]">Size</span>
+              <div className="inline-flex rounded-md border border-line overflow-hidden">
+                {widthOpts.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update({ width: opt.value })}
+                    className={`px-2 py-1 transition-colors ${
+                      width === opt.value
+                        ? 'bg-ink text-surface'
+                        : 'bg-surface text-ink-soft hover:bg-surface-muted'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-ink-muted uppercase tracking-[0.1em]">Align</span>
+              <div className="inline-flex rounded-md border border-line overflow-hidden">
+                {alignOpts.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update({ align: opt.value })}
+                    disabled={width === 'full'}
+                    className={`px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      align === opt.value
+                        ? 'bg-ink text-surface'
+                        : 'bg-surface text-ink-soft hover:bg-surface-muted'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
           <EditableText
             value={url}
@@ -876,6 +938,49 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
           />
         </figure>
       )
+    }
+
+    case 'spacer': {
+      const size = (block.content.size as string) || 'md'
+      const heightClass =
+        size === 'sm' ? 'h-4'
+          : size === 'lg' ? 'h-16'
+          : size === 'xl' ? 'h-24'
+          : 'h-8'
+      const sizeOpts: { value: string; label: string }[] = [
+        { value: 'sm', label: 'S' },
+        { value: 'md', label: 'M' },
+        { value: 'lg', label: 'L' },
+        { value: 'xl', label: 'XL' },
+      ]
+      return (
+        <div className="space-y-2">
+          <div className={`${heightClass} rounded-md border border-dashed border-line bg-surface-muted/40`} />
+          <div className="flex items-center gap-2 text-[11px]">
+            <span className="text-ink-muted uppercase tracking-[0.1em]">Size</span>
+            <div className="inline-flex rounded-md border border-line overflow-hidden">
+              {sizeOpts.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => update({ size: opt.value })}
+                  className={`px-2 py-1 transition-colors ${
+                    size === opt.value
+                      ? 'bg-ink text-surface'
+                      : 'bg-surface text-ink-soft hover:bg-surface-muted'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    case 'divider': {
+      return <hr className="my-8 border-0 border-t border-line" />
     }
 
     case 'video': {

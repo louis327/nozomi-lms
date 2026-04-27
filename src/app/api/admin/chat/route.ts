@@ -476,6 +476,9 @@ Content block types and their content structure:
 - checklist: { title: "Checklist Title", description: "Optional description", items: ["Item 1", "Item 2"] }
 - video: { url: "https://youtube.com/..." }
 - file: { label: "File description", fileUrl: "", fileName: "" }
+- image: { url: "https://...", alt: "Alt text", caption: "", width: "sm"|"md"|"lg"|"full", align: "left"|"center"|"right" } — width defaults to "md" (~70% column), align defaults to "center"; align is ignored when width is "full"
+- spacer: { size: "sm"|"md"|"lg"|"xl" } — vertical breathing room between blocks (16/32/64/96px)
+- divider: {} — hairline horizontal rule
 
 When building courses from content:
 1. Create the course first

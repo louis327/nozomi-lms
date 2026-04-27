@@ -14,6 +14,8 @@ import {
   Video,
   Pencil,
   Award,
+  Minus,
+  ArrowDownUp,
 } from 'lucide-react'
 import type { ContentBlock } from '@/lib/types'
 
@@ -36,6 +38,8 @@ const ITEMS: SlashItem[] = [
   { type: 'completion_checklist', label: 'Completion checklist', description: 'Grouped check-before-moving-on', Icon: CheckSquare },
   { type: 'file', label: 'File', description: 'Downloadable attachment', Icon: FileText },
   { type: 'video', label: 'Video', description: 'YouTube or Vimeo embed', Icon: Video },
+  { type: 'spacer', label: 'Spacer', description: 'Vertical breathing room (S/M/L/XL)', Icon: ArrowDownUp },
+  { type: 'divider', label: 'Divider', description: 'Hairline rule between sections', Icon: Minus },
 ]
 
 type Props = {

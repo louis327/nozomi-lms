@@ -17,6 +17,8 @@ const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'completion_checklist', label: 'Completion checklist' },
   { type: 'file', label: 'File Upload' },
   { type: 'video', label: 'Video' },
+  { type: 'spacer', label: 'Spacer' },
+  { type: 'divider', label: 'Divider' },
 ]
 
 type Props = {
