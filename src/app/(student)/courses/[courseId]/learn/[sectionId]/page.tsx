@@ -138,7 +138,7 @@ export default async function SectionPage({
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 pt-16 lg:pt-10">
-      <div className="max-w-[680px] mx-auto" id="nz-section-content-column">
+      <div className="max-w-[680px] mx-auto" id="nz-section-content-column" data-tour="section-content">
         {isFirstSectionInModule && moduleMeta ? (
           <ModuleHero
             moduleId={moduleMeta.id}
@@ -186,6 +186,7 @@ export default async function SectionPage({
 
       <div
         id="nz-section-footer-slot"
+        data-tour="section-footer"
         className="mt-16 -mx-4 sm:-mx-6 lg:-mx-10 border-t border-line bg-surface"
       />
 

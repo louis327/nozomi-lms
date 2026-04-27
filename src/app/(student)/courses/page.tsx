@@ -165,7 +165,7 @@ export default async function CoursesPage() {
   })()
 
   return (
-    <div className="px-6 lg:px-10 pb-16">
+    <div className="px-6 lg:px-10 pb-16" data-tour="courses-grid">
       <PageTopbar breadcrumb={[{ label: 'Nozomi', href: '/dashboard' }, { label: 'My Courses' }]} />
 
       <section className="mt-6 mb-10">

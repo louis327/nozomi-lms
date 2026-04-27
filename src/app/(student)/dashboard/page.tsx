@@ -159,7 +159,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Greeting */}
-      <div className="pb-8">
+      <div className="pb-8" data-tour="dashboard-greeting">
         <h1
           className="text-ink"
           style={{
@@ -176,7 +176,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Hero grid: left stack (Timeline + Continue/Explore), right tall Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5 items-start" data-tour="dashboard-courses">
         <div className="lg:col-span-2 flex flex-col gap-5">
           <RaiseTimeline
             closeDate={snap.targetCloseDate}
@@ -285,7 +285,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* Compact coach */}
-      <AiCoach starters={starters} compact />
+      <div data-tour="dashboard-coach">
+        <AiCoach starters={starters} compact />
+      </div>
     </div>
   )
 }

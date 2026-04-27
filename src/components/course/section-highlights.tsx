@@ -176,6 +176,7 @@ export function SectionHighlights({ sectionId }: { sectionId: string }) {
       {loaded && (
         <button
           onClick={() => setPanelOpen(true)}
+          data-tour="section-highlights"
           className="fixed bottom-24 right-6 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-surface border border-line shadow-lg text-[12px] font-medium text-ink-soft hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
           title="My highlights"
         >

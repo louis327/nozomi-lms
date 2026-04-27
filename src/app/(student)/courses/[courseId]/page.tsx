@@ -180,7 +180,7 @@ export default async function CourseOverviewPage({
       </section>
 
       {/* Modules */}
-      <section>
+      <section data-tour="course-modules">
         <div className="flex items-center justify-between mb-6">
           <h2 className="eyebrow">Course outline</h2>
           <span className="text-[12px] text-ink-muted">{modules.length} {modules.length === 1 ? 'module' : 'modules'}</span>

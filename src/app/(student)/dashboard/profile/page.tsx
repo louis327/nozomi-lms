@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { FileText, ArrowRight } from 'lucide-react'
 import { ProfileForm } from '@/components/profile/profile-form'
+import { RestartTourButton } from '@/components/profile/restart-tour-button'
 
 export const metadata = { title: 'Profile — Nozomi' }
 
@@ -67,6 +68,10 @@ export default async function ProfilePage() {
             </div>
             <ArrowRight className="w-4 h-4 text-ink-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" strokeWidth={1.5} />
           </Link>
+        </div>
+
+        <div className="mt-3 bg-surface rounded-2xl border border-line p-6">
+          <RestartTourButton />
         </div>
       </div>
     </div>
