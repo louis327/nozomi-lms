@@ -103,7 +103,7 @@ export function BlockGutter({
   }
 
   return (
-    <div className="absolute -left-12 top-1.5 hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+    <div className="absolute z-10 flex items-center gap-0.5 transition-opacity -top-7 left-0 opacity-100 md:-left-12 md:top-1.5 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
       {/* + insert after */}
       <div className="relative">
         <button
