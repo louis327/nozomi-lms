@@ -198,7 +198,7 @@ export function SectionContent({
 }: SectionContentProps) {
   const router = useRouter()
   const supabase = createClient()
-  const { editMode, isAdmin } = useEditMode()
+  const { editMode, isAdmin, activeBlockId, setActiveBlockId } = useEditMode()
   const { addToast } = useToast()
 
   const existingWorkbook = sectionProgress?.workbook_data ?? {}
@@ -330,7 +330,6 @@ export function SectionContent({
     setFooterSlot(document.getElementById('nz-section-footer-slot'))
   }, [])
 
-  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null)
 
   // Block-level undo stack (admin edit mode only)
   type UndoAction =
@@ -365,7 +364,7 @@ export function SectionContent({
         persistOrder(next)
         return next
       })
-      setFocusedBlockId(newBlock.id)
+      setActiveBlockId(newBlock.id)
       pushUndo({ kind: 'insert', newBlockId: newBlock.id })
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to add block', 'error')
@@ -383,7 +382,7 @@ export function SectionContent({
         persistOrder(next)
         return next
       })
-      setFocusedBlockId(newBlock.id)
+      setActiveBlockId(newBlock.id)
       pushUndo({ kind: 'duplicate', newBlockId: newBlock.id })
       addToast('Block duplicated', 'success')
     } catch (err) {
@@ -412,7 +411,7 @@ export function SectionContent({
     try {
       await deleteBlock(blockId)
       setBlocks((prev) => prev.filter((b) => b.id !== blockId))
-      setFocusedBlockId((id) => (id === blockId ? null : id))
+      if (activeBlockId === blockId) setActiveBlockId(null)
       if (block && idx !== -1) {
         pushUndo({ kind: 'delete', block, index: idx })
       }
@@ -506,7 +505,7 @@ export function SectionContent({
         persistOrder(next)
         return next
       })
-      setFocusedBlockId(newBlock.id)
+      setActiveBlockId(newBlock.id)
       pushUndo({ kind: 'insert', newBlockId: newBlock.id })
       addToast('Template inserted', 'success')
     } catch (err) {
@@ -622,7 +621,7 @@ export function SectionContent({
   useEffect(() => {
     if (!editMode || !isAdmin) return
     const handler = (e: KeyboardEvent) => {
-      const id = focusedBlockId
+      const id = activeBlockId
       if (!id) return
       const block = blocks.find((b) => b.id === id)
       if (!block) return
@@ -630,7 +629,7 @@ export function SectionContent({
       if (e.key === 'Escape') {
         const target = e.target as HTMLElement | null
         target?.blur?.()
-        setFocusedBlockId(null)
+        setActiveBlockId(null)
         return
       }
       if (mod && !e.shiftKey && (e.key === 'd' || e.key === 'D')) {
@@ -651,7 +650,21 @@ export function SectionContent({
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [editMode, isAdmin, focusedBlockId, blocks, handleDuplicate, handleMove])
+  }, [editMode, isAdmin, activeBlockId, setActiveBlockId, blocks, handleDuplicate, handleMove])
+
+  // Click-outside deactivation: clicking outside any block (or block menu portal) clears active.
+  useEffect(() => {
+    if (!editMode || !isAdmin || !activeBlockId) return
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[data-block-id]')) return
+      if (target.closest('[data-block-menu]')) return
+      setActiveBlockId(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [editMode, isAdmin, activeBlockId, setActiveBlockId])
 
   const handleReorder = useCallback((oldIndex: number, newIndex: number) => {
     setBlocks((prev) => {
@@ -1284,7 +1297,7 @@ export function SectionContent({
     if (editMode && isAdmin) {
       if (blocks.length === 0) {
         return (
-          <div className="pl-12">
+          <div>
             <EmptyAddButton
               onInsert={(type) => handleInsertBlock(type, 0)}
               onInsertTemplate={(tpl) => handleInsertTemplate(tpl, 0)}
@@ -1293,30 +1306,36 @@ export function SectionContent({
         )
       }
       return (
-        <div className="space-y-1 pl-12">
+        <div>
           <SortableBlocksContainer
             blockIds={blocks.map((b) => b.id)}
             onReorder={handleReorder}
           >
             {({ insertAfterId }) => (
               <>
-                {blocks.map((block, index) => (
-                  <SortableBlockWrapper
-                    key={block.id}
-                    id={block.id}
-                    showTopIndicator={
-                      insertAfterId === null && index === 0
-                    }
-                    showBottomIndicator={insertAfterId === block.id}
-                  >
-                    {(handle) => (
-                      <InlineBlockEditor
-                        block={block}
-                        onBlockUpdate={handleBlockUpdate}
-                        isFocused={focusedBlockId === block.id}
-                        onFocus={() => setFocusedBlockId(block.id)}
-                        onSlashInsert={(type) => handleInsertBlock(type, index + 1)}
-                        gutter={
+                {blocks.map((block, index) => {
+                  const isActive = activeBlockId === block.id
+                  return (
+                    <SortableBlockWrapper
+                      key={block.id}
+                      id={block.id}
+                      showTopIndicator={insertAfterId === null && index === 0}
+                      showBottomIndicator={insertAfterId === block.id}
+                    >
+                      {(handle) => (
+                        <div
+                          id={`block-${block.id}`}
+                          data-block-id={block.id}
+                          className={`group relative rounded-md transition-shadow ${
+                            isActive ? 'ring-1 ring-accent/40' : ''
+                          }`}
+                          onDoubleClick={(e) => {
+                            if (isActive) return
+                            const target = e.target as HTMLElement
+                            if (target.closest('[data-block-menu]')) return
+                            setActiveBlockId(block.id)
+                          }}
+                        >
                           <BlockGutter
                             block={block}
                             canMoveUp={index > 0}
@@ -1336,11 +1355,20 @@ export function SectionContent({
                             onSaveAsTemplate={() => handleSaveAsTemplate(block)}
                             onInsertTemplate={(tpl) => handleInsertTemplate(tpl, index + 1)}
                           />
-                        }
-                      />
-                    )}
-                  </SortableBlockWrapper>
-                ))}
+                          {isActive ? (
+                            <InlineBlockEditor
+                              block={block}
+                              onBlockUpdate={handleBlockUpdate}
+                              onSlashInsert={(type) => handleInsertBlock(type, index + 1)}
+                            />
+                          ) : (
+                            renderBlock(block)
+                          )}
+                        </div>
+                      )}
+                    </SortableBlockWrapper>
+                  )
+                })}
               </>
             )}
           </SortableBlocksContainer>

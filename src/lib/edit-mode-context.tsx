@@ -2,24 +2,34 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 
+export type GlobalSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
 type EditModeContextValue = {
   isAdmin: boolean
   editMode: boolean
   setEditMode: (val: boolean) => void
+  activeBlockId: string | null
+  setActiveBlockId: (id: string | null) => void
   dirtyBlocks: Set<string>
   markDirty: (blockId: string) => void
   markClean: (blockId: string) => void
   hasDirtyBlocks: boolean
+  saveStatus: GlobalSaveStatus
+  setSaveStatus: (s: GlobalSaveStatus) => void
 }
 
 const EditModeContext = createContext<EditModeContextValue>({
   isAdmin: false,
   editMode: false,
   setEditMode: () => {},
+  activeBlockId: null,
+  setActiveBlockId: () => {},
   dirtyBlocks: new Set(),
   markDirty: () => {},
   markClean: () => {},
   hasDirtyBlocks: false,
+  saveStatus: 'idle',
+  setSaveStatus: () => {},
 })
 
 export function useEditMode() {
@@ -35,8 +45,24 @@ export function EditModeProvider({
   defaultEditMode?: boolean
   children: React.ReactNode
 }) {
-  const [editMode, setEditMode] = useState(defaultEditMode)
+  const [editMode, setEditModeState] = useState(defaultEditMode)
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null)
   const [dirtyBlocks, setDirtyBlocks] = useState<Set<string>>(new Set())
+  const [saveStatus, setSaveStatusState] = useState<GlobalSaveStatus>('idle')
+
+  const setEditMode = useCallback((val: boolean) => {
+    setEditModeState(val)
+    if (!val) setActiveBlockId(null)
+  }, [])
+
+  const setSaveStatus = useCallback((s: GlobalSaveStatus) => {
+    setSaveStatusState(s)
+    if (s === 'saved') {
+      setTimeout(() => {
+        setSaveStatusState((curr) => (curr === 'saved' ? 'idle' : curr))
+      }, 1500)
+    }
+  }, [])
 
   const markDirty = useCallback((blockId: string) => {
     setDirtyBlocks((prev) => {
@@ -73,10 +99,14 @@ export function EditModeProvider({
         isAdmin,
         editMode,
         setEditMode,
+        activeBlockId,
+        setActiveBlockId,
         dirtyBlocks,
         markDirty,
         markClean,
         hasDirtyBlocks,
+        saveStatus,
+        setSaveStatus,
       }}
     >
       {children}

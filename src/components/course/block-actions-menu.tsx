@@ -121,6 +121,7 @@ export function BlockActionsMenu({
   return createPortal(
     <div
       ref={ref}
+      data-block-menu
       className="fixed z-50 w-56 bg-surface border border-line rounded-xl shadow-xl py-1.5"
       style={{ top, left }}
     >

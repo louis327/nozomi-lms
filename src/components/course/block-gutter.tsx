@@ -120,6 +120,7 @@ export function BlockGutter({
         {insertOpen && (
           <div
             ref={insertMenuRef}
+            data-block-menu
             className="absolute left-0 top-full mt-1 z-30 w-52 bg-surface border border-line rounded-xl shadow-xl overflow-hidden py-1 max-h-[60vh] overflow-y-auto"
           >
             {showTemplates ? (
