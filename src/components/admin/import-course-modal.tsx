@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 type InputMode = 'paste' | 'link' | 'pdf'
 type ImportPhase = 'idle' | 'sending' | 'waiting' | 'course-found' | 'building' | 'done' | 'error'
+type ImportMode = 'course' | 'module'
 
 interface ImportResult {
   success: boolean
@@ -27,7 +28,7 @@ interface LiveProgress {
   blocks: number
 }
 
-const phaseLabels: Record<ImportPhase, string> = {
+const courseLabels: Record<ImportPhase, string> = {
   idle: '',
   sending: 'Sending to AI...',
   waiting: 'Claude Opus is analyzing your content...',
@@ -37,13 +38,34 @@ const phaseLabels: Record<ImportPhase, string> = {
   error: 'Import failed',
 }
 
+const moduleLabels: Record<ImportPhase, string> = {
+  idle: '',
+  sending: 'Sending to AI...',
+  waiting: 'Claude is analyzing the doc...',
+  'course-found': 'Appending to course...',
+  building: 'Adding modules, sections & blocks...',
+  done: 'Module import complete!',
+  error: 'Import failed',
+}
+
 const modes = [
   { key: 'paste' as const, label: 'Paste', icon: Type },
   { key: 'link' as const, label: 'Google Doc', icon: Link2 },
   { key: 'pdf' as const, label: 'Upload PDF', icon: FileText },
 ]
 
-export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+export function ImportCourseModal({
+  onClose,
+  onSuccess,
+  mode = 'course',
+  courseId,
+}: {
+  onClose: () => void
+  onSuccess: () => void
+  mode?: ImportMode
+  courseId?: string
+}) {
+  const phaseLabels = mode === 'module' ? moduleLabels : courseLabels
   const [courseTitle, setCourseTitle] = useState('')
   const [courseDescription, setCourseDescription] = useState('')
   const [content, setContent] = useState('')
@@ -95,7 +117,8 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
   }
 
   const isReady = () => {
-    if (!courseTitle.trim()) return false
+    if (mode === 'course' && !courseTitle.trim()) return false
+    if (mode === 'module' && !courseId) return false
     if (inputMode === 'paste') return !!content.trim()
     if (inputMode === 'link') return !!googleDocUrl.trim()
     if (inputMode === 'pdf') return !!pdfBase64
@@ -121,6 +144,10 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
 
     // Build payload
     const payload: Record<string, string> = { courseTitle, courseDescription }
+    if (mode === 'module') {
+      payload.mode = 'module'
+      payload.courseId = courseId || ''
+    }
     if (inputMode === 'paste') payload.content = content
     else if (inputMode === 'link') payload.googleDocUrl = googleDocUrl
     else if (inputMode === 'pdf') {
@@ -151,7 +178,8 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
     setTimeout(() => {
       if (!importingRef.current) return
       setPhaseSync('waiting')
-      startPolling(supabase)
+      if (mode === 'module') startModulePolling(supabase)
+      else startPolling(supabase)
     }, 2000)
 
     // Hard timeout: 10 minutes
@@ -164,6 +192,101 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
         error: 'Import timed out after 10 minutes. The course may still be building — check your courses list in a moment.',
       })
     }, 600000)
+  }
+
+  const startModulePolling = async (supabase: ReturnType<typeof createClient>) => {
+    if (!courseId) return
+
+    // Snapshot module count before append so we can detect new ones.
+    const { count: initialCount } = await supabase
+      .from('modules')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+    const baseline = initialCount ?? 0
+
+    // Look up course title for progress display.
+    const { data: courseRow } = await supabase
+      .from('courses')
+      .select('title')
+      .eq('id', courseId)
+      .single()
+    setProgress((p) => ({ ...p, courseId, courseTitle: courseRow?.title ?? '' }))
+
+    let lastBlockCount = 0
+    let stableCount = 0
+
+    pollRef.current = setInterval(async () => {
+      if (!importingRef.current) return
+
+      try {
+        const { data: modules } = await supabase
+          .from('modules')
+          .select('id, sort_order, created_at')
+          .eq('course_id', courseId)
+          .order('sort_order', { ascending: true })
+
+        const allModules = modules ?? []
+        const newModules = allModules.slice(baseline)
+        const newModuleCount = newModules.length
+
+        if (newModuleCount > 0 && phaseRef.current === 'waiting') {
+          setPhaseSync('course-found')
+        }
+
+        if (newModuleCount === 0) {
+          if (pendingFinishRef.current) finishSuccess(pendingFinishRef.current)
+          return
+        }
+
+        const newModuleIds = newModules.map((m) => m.id)
+        const { data: sections } = await supabase
+          .from('sections')
+          .select('id')
+          .in('module_id', newModuleIds)
+        const sectionCount = (sections ?? []).length
+        let blockCount = 0
+        if (sections && sections.length > 0) {
+          const { count: bc } = await supabase
+            .from('content_blocks')
+            .select('id', { count: 'exact', head: true })
+            .in('section_id', sections.map((s) => s.id))
+          blockCount = bc ?? 0
+        }
+
+        setProgress({
+          courseId,
+          courseTitle: courseRow?.title ?? '',
+          modules: newModuleCount,
+          sections: sectionCount,
+          blocks: blockCount,
+        })
+
+        if (newModuleCount > 0 && phaseRef.current === 'course-found') {
+          setPhaseSync('building')
+        }
+
+        const n8nDone = !!pendingFinishRef.current
+        if (blockCount > 0 && blockCount === lastBlockCount) {
+          stableCount++
+          if (n8nDone || stableCount >= 3) {
+            finishSuccess({
+              success: true,
+              courseId,
+              courseTitle: courseRow?.title ?? '',
+              modulesCreated: newModuleCount,
+              sectionsCreated: sectionCount,
+              blocksCreated: blockCount,
+              message: `Appended ${newModuleCount} ${newModuleCount === 1 ? 'module' : 'modules'} (${sectionCount} sections, ${blockCount} blocks).`,
+            })
+          }
+        } else {
+          lastBlockCount = blockCount
+          stableCount = 0
+        }
+      } catch {
+        // Polling error — continue trying
+      }
+    }, 3000)
   }
 
   const startPolling = (supabase: ReturnType<typeof createClient>) => {
@@ -297,8 +420,14 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-nz-border">
           <div>
-            <h2 className="text-lg font-heading font-semibold text-nz-text-primary">Import Course</h2>
-            <p className="text-xs text-nz-text-muted mt-0.5">Paste content, link a Google Doc, or upload a PDF</p>
+            <h2 className="text-lg font-heading font-semibold text-nz-text-primary">
+              {mode === 'module' ? 'Import Module' : 'Import Course'}
+            </h2>
+            <p className="text-xs text-nz-text-muted mt-0.5">
+              {mode === 'module'
+                ? 'Append a new module (or modules) to this course from a Google Doc, paste, or PDF'
+                : 'Paste content, link a Google Doc, or upload a PDF'}
+            </p>
           </div>
           {!isImporting && (
             <button
@@ -315,27 +444,31 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
           {/* Form fields — hidden during import */}
           {!isImporting && phase !== 'done' && (
             <>
-              <div>
-                <label className="block text-sm font-medium text-nz-text-secondary mb-1.5">Course Title</label>
-                <input
-                  type="text"
-                  value={courseTitle}
-                  onChange={(e) => setCourseTitle(e.target.value)}
-                  placeholder="e.g., Raise Web3 - Fundraising Masterclass"
-                  className="w-full px-4 py-2.5 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
-                />
-              </div>
+              {mode === 'course' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-nz-text-secondary mb-1.5">Course Title</label>
+                    <input
+                      type="text"
+                      value={courseTitle}
+                      onChange={(e) => setCourseTitle(e.target.value)}
+                      placeholder="e.g., Raise Web3 - Fundraising Masterclass"
+                      className="w-full px-4 py-2.5 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-nz-text-secondary mb-1.5">Description (optional)</label>
-                <input
-                  type="text"
-                  value={courseDescription}
-                  onChange={(e) => setCourseDescription(e.target.value)}
-                  placeholder="Brief course description..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-nz-text-secondary mb-1.5">Description (optional)</label>
+                    <input
+                      type="text"
+                      value={courseDescription}
+                      onChange={(e) => setCourseDescription(e.target.value)}
+                      placeholder="Brief course description..."
+                      className="w-full px-4 py-2.5 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 transition-colors"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Input mode tabs */}
               <div>
@@ -367,7 +500,11 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Paste your full course content here — modules, sections, tables, exercises, everything. The AI will parse it into the correct block types automatically."
+                    placeholder={
+                      mode === 'module'
+                        ? 'Paste the new module content here — sections, tables, exercises. If the doc contains multiple module headings, each will become a separate module appended to the course.'
+                        : 'Paste your full course content here — modules, sections, tables, exercises, everything. The AI will parse it into the correct block types automatically.'
+                    }
                     rows={10}
                     className="w-full px-4 py-3 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 resize-none transition-colors font-mono leading-relaxed"
                   />
@@ -532,7 +669,11 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
               )}
               <div>
                 <p className={`text-sm font-medium ${result.success ? 'text-nz-success' : 'text-nz-error'}`}>
-                  {result.success ? 'Course imported successfully!' : 'Import failed'}
+                  {result.success
+                    ? mode === 'module'
+                      ? 'Module imported successfully!'
+                      : 'Course imported successfully!'
+                    : 'Import failed'}
                 </p>
                 <p className="text-xs text-nz-text-tertiary mt-1">
                   {result.message || result.error}
@@ -561,7 +702,11 @@ export function ImportCourseModal({ onClose, onSuccess }: { onClose: () => void;
               disabled={!isReady() || isImporting}
             >
               <Upload className="w-4 h-4" />
-              {isImporting ? 'Importing...' : 'Import Course'}
+              {isImporting
+                ? 'Importing...'
+                : mode === 'module'
+                  ? 'Import Module'
+                  : 'Import Course'}
             </Button>
           )}
         </div>

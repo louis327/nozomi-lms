@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Settings, Layers, FileText, Blocks, Eye, Pencil } from 'lucide-react'
+import { ArrowLeft, Settings, Layers, FileText, Blocks, Eye, Pencil, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useEditMode } from '@/lib/edit-mode-context'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
+import { ImportCourseModal } from '@/components/admin/import-course-modal'
 import type { Course, Module, Section } from '@/lib/types'
 
 type CourseWithTree = Course & { modules: (Module & { sections: Section[] })[] }
@@ -37,6 +38,7 @@ export function AdminCourseBar({ course }: { course: CourseWithTree }) {
   }, [editMode, setEditMode])
 
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [importModuleOpen, setImportModuleOpen] = useState(false)
   const [title, setTitle] = useState(course.title)
   const [description, setDescription] = useState(course.description ?? '')
   const [coverImage, setCoverImage] = useState(course.cover_image ?? '')
@@ -174,6 +176,15 @@ export function AdminCourseBar({ course }: { course: CourseWithTree }) {
             </button>
 
             <button
+              onClick={() => setImportModuleOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-[#555] hover:text-[#111] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+              title="Import a new module from a Google Doc, paste, or PDF"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Import module
+            </button>
+
+            <button
               onClick={() => setSettingsOpen(true)}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-[#555] hover:text-[#111] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
             >
@@ -183,6 +194,18 @@ export function AdminCourseBar({ course }: { course: CourseWithTree }) {
           </div>
         </div>
       </div>
+
+      {importModuleOpen && (
+        <ImportCourseModal
+          mode="module"
+          courseId={course.id}
+          onClose={() => setImportModuleOpen(false)}
+          onSuccess={() => {
+            setImportModuleOpen(false)
+            startTransition(() => router.refresh())
+          }}
+        />
+      )}
 
       <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Course Settings">
         <div className="space-y-4">
