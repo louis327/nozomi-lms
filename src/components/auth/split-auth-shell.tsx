@@ -4,10 +4,12 @@ import type { ReactNode } from 'react'
 type Props = {
   /** The single dominant italic word that fills the dark panel. End with a period. */
   hero: string
+  /** Single supporting line under the hero. Keep it short. */
+  tagline: string
   children: ReactNode
 }
 
-export function SplitAuthShell({ hero, children }: Props) {
+export function SplitAuthShell({ hero, tagline, children }: Props) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-canvas">
       {/* Left: dark hero panel */}
@@ -36,8 +38,8 @@ export function SplitAuthShell({ hero, children }: Props) {
           <span className="font-serif text-[22px] tracking-tight">Nozomi</span>
         </Link>
 
-        {/* Hero word — anchored bottom-left, fills the panel */}
-        <div className="relative flex-1 flex items-end pt-12 lg:pt-0">
+        {/* Hero block — anchored bottom-left */}
+        <div className="relative flex-1 flex flex-col justify-end pt-12 lg:pt-0">
           <h1
             className="text-white tracking-tight animate-[fadeUp_900ms_cubic-bezier(0.2,0.8,0.2,1)_200ms_both]"
             style={{
@@ -59,10 +61,20 @@ export function SplitAuthShell({ hero, children }: Props) {
               hero
             )}
           </h1>
+          <p
+            className="mt-5 lg:mt-6 text-white/55 leading-[1.5] max-w-[34ch] animate-[fadeUp_800ms_cubic-bezier(0.2,0.8,0.2,1)_500ms_both]"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 'clamp(14px, 1.15vw, 17px)',
+              letterSpacing: '-0.005em',
+            }}
+          >
+            {tagline}
+          </p>
         </div>
 
         {/* Footer — bottom-right */}
-        <p className="relative text-[10px] tracking-[0.24em] text-white/30 uppercase self-end animate-[fadeInFast_900ms_ease-out_800ms_both]">
+        <p className="relative mt-10 lg:mt-12 text-[10px] tracking-[0.24em] text-white/30 uppercase self-end animate-[fadeInFast_900ms_ease-out_800ms_both]">
           © {new Date().getFullYear()} Nozomi
         </p>
       </div>

@@ -101,7 +101,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <SplitAuthShell hero="Welcome.">
+    <SplitAuthShell
+      hero="Welcome."
+      tagline="Your coach, your raise, your work — pick up where you left off."
+    >
       <Suspense
         fallback={
           <div className="space-y-5 animate-pulse">
