@@ -175,12 +175,7 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <SplitAuthShell
-      eyebrow="Start with Nozomi"
-      headlinePrefix="Web3 fundraising,"
-      headlineAccent="taught by operators."
-      subtitle="Three fields, one short brief, then a coach who knows the work — not just the theory."
-    >
+    <SplitAuthShell hero="Begin.">
       <Suspense
         fallback={
           <div className="space-y-5 animate-pulse">
