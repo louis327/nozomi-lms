@@ -85,19 +85,20 @@ export function SplitAuthShell({ hero, tagline, children }: Props) {
           </p>
         </div>
 
-        {/* Hero block — anchored bottom-left */}
-        <div className="relative flex-1 flex flex-col justify-end pt-16 lg:pt-0">
+        {/* Hero block — vertically centered */}
+        <div className="relative flex-1 flex flex-col justify-center pt-16 lg:pt-0">
           <h1
             className="text-white tracking-tight animate-[fadeUp_900ms_cubic-bezier(0.2,0.8,0.2,1)_300ms_both]"
             style={{
               fontFamily: 'var(--font-sans)',
               fontWeight: 700,
               fontStyle: 'italic',
-              fontSize: 'clamp(72px, 11vw, 148px)',
-              lineHeight: 0.92,
-              letterSpacing: '-0.045em',
+              fontSize: 'clamp(56px, 8.5vw, 112px)',
+              lineHeight: 0.95,
+              letterSpacing: '-0.04em',
               textWrap: 'balance',
-              textShadow: '0 2px 40px rgba(0,0,0,0.4)',
+              maxWidth: '11ch',
+              textShadow: '0 2px 40px rgba(0,0,0,0.45)',
             }}
           >
             {hero.endsWith('.') ? (
@@ -110,7 +111,7 @@ export function SplitAuthShell({ hero, tagline, children }: Props) {
             )}
           </h1>
           <p
-            className="mt-5 lg:mt-6 text-white/65 leading-[1.5] max-w-[34ch] animate-[fadeUp_800ms_cubic-bezier(0.2,0.8,0.2,1)_600ms_both]"
+            className="mt-6 lg:mt-7 text-white/65 leading-[1.5] max-w-[34ch] animate-[fadeUp_800ms_cubic-bezier(0.2,0.8,0.2,1)_600ms_both]"
             style={{
               fontFamily: 'var(--font-sans)',
               fontSize: 'clamp(14px, 1.15vw, 17px)',

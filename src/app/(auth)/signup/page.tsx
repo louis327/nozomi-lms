@@ -176,7 +176,7 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <SplitAuthShell
-      hero="Begin."
+      hero="The work begins."
       tagline="Web3 fundraising, taught by operators who've raised the rounds."
     >
       <Suspense

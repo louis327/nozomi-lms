@@ -102,8 +102,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <SplitAuthShell
-      hero="Welcome."
-      tagline="Your coach, your raise, your work — pick up where you left off."
+      hero="Back to the work."
+      tagline="Your coach, your raise, your plan — exactly where you left them."
     >
       <Suspense
         fallback={
