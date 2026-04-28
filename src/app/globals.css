@@ -227,6 +227,20 @@ body {
   to { opacity: 1; }
 }
 
+/* Auth-shell gradient mesh — slow organic drift */
+@keyframes meshFloat1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(6%, -4%, 0) scale(1.12); }
+}
+@keyframes meshFloat2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(-7%, 5%, 0) scale(0.95); }
+}
+@keyframes meshFloat3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(4%, 5%, 0) scale(1.06); }
+}
+
 /* Focus ring */
 *:focus-visible {
   outline: 2px solid var(--nz-accent);
