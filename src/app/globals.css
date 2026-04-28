@@ -217,6 +217,16 @@ body {
   animation: drawLine 1.4s ease-out forwards;
 }
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInFast {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Focus ring */
 *:focus-visible {
   outline: 2px solid var(--nz-accent);

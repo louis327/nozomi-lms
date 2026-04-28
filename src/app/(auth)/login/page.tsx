@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { SplitAuthShell } from '@/components/auth/split-auth-shell'
 
 function LoginForm() {
   const router = useRouter()
@@ -47,16 +48,14 @@ function LoginForm() {
 
   return (
     <div>
-      <div className="text-center mb-8">
-        <p className="eyebrow-accent mb-3">Sign in</p>
-        <h1 className="display text-[32px] leading-[1.15] mb-2">
-          Welcome <em>back.</em>
-        </h1>
-        <p className="text-[14px] text-ink-soft">Continue where you left off.</p>
-      </div>
+      <p className="eyebrow-accent mb-2 lg:hidden">Sign in</p>
+      <h2 className="display text-[24px] leading-[1.2] mb-1.5">Sign in</h2>
+      <p className="text-[13.5px] text-ink-soft mb-7">
+        Enter your details to continue.
+      </p>
 
       {error && (
-        <div className="mb-6 px-4 py-3 rounded-xl bg-error/10 border border-error/20 text-[13px] text-error">
+        <div className="mb-5 px-4 py-3 rounded-xl bg-error/10 border border-error/20 text-[13px] text-error">
           {error}
         </div>
       )}
@@ -82,17 +81,12 @@ function LoginForm() {
           autoComplete="current-password"
         />
 
-        <Button
-          type="submit"
-          loading={loading}
-          className="w-full"
-          size="lg"
-        >
+        <Button type="submit" loading={loading} className="w-full" size="lg">
           Sign in
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-[13px] text-ink-muted">
+      <p className="mt-6 text-[13px] text-ink-muted">
         Don&apos;t have an account?{' '}
         <Link
           href="/signup"
@@ -107,16 +101,25 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-5 animate-pulse">
-        <div className="h-8 w-48 bg-surface-muted rounded-lg" />
-        <div className="h-4 w-56 bg-surface-muted rounded-lg" />
-        <div className="h-12 bg-surface-muted rounded-xl" />
-        <div className="h-12 bg-surface-muted rounded-xl" />
-        <div className="h-12 bg-surface-muted rounded-xl" />
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
+    <SplitAuthShell
+      eyebrow="Welcome back"
+      headlinePrefix="Pick up"
+      headlineAccent="where you left off."
+      subtitle="Your coach, your raise plan, your work — all where you left them."
+    >
+      <Suspense
+        fallback={
+          <div className="space-y-5 animate-pulse">
+            <div className="h-8 w-48 bg-surface-muted rounded-lg" />
+            <div className="h-4 w-56 bg-surface-muted rounded-lg" />
+            <div className="h-12 bg-surface-muted rounded-xl" />
+            <div className="h-12 bg-surface-muted rounded-xl" />
+            <div className="h-12 bg-surface-muted rounded-xl" />
+          </div>
+        }
+      >
+        <LoginForm />
+      </Suspense>
+    </SplitAuthShell>
   )
 }
