@@ -71,15 +71,25 @@ function LoginForm() {
           autoComplete="email"
         />
 
-        <Input
-          label="Password"
-          type="password"
-          placeholder="Your password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
+        <div>
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+          <div className="mt-1.5 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-[12px] text-ink-muted hover:text-accent transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        </div>
 
         <Button type="submit" loading={loading} className="w-full" size="lg">
           Sign in
