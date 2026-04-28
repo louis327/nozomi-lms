@@ -43,13 +43,21 @@ export default async function CourseLearnLayout({
       id, title, description, cover_image, status, sort_order, created_at, updated_at,
       modules (
         id, course_id, title, description, sort_order, created_at, updated_at,
-        sections ( id, module_id, title, video_url, sort_order, created_at, updated_at )
+        sections ( id, module_id, title, video_url, status, sort_order, created_at, updated_at )
       )
     `)
     .eq('id', courseId)
     .single()
 
   if (!course) redirect('/dashboard')
+
+  // Hide draft sections from non-admins (RLS already does this for them, but
+  // admins fetch everything — students see only published sections).
+  if (!isAdmin) {
+    for (const mod of (course.modules ?? []) as any[]) {
+      mod.sections = (mod.sections ?? []).filter((s: any) => s.status === 'published')
+    }
+  }
 
   // Fetch all section progress for this user in this course
   const allSectionIds: string[] = []

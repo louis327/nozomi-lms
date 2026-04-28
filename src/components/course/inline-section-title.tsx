@@ -4,13 +4,15 @@ import { useState, useRef, useCallback } from 'react'
 import { useEditMode } from '@/lib/edit-mode-context'
 import { updateSectionTitle } from '@/lib/block-actions'
 import { useToast } from '@/components/ui/toast'
+import { SectionStatusToggle } from './section-status-toggle'
 
 type InlineSectionTitleProps = {
   sectionId: string
   title: string
+  status?: 'draft' | 'published'
 }
 
-export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps) {
+export function InlineSectionTitle({ sectionId, title, status = 'published' }: InlineSectionTitleProps) {
   const { editMode } = useEditMode()
   const { addToast } = useToast()
   const [value, setValue] = useState(title)
@@ -57,26 +59,31 @@ export function InlineSectionTitle({ sectionId, title }: InlineSectionTitleProps
   }
 
   return (
-    <div className="relative mb-6 group">
-      <textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault()
-            e.currentTarget.blur()
-          }
-        }}
-        rows={1}
-        className="w-full display text-[28px] sm:text-[34px] leading-[1.15] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none resize-none break-words text-left"
-        style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left', textIndent: '-0.04em', fontStyle: 'normal' }}
-      />
-      {saving && (
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
-          <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-        </div>
-      )}
+    <div className="mb-6">
+      <div className="mb-3">
+        <SectionStatusToggle sectionId={sectionId} status={status} />
+      </div>
+      <div className="relative group">
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              e.currentTarget.blur()
+            }
+          }}
+          rows={1}
+          className="w-full display text-[28px] sm:text-[34px] leading-[1.15] bg-transparent border-b-2 border-transparent focus:border-accent/40 hover:border-line transition-colors focus:outline-none resize-none break-words text-left"
+          style={{ overflowWrap: 'anywhere', marginLeft: 0, paddingLeft: 0, textAlign: 'left', textIndent: '-0.04em', fontStyle: 'normal' }}
+        />
+        {saving && (
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

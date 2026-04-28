@@ -91,6 +91,21 @@ export async function updateSectionTitle(sectionId: string, title: string): Prom
   }
 }
 
+export async function updateSectionStatus(
+  sectionId: string,
+  status: 'draft' | 'published',
+): Promise<void> {
+  const res = await fetch(`/api/admin/sections/${sectionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.error || 'Failed to update section status')
+  }
+}
+
 export function getDefaultContent(type: ContentBlock['type']): Record<string, unknown> {
   switch (type) {
     case 'rich_text': return { html: '' }

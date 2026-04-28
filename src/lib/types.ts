@@ -27,6 +27,7 @@ export interface Section {
   module_id: string
   title: string
   video_url: string | null
+  status: 'draft' | 'published'
   sort_order: number
   created_at: string
   updated_at: string

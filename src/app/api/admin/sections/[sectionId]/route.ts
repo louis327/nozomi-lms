@@ -27,6 +27,12 @@ export async function PATCH(
 
   if (body.title !== undefined) updates.title = body.title
   if (body.video_url !== undefined) updates.video_url = body.video_url
+  if (body.status !== undefined) {
+    if (body.status !== 'draft' && body.status !== 'published') {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+    updates.status = body.status
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

@@ -19,19 +19,32 @@ export default async function CourseOverviewPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isAdmin = profile?.role === 'admin'
+
   const { data: course } = await supabase
     .from('courses')
     .select(`
       id, title, description, cover_image, status,
       modules (
         id, title, description, sort_order,
-        sections ( id, title, sort_order )
+        sections ( id, title, status, sort_order )
       )
     `)
     .eq('id', courseId)
     .single()
 
   if (!course) redirect('/courses')
+
+  if (!isAdmin) {
+    for (const mod of (course.modules ?? []) as any[]) {
+      mod.sections = (mod.sections ?? []).filter((s: any) => s.status === 'published')
+    }
+  }
 
   const { data: enrollment } = await supabase
     .from('enrollments')
@@ -214,6 +227,7 @@ export default async function CourseOverviewPage({
                     const isComplete = progressMap[sec.id]
                     const href = isEnrolled ? `/courses/${courseId}/learn/${sec.id}` : undefined
 
+                    const isDraft = sec.status === 'draft'
                     const content = (
                       <>
                         <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0">
@@ -228,9 +242,14 @@ export default async function CourseOverviewPage({
                         <span className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.12em] tabular-nums shrink-0 w-8">
                           {String(secIdx + 1).padStart(2, '0')}
                         </span>
-                        <span className={`text-[13.5px] flex-1 leading-snug break-words ${isEnrolled ? 'text-ink-soft group-hover:text-ink' : 'text-ink-muted'} transition-colors`} style={{ overflowWrap: 'anywhere' }}>
+                        <span className={`text-[13.5px] flex-1 leading-snug break-words ${isDraft ? 'text-ink-faint italic' : isEnrolled ? 'text-ink-soft group-hover:text-ink' : 'text-ink-muted'} transition-colors`} style={{ overflowWrap: 'anywhere' }}>
                           {sec.title}
                         </span>
+                        {isDraft && (
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-surface-muted text-ink-muted shrink-0">
+                            Draft
+                          </span>
+                        )}
                         <span className="text-[11px] text-ink-faint shrink-0">
                           {isComplete ? 'Complete' : '~18 min'}
                         </span>

@@ -169,6 +169,7 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                   {sections.map((section) => {
                     const isCurrent = section.id === currentSectionId
                     const isCompleted = progress[section.id]
+                    const isDraft = section.status === 'draft'
 
                     return (
                       <Link
@@ -179,7 +180,9 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                           relative flex items-center gap-2.5 pl-[42px] pr-5 py-2 text-[12.5px] transition-colors min-w-0 group
                           ${isCurrent
                             ? 'text-white bg-white/[0.06]'
-                            : 'text-white/55 hover:text-white hover:bg-white/[0.03]'
+                            : isDraft
+                              ? 'text-white/35 hover:text-white/60 hover:bg-white/[0.03] italic'
+                              : 'text-white/55 hover:text-white hover:bg-white/[0.03]'
                           }
                         `}
                       >
@@ -190,6 +193,11 @@ export function CourseSidebar({ course, progress, currentSectionId: initialSecti
                           <span className={`w-3 h-3 rounded-full border shrink-0 ${isCurrent ? 'border-white/80' : 'border-white/20'}`} />
                         )}
                         <span className="leading-snug break-words min-w-0" title={section.title} style={{ overflowWrap: 'anywhere' }}>{section.title}</span>
+                        {isDraft && (
+                          <span className="ml-auto text-[9px] font-semibold uppercase tracking-[0.12em] px-1.5 py-0.5 rounded bg-white/[0.06] text-white/60 shrink-0">
+                            Draft
+                          </span>
+                        )}
                       </Link>
                     )
                   })}

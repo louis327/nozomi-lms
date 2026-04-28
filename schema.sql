@@ -40,6 +40,7 @@ CREATE TABLE public.sections (
   module_id UUID NOT NULL REFERENCES public.modules(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   video_url TEXT,
+  status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -162,8 +163,9 @@ CREATE POLICY "Anyone can read modules of published courses" ON public.modules F
 CREATE POLICY "Admins can manage modules" ON public.modules FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- Sections policies
-CREATE POLICY "Anyone can read sections of published courses" ON public.sections FOR SELECT USING (
-  EXISTS (
+CREATE POLICY "Anyone can read published sections of published courses" ON public.sections FOR SELECT USING (
+  status = 'published'
+  AND EXISTS (
     SELECT 1 FROM public.modules m
     JOIN public.courses c ON c.id = m.course_id
     WHERE m.id = module_id AND c.status = 'published'
@@ -172,12 +174,14 @@ CREATE POLICY "Anyone can read sections of published courses" ON public.sections
 CREATE POLICY "Admins can manage sections" ON public.sections FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- Content blocks policies
-CREATE POLICY "Anyone can read content of published courses" ON public.content_blocks FOR SELECT USING (
+CREATE POLICY "Anyone can read content of published sections" ON public.content_blocks FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.sections s
     JOIN public.modules m ON m.id = s.module_id
     JOIN public.courses c ON c.id = m.course_id
-    WHERE s.id = section_id AND c.status = 'published'
+    WHERE s.id = section_id
+      AND s.status = 'published'
+      AND c.status = 'published'
   )
 );
 CREATE POLICY "Admins can manage content blocks" ON public.content_blocks FOR ALL USING (is_admin()) WITH CHECK (is_admin());
