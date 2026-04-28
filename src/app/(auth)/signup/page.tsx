@@ -175,10 +175,7 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <SplitAuthShell
-      hero="The work begins."
-      tagline="Web3 fundraising, taught by operators who've raised the rounds."
-    >
+    <SplitAuthShell tagline="Web3 fundraising, taught by operators who've raised the rounds.">
       <Suspense
         fallback={
           <div className="space-y-5 animate-pulse">
