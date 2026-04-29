@@ -354,6 +354,12 @@ body {
 .nz-table td:first-child {
   font-weight: 600;
 }
+/* Only the FIRST paragraph in a first-column cell is auto-bold; later
+   paragraphs render at the normal body weight so descriptive lines under
+   a label aren't forced bold. */
+.nz-table td:first-child p ~ p {
+  font-weight: 400;
+}
 .nz-table td strong, .nz-table th strong {
   font-weight: 600;
   color: inherit;
