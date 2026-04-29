@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useEditMode } from '@/lib/edit-mode-context'
 import { useToast } from '@/components/ui/toast'
 
@@ -45,6 +45,17 @@ function InlineField({
   const [text, setText] = useState(value)
   const [saving, setSaving] = useState(false)
   const original = useRef(value)
+  const taRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-size the multiline textarea to its content so descriptions
+  // that wrap to multiple lines don't get clipped to a single row.
+  useEffect(() => {
+    if (!multiline) return
+    const ta = taRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = `${ta.scrollHeight}px`
+  }, [text, multiline, value])
 
   const commit = useCallback(async () => {
     const trimmed = text.trim()
@@ -75,6 +86,7 @@ function InlineField({
   if (multiline) {
     return (
       <textarea
+        ref={taRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={commit}
@@ -86,7 +98,7 @@ function InlineField({
         }}
         rows={1}
         placeholder={placeholder}
-        className={`bg-transparent w-full resize-none border-b border-transparent hover:border-white/20 focus:border-white/40 focus:outline-none transition-colors ${className ?? ''} ${saving ? 'opacity-60' : ''}`}
+        className={`bg-transparent w-full resize-none overflow-hidden border-b border-transparent hover:border-white/20 focus:border-white/40 focus:outline-none transition-colors ${className ?? ''} ${saving ? 'opacity-60' : ''}`}
         style={style}
       />
     )
