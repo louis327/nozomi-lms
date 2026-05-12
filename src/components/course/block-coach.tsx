@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type Turn = {
@@ -18,6 +18,15 @@ type Props = {
   getAnswer: () => string
 }
 
+// Maps the stage values written by the n8n workflow to user-facing labels.
+const STAGE_LABEL: Record<string, string> = {
+  reading: 'Reading your answer…',
+  thinking: 'Thinking it through…',
+  reviewing: 'Reviewing my response…',
+  tightening: 'Tightening the response…',
+  done: 'Ready'
+}
+
 export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
   const [hasRubric, setHasRubric] = useState<boolean | null>(null)
   const [open, setOpen] = useState(false)
@@ -27,6 +36,10 @@ export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
   const [mastery, setMastery] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [followUp, setFollowUp] = useState('')
+  const [stage, setStage] = useState<string | null>(null)
+  const [stageStartedAt, setStageStartedAt] = useState<number | null>(null)
+  const [, forceTick] = useState(0)
+  const esRef = useRef<EventSource | null>(null)
 
   // Check rubric existence on mount.
   useEffect(() => {
@@ -70,52 +83,115 @@ export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
     }
   }, [sessionId, sectionId, blockId])
 
+  // Tick every second while thinking, so the elapsed-time counter updates.
+  useEffect(() => {
+    if (!thinking) return
+    const t = setInterval(() => forceTick(n => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [thinking])
+
+  const closeStream = useCallback(() => {
+    if (esRef.current) {
+      esRef.current.close()
+      esRef.current = null
+    }
+  }, [])
+
+  useEffect(() => () => closeStream(), [closeStream])
+
   const sendTurn = useCallback(async (message: string) => {
     if (!message.trim() || thinking || mastery) return
     setError(null)
     setThinking(true)
+    setStage('reading')
+    setStageStartedAt(Date.now())
     const sid = await ensureSession()
-    if (!sid) { setThinking(false); return }
+    if (!sid) { setThinking(false); setStage(null); return }
+
+    const turnCorrelationId = crypto.randomUUID()
 
     const turnNum = (turns[turns.length - 1]?.turn_number ?? 0) + 1
     const optimistic: Turn = {
       turn_number: turnNum,
       student_message: message,
-      agent_message: '…',
+      agent_message: '',
       intent: null,
       verdict: null
     }
     setTurns(t => [...t, optimistic])
 
+    // Open SSE stream BEFORE POSTing, so we don't miss early events.
+    closeStream()
+    const es = new EventSource(`/api/tutor/turn-stream?turnCorrelationId=${turnCorrelationId}`)
+    esRef.current = es
+    let finalFromStream: any = null
+
+    es.onmessage = ev => {
+      try {
+        const row = JSON.parse(ev.data)
+        if (row.stage) {
+          setStage(row.stage)
+          setStageStartedAt(Date.now())
+        }
+        if (row.stage === 'done' && row.payload) {
+          finalFromStream = row.payload
+          setTurns(t => {
+            const copy = [...t]
+            const last = copy[copy.length - 1]
+            if (last) {
+              copy[copy.length - 1] = {
+                ...last,
+                agent_message: row.payload.reply ?? last.agent_message,
+                intent: row.payload.intent ?? null,
+                verdict: row.payload.verdict ?? null
+              }
+            }
+            return copy
+          })
+          if (row.payload.verdict === 'pass' || row.payload.mastery === 'mastered') setMastery(true)
+        }
+      } catch {}
+    }
+    es.onerror = () => { es.close() }
+
     try {
       const res = await fetch('/api/tutor/turn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: sid, sectionId, blockId, studentMessage: message })
+        body: JSON.stringify({ sessionId: sid, sectionId, blockId, studentMessage: message, turnCorrelationId })
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Tutor failed (${res.status})`)
       }
       const data = await res.json()
-      setTurns(t => {
-        const copy = [...t]
-        copy[copy.length - 1] = {
-          ...optimistic,
-          agent_message: data.reply ?? '(no reply)',
-          intent: data.intent ?? null,
-          verdict: data.verdict ?? null
-        }
-        return copy
-      })
-      if (data.verdict === 'pass' || data.mastery === 'mastered') setMastery(true)
+      // If SSE didn't already update the bubble (slower-arriving), do it now.
+      if (!finalFromStream) {
+        setTurns(t => {
+          const copy = [...t]
+          const last = copy[copy.length - 1]
+          if (last) {
+            copy[copy.length - 1] = {
+              ...last,
+              agent_message: data.reply ?? '(no reply)',
+              intent: data.intent ?? null,
+              verdict: data.verdict ?? null
+            }
+          }
+          return copy
+        })
+        if (data.verdict === 'pass' || data.mastery === 'mastered') setMastery(true)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed')
       setTurns(t => t.slice(0, -1))
     } finally {
       setThinking(false)
+      setStage(null)
+      setStageStartedAt(null)
+      closeStream()
     }
-  }, [ensureSession, sectionId, blockId, thinking, mastery, turns])
+  }, [ensureSession, sectionId, blockId, thinking, mastery, turns, closeStream])
 
   const onEvaluate = useCallback(() => {
     const answer = getAnswer().trim()
@@ -187,11 +263,6 @@ export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
                 <div className="flex justify-start">
                   <div className="rounded-lg px-3 py-2 text-[13px] leading-relaxed max-w-[90%]" style={{ background: '#1a1a1d', color: '#e8e3d4' }}>
                     {t.agent_message}
-                    {t.verdict && t.verdict !== 'pass' && (
-                      <span className="ml-2 text-[9.5px] font-semibold uppercase tracking-wider" style={{ color: t.verdict === 'wrong' ? '#d97755' : '#c69a3f' }}>
-                        · {t.verdict}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -199,8 +270,14 @@ export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
 
             {thinking && (
               <div className="flex justify-start">
-                <div className="rounded-lg px-3 py-2 text-[12px] italic" style={{ background: '#1a1a1d', color: '#c69a3f' }}>
-                  the coach is reviewing your answer…
+                <div className="rounded-lg px-3 py-2 text-[12px] flex items-center gap-2" style={{ background: '#1a1a1d', color: '#c69a3f' }}>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#c69a3f' }} />
+                  <span className="italic">{stage ? (STAGE_LABEL[stage] ?? stage) : 'Starting…'}</span>
+                  {stageStartedAt && (
+                    <span className="text-white/30 text-[10.5px] font-mono ml-1">
+                      {Math.max(0, Math.floor((Date.now() - stageStartedAt) / 1000))}s
+                    </span>
+                  )}
                 </div>
               </div>
             )}

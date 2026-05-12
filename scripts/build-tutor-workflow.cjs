@@ -122,6 +122,7 @@ return [{ json: {
   sectionId: b.sectionId,
   blockId: b.blockId,
   studentMessage: String(b.studentMessage).slice(0, 8000),
+  turnCorrelationId: b.turnCorrelationId || null,
   isOpener: !!b.isOpener
 }}];
 `.trim()
@@ -129,6 +130,76 @@ return [{ json: {
     { typeVersion: 2, position: [col(1), row(2)] }
   )
 );
+
+// --- Progress writer helper -----------------------------------------------
+// Inserts a fire-and-forget HTTP POST to tutor_turn_progress. Conditional
+// on turnCorrelationId being present (older clients without progress
+// streaming still work).
+let nextProgressNodeId = 1000;
+function progressWriter(name, stage, message, position, opts = {}) {
+  const id = nextProgressNodeId++;
+  return node(
+    id,
+    name,
+    'n8n-nodes-base.httpRequest',
+    {
+      method: 'POST',
+      url: `${SUPABASE_URL}/rest/v1/tutor_turn_progress`,
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpHeaderAuth',
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'apikey', value: SUPABASE_ANON },
+        { name: 'Content-Type', value: 'application/json' },
+        { name: 'Prefer', value: 'return=minimal' }
+      ]},
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: `={{ ($('Validate Input').first().json.turnCorrelationId ? JSON.stringify({
+        turn_correlation_id: $('Validate Input').first().json.turnCorrelationId,
+        stage: ${JSON.stringify(stage)},
+        message: ${JSON.stringify(message)}${opts.payloadExpression ? ',\n        payload: ' + opts.payloadExpression : ''}
+      }) : JSON.stringify({skip: true})) }}`,
+      options: { timeout: 3000 }
+    },
+    {
+      typeVersion: 4.2,
+      position,
+      credentials: httpCred(SUPABASE_CRED_ID),
+      onError: 'continueRegularOutput'
+    }
+  );
+}
+
+// Progress: Reading your answer
+nodes.push(progressWriter('Progress: Reading', 'reading', 'Reading your answer…', [col(1), row(3)]));
+
+// Progress: Thinking (after Parse Classification)
+nodes.push(progressWriter('Progress: Thinking', 'thinking', 'Thinking it through…', [col(5), row(3)]));
+
+// Progress: Reviewing (after Normalize Reply)
+nodes.push(progressWriter('Progress: Reviewing', 'reviewing', 'Reviewing my response…', [col(10), row(3)]));
+
+// Progress: Tightening (after Rewrite Responder, before Apply Rewrite)
+nodes.push(progressWriter('Progress: Tightening', 'tightening', 'Tightening the response…', [col(13), row(4)]));
+
+// Progress: Done (after Upsert Mastery, before Respond to Webhook) — carries the final reply
+nodes.push(progressWriter(
+  'Progress: Done',
+  'done',
+  'Ready',
+  [col(15), row(3)],
+  {
+    payloadExpression: `JSON.stringify({
+        reply: $('Finalize Reply').first().json.replyText,
+        intent: $('Finalize Reply').first().json.intent,
+        verdict: $('Finalize Reply').first().json.verdict || null,
+        mastery: $('Finalize Reply').first().json.verdict === 'pass' ? 'mastered' : 'in_progress',
+        flagged: $('Finalize Reply').first().json.flagged_for_review,
+        rewritten: $('Finalize Reply').first().json.rewritten === true
+      })`
+  }
+));
 
 // 3-5. Parallel context loads --------------------------------------------
 const supaUrl = path =>
@@ -146,7 +217,7 @@ nodes.push(
     'n8n-nodes-base.httpRequest',
     {
       method: 'GET',
-      url: `=${SUPABASE_URL}/rest/v1/tutor_sessions?id=eq.{{$json.sessionId}}&select=id,user_id,section_id,rubric_id,turn_count,probe_count,mastery_reached,status,tutor_turns(turn_number,student_message,agent_message,intent,verdict,gap,created_at)`,
+      url: `=${SUPABASE_URL}/rest/v1/tutor_sessions?id=eq.{{$('Validate Input').item.json.sessionId}}&select=id,user_id,section_id,rubric_id,turn_count,probe_count,mastery_reached,status,tutor_turns(turn_number,student_message,agent_message,intent,verdict,gap,created_at)`,
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
@@ -552,10 +623,10 @@ nodes.push(
       mode: 'rules',
       rules: {
         values: [
-          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r1', leftValue: '={{$json.intent}}', rightValue: 'answer', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'answer' },
-          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r2', leftValue: '={{$json.intent}}', rightValue: 'question', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'question' },
-          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r3', leftValue: '={{$json.intent}}', rightValue: 'off_topic', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'off_topic' },
-          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r4', leftValue: '={{$json.intent}}', rightValue: 'meta', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'meta' }
+          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r1', leftValue: "={{$('Parse Classification').item.json.intent}}", rightValue: 'answer', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'answer' },
+          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r2', leftValue: "={{$('Parse Classification').item.json.intent}}", rightValue: 'question', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'question' },
+          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r3', leftValue: "={{$('Parse Classification').item.json.intent}}", rightValue: 'off_topic', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'off_topic' },
+          { conditions: { options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' }, conditions: [{ id: 'r4', leftValue: "={{$('Parse Classification').item.json.intent}}", rightValue: 'meta', operator: { type: 'string', operation: 'equals' } }], combinator: 'and' }, renameOutput: true, outputKey: 'meta' }
         ]
       },
       options: { fallbackOutput: 'extra', renameFallbackOutput: 'other' }
@@ -901,9 +972,9 @@ You are NOT a style critic for everything else. Only check those five.`)},
         messages: [{
           role: 'user',
           content:
-            '=== STUDENT MESSAGE ===\\n' + $json.studentMessage +
-            '\\n\\n=== EVALUATION (if answer branch) ===\\n' + JSON.stringify($json.evaluation || null) +
-            '\\n\\n=== PROPOSED REPLY ===\\n' + $json.replyText +
+            '=== STUDENT MESSAGE ===\\n' + $('Normalize Reply').item.json.studentMessage +
+            '\\n\\n=== EVALUATION (if answer branch) ===\\n' + JSON.stringify($('Normalize Reply').item.json.evaluation || null) +
+            '\\n\\n=== PROPOSED REPLY ===\\n' + $('Normalize Reply').item.json.replyText +
             '\\n\\nRun the 5 checks above. Output ONLY JSON:\\n' +
             '{\\n' +
             '  "pass": true | false,\\n' +
@@ -1050,7 +1121,7 @@ nodes.push(
     {
       jsCode: `
 const ctx = $('Parse Critic').first().json;
-const raw = items[0].json;
+const raw = $('Rewrite Responder').first().json;
 const newText = (raw?.content?.[0]?.text || '').trim();
 return [{ json: { ...ctx, replyText: newText || ctx.replyText, rewritten: true } }];
 `.trim()
@@ -1235,7 +1306,8 @@ function link(from, to, fromIdx = 0) {
 }
 
 link('Tutor Turn Webhook', 'Validate Input');
-link('Validate Input', 'Load Session + Turns');
+link('Validate Input', 'Progress: Reading');
+link('Progress: Reading', 'Load Session + Turns');
 link('Load Session + Turns', 'Load Rubric');
 link('Load Rubric', 'Load Section Content');
 link('Load Section Content', 'Load Course Outline');
@@ -1243,7 +1315,8 @@ link('Load Course Outline', 'Load Student Portfolio');
 link('Load Student Portfolio', 'Build Context');
 link('Build Context', 'Classify Intent');
 link('Classify Intent', 'Parse Classification');
-link('Parse Classification', 'Route by Intent');
+link('Parse Classification', 'Progress: Thinking');
+link('Progress: Thinking', 'Route by Intent');
 // Switch outputs: 0=answer, 1=question, 2=off_topic, 3=meta
 link('Route by Intent', 'Evaluate Answer', 0);
 link('Route by Intent', 'Answer Student Question', 1);
@@ -1255,18 +1328,21 @@ link('Respond to Answer', 'Normalize Reply');
 link('Answer Student Question', 'Normalize Reply');
 link('Scope Back', 'Normalize Reply');
 link('Meta Reply', 'Normalize Reply');
-link('Normalize Reply', 'Critic Review');
+link('Normalize Reply', 'Progress: Reviewing');
+link('Progress: Reviewing', 'Critic Review');
 link('Critic Review', 'Parse Critic');
 link('Parse Critic', 'Critic Decision');
 // IF node: output 0 = true (critic passed), output 1 = false (failed → rewrite)
 link('Critic Decision', 'Finalize Reply', 0);
 link('Critic Decision', 'Rewrite Responder', 1);
-link('Rewrite Responder', 'Apply Rewrite');
+link('Rewrite Responder', 'Progress: Tightening');
+link('Progress: Tightening', 'Apply Rewrite');
 link('Apply Rewrite', 'Finalize Reply');
 link('Finalize Reply', 'Persist Turn');
 link('Persist Turn', 'Update Session');
 link('Update Session', 'Upsert Mastery');
-link('Upsert Mastery', 'Respond to Webhook');
+link('Upsert Mastery', 'Progress: Done');
+link('Progress: Done', 'Respond to Webhook');
 
 // ---------------------------------------------------------------------------
 // Workflow payload

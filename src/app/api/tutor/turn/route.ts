@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-  const { sessionId, sectionId, blockId, studentMessage } = await request.json()
+  const { sessionId, sectionId, blockId, studentMessage, turnCorrelationId } = await request.json()
   if (!sessionId || !sectionId || !blockId || typeof studentMessage !== 'string') {
     return NextResponse.json({ error: 'sessionId, sectionId, blockId, studentMessage required' }, { status: 400 })
   }
@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       sectionId,
       blockId,
-      studentMessage
+      studentMessage,
+      turnCorrelationId: turnCorrelationId || null
     })
   })
 
