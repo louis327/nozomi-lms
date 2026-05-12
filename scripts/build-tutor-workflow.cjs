@@ -662,16 +662,16 @@ You are the EVALUATOR stage. Grade the student's answer hard but fair. Do NOT re
         messages: [{
           role: 'user',
           content:
-            '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
-            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
-            '\\n\\n=== SECTION MATERIAL (use ONLY this for grounding) ===\\n' + $json.sectionText +
-            '\\n\\n=== STUDENT PORTFOLIO (answers they have already written elsewhere in the course — use this to check consistency and reference prior commitments) ===\\n' + $json.studentPortfolio +
-            '\\n\\n=== PROMPT BEING GRADED ===\\n' + $json.question +
-            '\\n\\n=== PASS CRITERIA ===\\n' + JSON.stringify($json.passCriteria, null, 2) +
-            '\\n\\n=== KNOWN SHALLOW PATTERNS ===\\n' + JSON.stringify($json.shallowPatterns, null, 2) +
-            '\\n\\n=== KNOWN WRONG PATTERNS ===\\n' + JSON.stringify($json.wrongPatterns, null, 2) +
-            '\\n\\n=== CONVERSATION SO FAR ===\\n' + JSON.stringify($json.history, null, 2) +
-            '\\n\\n=== STUDENT ANSWER ===\\n' + $json.studentMessage +
+            '=== COURSE: ' + $('Build Context').first().json.courseTitle + ' ===\\n' + $('Build Context').first().json.courseOutline +
+            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($('Build Context').first().json.modulePosition || '?') + ': ' + $('Build Context').first().json.moduleTitle + '\\nSection ' + ($('Build Context').first().json.sectionPosition || '?') + ': ' + $('Build Context').first().json.sectionTitle +
+            '\\n\\n=== SECTION MATERIAL (use ONLY this for grounding) ===\\n' + $('Build Context').first().json.sectionText +
+            '\\n\\n=== STUDENT PORTFOLIO (answers they have already written elsewhere in the course — use this to check consistency and reference prior commitments) ===\\n' + $('Build Context').first().json.studentPortfolio +
+            '\\n\\n=== PROMPT BEING GRADED ===\\n' + $('Build Context').first().json.question +
+            '\\n\\n=== PASS CRITERIA ===\\n' + JSON.stringify($('Build Context').first().json.passCriteria, null, 2) +
+            '\\n\\n=== KNOWN SHALLOW PATTERNS ===\\n' + JSON.stringify($('Build Context').first().json.shallowPatterns, null, 2) +
+            '\\n\\n=== KNOWN WRONG PATTERNS ===\\n' + JSON.stringify($('Build Context').first().json.wrongPatterns, null, 2) +
+            '\\n\\n=== CONVERSATION SO FAR ===\\n' + JSON.stringify($('Build Context').first().json.history, null, 2) +
+            '\\n\\n=== STUDENT ANSWER ===\\n' + $('Build Context').first().json.studentMessage +
             '\\n\\nEvaluate. Output ONLY JSON:\\n' +
             '{\\n' +
             '  "verdict": "pass" | "shallow" | "wrong" | "partial",\\n' +
@@ -802,13 +802,13 @@ The student asked a question rather than answered the checkpoint. Answer from th
         messages: [{
           role: 'user',
           content:
-            '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
-            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
-            '\\n\\n=== SECTION MATERIAL (use ONLY this for quotes) ===\\n' + $json.sectionText +
-            '\\n\\n=== STUDENT PORTFOLIO ===\\n' + $json.studentPortfolio +
-            '\\n\\n=== PROMPT WE WERE WORKING ON ===\\n' + $json.question +
-            '\\n\\n=== OFF-SCOPE HINT (if needed) ===\\n' + ($json.offScopeHint || '') +
-            '\\n\\n=== STUDENT QUESTION ===\\n' + $json.studentMessage +
+            '=== COURSE: ' + $('Build Context').first().json.courseTitle + ' ===\\n' + $('Build Context').first().json.courseOutline +
+            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($('Build Context').first().json.modulePosition || '?') + ': ' + $('Build Context').first().json.moduleTitle + '\\nSection ' + ($('Build Context').first().json.sectionPosition || '?') + ': ' + $('Build Context').first().json.sectionTitle +
+            '\\n\\n=== SECTION MATERIAL (use ONLY this for quotes) ===\\n' + $('Build Context').first().json.sectionText +
+            '\\n\\n=== STUDENT PORTFOLIO ===\\n' + $('Build Context').first().json.studentPortfolio +
+            '\\n\\n=== PROMPT WE WERE WORKING ON ===\\n' + $('Build Context').first().json.question +
+            '\\n\\n=== OFF-SCOPE HINT (if needed) ===\\n' + ($('Build Context').first().json.offScopeHint || '') +
+            '\\n\\n=== STUDENT QUESTION ===\\n' + $('Build Context').first().json.studentMessage +
             '\\n\\nAnswer their question. If the answer lives in the current section material, quote/cite from there. If it lives in another module visible in the outline, name the module but say it\\'s covered there. 2-4 sentences. End by inviting them back to the checkpoint — but do NOT say "good question" or similar opener.\\n\\n' +
             'Output ONLY the reply text.'
         }]
@@ -850,11 +850,11 @@ Student went off-topic. Use the off_scope_hint to scope back politely. 1-2 sente
         messages: [{
           role: 'user',
           content:
-            'Section: ' + $json.sectionTitle +
-            '\\nCheckpoint: ' + $json.question +
-            '\\nOff-scope hint: ' + ($json.offScopeHint || '(none)') +
-            '\\nCourse outline (so you know what IS covered elsewhere):\\n' + $json.courseOutline +
-            '\\n\\nStudent said: ' + $json.studentMessage +
+            'Section: ' + $('Build Context').first().json.sectionTitle +
+            '\\nCheckpoint: ' + $('Build Context').first().json.question +
+            '\\nOff-scope hint: ' + ($('Build Context').first().json.offScopeHint || '(none)') +
+            '\\nCourse outline (so you know what IS covered elsewhere):\\n' + $('Build Context').first().json.courseOutline +
+            '\\n\\nStudent said: ' + $('Build Context').first().json.studentMessage +
             '\\n\\nScope back. 1-2 sentences. If their question is covered in another module visible in the outline, name that module. If not in the course at all, simply note the focus is on the current checkpoint. Output only the reply.'
         }]
       }) }}`
