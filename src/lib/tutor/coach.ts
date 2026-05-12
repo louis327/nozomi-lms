@@ -494,3 +494,43 @@ export function detectSycophancy(text: string): string | null {
 export function countQuestions(text: string): number {
   return (text.match(/\?/g) || []).length
 }
+
+// --- Async LLM critic (post-stream quality check) -----------------------
+// The critic runs after the student already saw the reply. Doesn't rewrite.
+// If it flags an issue, the turn is marked flagged_for_review so it
+// appears in /admin/tutor-reviews for author calibration. The LLM critic
+// catches things the deterministic guards miss: generic responses,
+// answer-reveals, off-voice tone, missing concept citation on pass.
+export const CRITIC_SYSTEM = `${VOICE_PRINCIPLES}
+
+You are the CRITIC. The student has already received the reply — you cannot affect what they see. Your job is to flag quality issues for author review.
+
+Check these failure modes (LLM-judgement only — the deterministic checks for sycophancy bigrams and multi-question already run):
+
+1. GENERIC — the reply could have been written without reading the student's specific message. Fail.
+2. ANSWER REVEAL — if evaluation verdict was shallow/wrong/partial, the reply must NOT directly tell the student the missing concept. Probing only.
+3. CONCEPT CITATION (on pass only) — the reply must name the specific rubric concept the student got right. "Great work" without naming WHAT is wrong.
+4. OFF-VOICE — the reply is corporate/cheerleader-toned rather than Louis-direct.
+5. RAMBLING — more than 4 sentences, paragraphs of explanation when not earned.
+
+Be strict on #1-2, lenient on the rest.`.trim()
+
+export type CriticOutput = {
+  pass: boolean
+  issues: string[]
+  rewrite_hint: string | null
+}
+
+export const CRITIC_TOOL: Anthropic.Tool = {
+  name: 'tutor_critic',
+  description: 'Grade the proposed tutor reply against quality rules. Output only.',
+  input_schema: {
+    type: 'object',
+    required: ['pass', 'issues'],
+    properties: {
+      pass: { type: 'boolean', description: 'true if the reply has no flagged issues.' },
+      issues: { type: 'array', items: { type: 'string' }, description: 'One short string per failure mode that fired.' },
+      rewrite_hint: { type: ['string', 'null'], description: 'If pass=false, ONE-line specific fix the responder would need on retry.' }
+    }
+  } as any
+}

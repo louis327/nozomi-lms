@@ -257,6 +257,16 @@ export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
               <div className="rounded-lg px-3.5 py-2.5 text-[12.5px]" style={{ background: 'linear-gradient(135deg, #2a2018 0%, #1a1a1d 100%)', border: '1px solid #c69a3f66' }}>
                 <p className="font-semibold" style={{ color: '#c69a3f' }}>This one's locked in.</p>
                 <p className="mt-0.5" style={{ color: '#cfcab8' }}>Move on when you're ready.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMastery(false); setTurns([]); setSessionId(null); setOpen(false); setError(null)
+                  }}
+                  className="mt-2 text-[10.5px] uppercase tracking-wider underline opacity-70 hover:opacity-100 cursor-pointer"
+                  style={{ color: '#c69a3f' }}
+                >
+                  Try again with a fresh take →
+                </button>
               </div>
             )}
 
