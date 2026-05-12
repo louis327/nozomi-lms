@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useEditMode } from '@/lib/edit-mode-context'
 
 type Turn = {
   turn_number: number
@@ -15,7 +14,6 @@ type Turn = {
 type Props = { sectionId: string; sectionTitle: string }
 
 export function TutorCoach({ sectionId, sectionTitle }: Props) {
-  const { isAdmin } = useEditMode()
   const [hasRubric, setHasRubric] = useState<boolean | null>(null)
   const [open, setOpen] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -132,14 +130,15 @@ export function TutorCoach({ sectionId, sectionTitle }: Props) {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [turns.length, thinking])
 
-  // Gate: admin-only while we beta-test, and section must have an approved rubric.
-  if (!isAdmin || !hasRubric) return null
+  // Show the Coach to any authenticated user on a section that has an
+  // approved rubric. Auth is enforced at the API level for start/turn calls.
+  if (!hasRubric) return null
 
   if (!open) {
     return (
       <button
         onClick={onOpen}
-        className="fixed bottom-6 right-6 z-40 rounded-full shadow-xl px-5 py-3 text-sm font-semibold tracking-wide flex items-center gap-2 transition-transform hover:scale-105"
+        className="fixed bottom-24 right-6 z-40 rounded-full shadow-xl px-5 py-3 text-sm font-semibold tracking-wide flex items-center gap-2 transition-transform hover:scale-105"
         style={{
           background: 'linear-gradient(135deg, #0d0d0e 0%, #1a1a1d 100%)',
           color: '#fafafa',
