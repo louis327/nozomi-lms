@@ -23,6 +23,7 @@ const navItems = [
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
   { href: '/admin/students', label: 'Students', icon: Users },
   { href: '/admin/responses', label: 'Responses', icon: MessageSquare },
+  { href: '/admin/rubrics', label: 'Rubrics', icon: GraduationCap },
   { href: '/admin/tutor-reviews', label: 'Tutor reviews', icon: GraduationCap },
   { href: '/admin/analytics', label: 'Analytics', icon: TrendingDown },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
