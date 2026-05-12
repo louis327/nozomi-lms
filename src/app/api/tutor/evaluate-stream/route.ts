@@ -7,6 +7,7 @@ import {
   buildSystemBlocks,
   buildUserMessage,
   EVALUATOR_TOOL,
+  EVALUATOR_GRADING_STANCE,
   RESPONDER_SYSTEM_SUFFIX,
   detectSycophancy,
   countQuestions,
@@ -68,8 +69,11 @@ export async function POST(request: NextRequest) {
         const evalT0 = Date.now()
         const evalRes = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
-          system: systemBlocks,
+          max_tokens: 800,
+          system: [
+            ...systemBlocks,
+            { type: 'text' as const, text: EVALUATOR_GRADING_STANCE }
+          ],
           messages: [{ role: 'user', content: userMessage }],
           tools: [EVALUATOR_TOOL],
           tool_choice: { type: 'tool', name: 'tutor_evaluate' }

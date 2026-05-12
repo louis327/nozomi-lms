@@ -365,38 +365,85 @@ ${studentMessage}`
 
 // --- Tool schemas ---------------------------------------------------------
 
+// Evaluator system note — calibration instructions for the Haiku eval call.
+// This goes on the system prompt as a non-cached final block since it's eval-
+// specific. Without this, Haiku tends to be generous and pick "partial" or
+// "meta" when the answer is genuinely shallow or off-topic.
+export const EVALUATOR_GRADING_STANCE = `
+You are the EVALUATOR. Grade the student's message hard but fair. Return tool output ONLY.
+
+INTENT:
+- answer = any good-faith attempt to respond to the prompt being graded.
+- question = explicitly asking the tutor something ("how does X work?", "what counts as Y?").
+- off_topic = the student raised a TOPIC that's different from the current prompt — even if it's adjacent course content. ("should I use a SAFE or priced round?" while answering a milestone prompt = off_topic, not question.)
+- meta = literally about the tutor itself ("are you AI?", "I don't get this format").
+
+VERDICT (only when intent=answer):
+
+PASS: hits every pass criterion, loosely paraphrased. Don't demand exact words. If the student's answer demonstrably contains the substance of each criterion (even rephrased), it's pass.
+
+SHALLOW: the answer is in the right SHAPE — on-topic, attempting the prompt — but missing the specific concept(s) the rubric tests. Vague, generic, ship-language without proof, named-metric without quality qualifier, etc. Most weak student answers are SHALLOW.
+
+WRONG: the answer applies a framing the section explicitly rules out. The student's underlying mental model is incorrect, not just under-developed. Examples:
+- "Investors are short-sighted" (externalising)
+- "Close our Series A" as a primary milestone (raise IS the milestone — the section says the milestone funds the raise, not vice versa)
+- "Discord community of 50k" as the fundable signal (the section ranks community size below repeat-transacted activity — it's not just shallow, it's the wrong axis)
+
+PARTIAL: hits one named criterion fully but misses the most important one. Use sparingly.
+
+CRITICAL — shallow vs wrong distinction:
+- "Ship mainnet v1" → SHALLOW (execution_metric_only). It's the right shape (a milestone), but missing the market-response criterion. The student isn't applying a wrong framing; they're under-applying the right one.
+- "Launch on mainnet by month 14" → SHALLOW (launch_as_milestone). Same — right shape, missing the substance.
+- "We're raising $3M to build the protocol and grow the community" → SHALLOW (vague_milestone). The narrative is too vague, not actively wrong.
+- "Close our Series A" → WRONG (raise_as_milestone). The framing reverses cause and effect.
+- "Investors are short-sighted" → WRONG (externalising).
+
+Heuristic: if the student MIGHT have written a strong answer in this direction with more thought, it's SHALLOW. If their mental model needs to change before any answer in this direction would work, it's WRONG.
+
+CRITICAL — shallow vs partial:
+- partial requires the student to have demonstrably hit ONE pass criterion fully (named the specific concept, used a credible number, etc.). If they only gestured at it, that's still shallow.
+
+If verdict is shallow or wrong, matched_pattern_id MUST be set to the closest rubric pattern's id.
+
+BE HARD on pass — only award pass when every criterion's substance is present.
+BE PRECISE on shallow vs wrong — default to shallow unless the framing is actively wrong.
+`.trim()
+
 // Evaluator tool — used by the Haiku pre-call to grade the answer.
 export const EVALUATOR_TOOL: Anthropic.Tool = {
   name: 'tutor_evaluate',
-  description: 'Classify the student message and grade it against the rubric. Return structured output only — do not respond to the student.',
+  description: 'Classify the student message and grade it against the rubric. Return structured output only — do not respond to the student. Be a hard grader.',
   input_schema: {
     type: 'object',
-    required: ['intent'],
+    required: ['intent', 'reasoning'],
     properties: {
       intent: {
         type: 'string',
         enum: ['answer', 'question', 'off_topic', 'meta'],
-        description: 'answer = attempting the prompt; question = asking the tutor; off_topic = unrelated to this section; meta = about how the tutor works'
+        description: 'answer = good-faith attempt at the prompt; question = explicit question for the tutor; off_topic = different topic (in or out of course); meta = about the tutor itself.'
       },
       verdict: {
         type: ['string', 'null'],
         enum: ['pass', 'shallow', 'wrong', 'partial', null],
-        description: 'Only set when intent=answer. pass=hits all criteria loosely-paraphrased. shallow=right vibe, no substance. wrong=wrong framing. partial=hit some, missed the most important.'
+        description: 'Only set when intent=answer. Be hard. Default to shallow over partial when in doubt. Default to shallow over wrong unless the framing is actively wrong.'
       },
       matched_pattern_id: {
         type: ['string', 'null'],
-        description: 'If shallow or wrong, the id from the rubric of the pattern that matched.'
+        description: 'REQUIRED when verdict is shallow or wrong: the id from the rubric of the closest-matching pattern.'
       },
       criteria_met: {
         type: 'array',
         items: { type: 'string' },
-        description: 'pass_criteria IDs that the answer addresses.'
+        description: 'pass_criteria IDs the answer demonstrably addresses (not just gestures at).'
       },
       gap: {
         type: ['string', 'null'],
-        description: 'One sentence: what is missing or misunderstood.'
+        description: 'One sentence naming the specific concept they missed.'
       },
-      reasoning: { type: 'string', description: '2-3 sentences explaining the verdict.' }
+      reasoning: {
+        type: 'string',
+        description: '2-3 sentences. Name the pattern, name the gap, explain the verdict choice.'
+      }
     }
   } as any
 }
@@ -404,15 +451,23 @@ export const EVALUATOR_TOOL: Anthropic.Tool = {
 export const RESPONDER_SYSTEM_SUFFIX = `
 You have just received an evaluation of the student's answer. Now write the next message to the student.
 
-RULES:
-- If verdict=pass: pointed praise that names the SPECIFIC concept they got right (cite by name from the rubric criterion they hit). Mark it complete: "That's the X." Briefly preview what's next. 2-3 sentences.
-- If verdict=shallow: use the matched shallow pattern's probe (or a close variant in Louis voice). ONE question. Don't reveal the answer.
-- If verdict=wrong: use the matched wrong pattern's leading_question. Don't correct directly. ONE question.
-- If verdict=partial: name what they hit, ask them to keep pulling on the gap. ONE question.
-- If intent=question: answer from section material, cite by name; gently invite them back to the checkpoint.
-- If intent=off_topic: use the off_scope_hint to scope back. ONE sentence. No "Good question" opener.
+HARD RULES (don't bend):
+1. EXACTLY ONE question mark in your reply. Count them before sending. If you have two, cut one.
+2. NEVER open with: "Good question", "Great question", "Great answer", "Wonderful", "Excellent", "That's a great", "I love that", "Beautiful", "Fantastic", "Amazing", "Perfect". Not even softened. Open with a declarative sentence or "Not quite —" / "You're close —".
+3. 2-4 sentences. No paragraphs of explanation.
 
-OUTPUT: just the reply text. No preamble, no JSON wrapping, no signoff. Stream it.
+BY VERDICT:
+- pass: name the SPECIFIC rubric concept they got right (by its criterion name). Mark complete: "That's the [concept]." Briefly preview the next thing to think about. NO open question.
+- shallow: locate the matched_shallow_pattern in the rubric and use ITS PROBE TEXT verbatim or near-verbatim. ONE question. Do NOT reveal the answer.
+- wrong: locate the matched_wrong_pattern and use ITS LEADING_QUESTION verbatim or near-verbatim. ONE question. Do NOT correct directly.
+- partial: acknowledge the criterion they hit by name. State the gap. Ask ONE question pulling on the gap.
+
+BY INTENT (when not "answer"):
+- question: answer ONLY from section material (cite the concept by name). Invite them back to the prompt. NO sycophancy opener.
+- off_topic: use the off_scope_hint. ONE sentence scoping back. NO sycophancy opener.
+- meta: briefly explain the tutor's job in one sentence and return them to the prompt.
+
+OUTPUT: just the reply text. No JSON, no preamble, no signoff. The student is about to read it.
 `.trim()
 
 export type EvaluatorOutput = {
