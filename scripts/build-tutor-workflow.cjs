@@ -18,7 +18,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://lxgethcibldfcnmajutf.s
 const SUPABASE_ANON = process.env.SUPABASE_ANON_KEY;
 
 const SUPABASE_CRED_ID  = process.env.N8N_SUPABASE_CRED_ID  || 'Fq0gFGPTiP3Wgc2A';
-const ANTHROPIC_CRED_ID = process.env.N8N_ANTHROPIC_CRED_ID || 'Op4lRo6yRw0Qx2Bm';
+const ANTHROPIC_CRED_ID = process.env.N8N_ANTHROPIC_CRED_ID || 'JoMJUil5cCEwBPbm';
 
 for (const [k, v] of Object.entries({ N8N_API_KEY, SUPABASE_ANON_KEY: SUPABASE_ANON })) {
   if (!v) { console.error('Set env var: ' + k); process.exit(1); }
@@ -819,7 +819,7 @@ nodes.push(
     'n8n-nodes-base.httpRequest',
     {
       method: 'POST',
-      url: `${SUPABASE_URL}/rest/v1/tutor_mastery`,
+      url: `${SUPABASE_URL}/rest/v1/tutor_mastery?on_conflict=user_id,section_id`,
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
