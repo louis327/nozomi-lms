@@ -47,9 +47,23 @@ export default async function SectionPage({
 
   const { data: moduleMeta } = await supabase
     .from('modules')
-    .select('id, title, description, sort_order, course_id, courses ( id, title )')
+    .select('id, title, description, sort_order, label, eyebrow, course_id, courses ( id, title )')
     .eq('id', section.module_id)
     .single()
+
+  // Module position within the course (1-based). Derived from actual ordering,
+  // not sort_order — gaps from deleted modules used to throw the numbering off.
+  let modulePosition = 1
+  if (moduleMeta) {
+    const { data: courseModules } = await supabase
+      .from('modules')
+      .select('id, sort_order')
+      .eq('course_id', moduleMeta.course_id)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true })
+    const idx = (courseModules ?? []).findIndex((m) => m.id === moduleMeta.id)
+    modulePosition = idx >= 0 ? idx + 1 : 1
+  }
 
   // Next section — non-admins skip drafts
   let nextSiblingsQuery = supabase
@@ -157,10 +171,12 @@ export default async function SectionPage({
           <>
             <ModuleHero
               moduleId={moduleMeta.id}
-              moduleNumber={(moduleMeta.sort_order ?? 0) + 1}
+              moduleNumber={modulePosition}
               moduleTitle={moduleMeta.title}
               description={(moduleMeta as any).description ?? null}
               courseTitle={courseTitle}
+              label={(moduleMeta as any).label ?? null}
+              eyebrow={(moduleMeta as any).eyebrow ?? null}
             />
             <div className="mb-4">
               <SectionStatusToggle sectionId={sectionId} status={(section as any).status ?? 'published'} />

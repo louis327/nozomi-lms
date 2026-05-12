@@ -10,6 +10,8 @@ type ModuleHeroProps = {
   moduleTitle: string
   description: string | null
   courseTitle: string
+  label?: string | null
+  eyebrow?: string | null
 }
 
 async function patchModule(moduleId: string, patch: Record<string, unknown>) {
@@ -126,6 +128,8 @@ export function ModuleHero({
   moduleTitle,
   description,
   courseTitle,
+  label,
+  eyebrow,
 }: ModuleHeroProps) {
   const { editMode, isAdmin } = useEditMode()
   const { addToast } = useToast()
@@ -151,7 +155,30 @@ export function ModuleHero({
     }
   }, [moduleId, addToast])
 
+  const handleLabel = useCallback(async (v: string) => {
+    try {
+      await patchModule(moduleId, { label: v })
+      addToast('Module label updated', 'success')
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'Failed to update', 'error')
+      throw e
+    }
+  }, [moduleId, addToast])
+
+  const handleEyebrow = useCallback(async (v: string) => {
+    try {
+      await patchModule(moduleId, { eyebrow: v })
+      addToast('Eyebrow updated', 'success')
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'Failed to update', 'error')
+      throw e
+    }
+  }, [moduleId, addToast])
+
   const taglineValue = description ?? ''
+  const defaultLabel = `Module ${moduleNumber}`
+  const labelValue = label && label.trim() ? label : defaultLabel
+  const eyebrowValue = eyebrow && eyebrow.trim() ? eyebrow : courseTitle
 
   return (
     <div
@@ -161,12 +188,16 @@ export function ModuleHero({
         color: '#fafafa',
       }}
     >
-      <p
-        className="mb-6 text-[10.5px] font-semibold uppercase tracking-[0.22em]"
-        style={{ color: '#c69a3f' }}
-      >
-        {courseTitle}
-      </p>
+      <div className="mb-6">
+        <InlineField
+          value={eyebrowValue}
+          onSave={handleEyebrow}
+          placeholder={courseTitle}
+          editable={editable}
+          className="text-[10.5px] font-semibold uppercase tracking-[0.22em]"
+          style={{ color: '#c69a3f' }}
+        />
+      </div>
 
       <h1
         className="text-[44px] sm:text-[52px] leading-[1.05] font-bold tracking-tight"
@@ -175,7 +206,17 @@ export function ModuleHero({
           color: '#fafafa',
         }}
       >
-        Module {moduleNumber}
+        <InlineField
+          value={labelValue}
+          onSave={handleLabel}
+          placeholder={defaultLabel}
+          editable={editable}
+          className="text-[44px] sm:text-[52px] leading-[1.05] font-bold tracking-tight"
+          style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            color: '#fafafa',
+          }}
+        />
       </h1>
 
       <div className="mt-1">
