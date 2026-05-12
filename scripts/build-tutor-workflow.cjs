@@ -34,15 +34,33 @@ VOICE — DO:
 - Cite the section's named concept when grading
 - One pointed probe at a time
 
-VOICE — DON'T:
-- "Great question!" / "Wonderful insight!" / "Excellent answer!" — never
-- Multiple questions in one message
-- Reveal the answer before they've tried twice
-- Generic encouragement without naming what was good or weak
+VOICE — DON'T (hard bans, instant rewrite if used):
+- "Good question" / "Great question" / "Great answer" / "Wonderful" / "Excellent" / "That's a great point" — these are the sycophancy bigrams, NEVER use them, not even as openers
+- Multiple questions in one message — exactly one question per turn, ever
+- Reveal the answer before the student has tried at least twice
+- Generic encouragement that doesn't name what was good or weak
 - Go outside the course material — scope back politely instead
 
-RESPONSE LENGTH: usually 2-4 sentences. Never paragraphs of explanation unless they've earned the worked example.
+RESPONSE LENGTH: usually 2-4 sentences. Never paragraphs of explanation unless the student has earned the worked example.
+
+GROUNDING: when you cite a concept or quote, only reference material from the course outline or section content that's been provided to you. If you don't see it in the provided material, don't invent it.
 `.trim();
+
+// Phrases the critic must hard-fail on if found in the reply (case-insensitive).
+const SYCOPHANCY_BIGRAMS = [
+  'good question',
+  'great question',
+  'great answer',
+  'wonderful',
+  'excellent answer',
+  'excellent point',
+  "that's a great",
+  'i love that',
+  'beautiful',
+  'fantastic',
+  'amazing answer',
+  'perfect answer'
+];
 
 const node = (i, name, type, parameters, opts = {}) => ({
   id: `n${i}`,
@@ -178,7 +196,7 @@ nodes.push(
     'n8n-nodes-base.httpRequest',
     {
       method: 'GET',
-      url: `=${SUPABASE_URL}/rest/v1/sections?id=eq.{{$('Validate Input').item.json.sectionId}}&select=id,title,content_blocks(type,content,sort_order)`,
+      url: `=${SUPABASE_URL}/rest/v1/sections?id=eq.{{$('Validate Input').item.json.sectionId}}&select=id,title,module_id,content_blocks(type,content,sort_order),modules!inner(id,title,course_id,courses!inner(id,title))`,
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
@@ -190,6 +208,32 @@ nodes.push(
     {
       typeVersion: 4.2,
       position: [col(2), row(4)],
+      credentials: httpCred(SUPABASE_CRED_ID),
+      retryOnFail: true
+    }
+  )
+);
+
+// 5b. Load Course Outline (modules + section titles for the whole course) ---
+nodes.push(
+  node(
+    51,
+    'Load Course Outline',
+    'n8n-nodes-base.httpRequest',
+    {
+      method: 'GET',
+      url: `=${SUPABASE_URL}/rest/v1/modules?course_id=eq.{{$('Load Section Content').item.json.modules.course_id}}&select=id,title,sort_order,sections(id,title,sort_order,status)&order=sort_order`,
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpHeaderAuth',
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'apikey', value: SUPABASE_ANON },
+        { name: 'Accept', value: 'application/json' }
+      ]}
+    },
+    {
+      typeVersion: 4.2,
+      position: [col(2), row(5)],
       credentials: httpCred(SUPABASE_CRED_ID),
       retryOnFail: true
     }
@@ -223,6 +267,36 @@ const sectionText = blocks.map(b => {
   return '[' + b.type + ']';
 }).filter(Boolean).join('\\n\\n');
 
+// Course outline: a compact map of "Module 1: Title\\n  - Section 1: Title\\n  ..."
+// for every module/section in the course. Lets the agent reference structure
+// without hallucinating section names.
+const moduleObj = Array.isArray(sec.modules) ? sec.modules[0] : sec.modules;
+const courseObj = moduleObj?.courses
+  ? (Array.isArray(moduleObj.courses) ? moduleObj.courses[0] : moduleObj.courses)
+  : null;
+const courseTitle = courseObj?.title || 'this course';
+const moduleTitle = moduleObj?.title || 'this module';
+
+const outlineModules = ($('Load Course Outline').all() || []).map(it => it.json);
+const courseOutline = outlineModules
+  .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  .map((m, mi) => {
+    const sects = (m.sections || [])
+      .filter(s => s.status === 'published')
+      .sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((s, si) => '    - Section ' + (si+1) + ': ' + s.title)
+      .join('\\n');
+    return 'Module ' + (mi+1) + ': ' + m.title + (sects ? '\\n' + sects : '');
+  })
+  .join('\\n');
+
+// Find current module + section position within course outline
+const currentModuleIdx = outlineModules.findIndex(m => m.id === moduleObj?.id);
+const currentSectionsList = outlineModules[currentModuleIdx]?.sections
+  ?.filter(s => s.status === 'published')
+  ?.sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) || [];
+const currentSectionIdx = currentSectionsList.findIndex(s => s.id === sec.id);
+
 const history = ((sess?.tutor_turns) || [])
   .sort((a,b) => a.turn_number - b.turn_number)
   .slice(-8)
@@ -245,6 +319,11 @@ return [{ json: {
   wrongPatterns: rub.wrong_patterns,
   offScopeHint: rub.off_scope_hint,
   authorNotes: rub.notes,
+  courseTitle,
+  moduleTitle,
+  modulePosition: currentModuleIdx >= 0 ? currentModuleIdx + 1 : null,
+  sectionPosition: currentSectionIdx >= 0 ? currentSectionIdx + 1 : null,
+  courseOutline,
   sectionTitle: sec.title,
   sectionText,
   history,
@@ -386,7 +465,9 @@ You are the EVALUATOR stage. Grade the student's answer hard but fair. Do NOT re
         messages: [{
           role: 'user',
           content:
-            '=== SECTION MATERIAL ===\\n' + $json.sectionText +
+            '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
+            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
+            '\\n\\n=== SECTION MATERIAL (use ONLY this for grounding) ===\\n' + $json.sectionText +
             '\\n\\n=== CHECKPOINT QUESTION ===\\n' + $json.question +
             '\\n\\n=== PASS CRITERIA ===\\n' + JSON.stringify($json.passCriteria, null, 2) +
             '\\n\\n=== KNOWN SHALLOW PATTERNS ===\\n' + JSON.stringify($json.shallowPatterns, null, 2) +
@@ -465,9 +546,11 @@ You are the RESPONDER stage. Write the next message to the student. Follow the v
         messages: [{
           role: 'user',
           content:
-            '=== SECTION: ' + $json.sectionTitle + ' ===\\n' + $json.sectionText +
+            '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
+            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
+            '\\n\\n=== SECTION MATERIAL (use ONLY this for quotes/citations) ===\\n' + $json.sectionText +
             '\\n\\n=== CHECKPOINT QUESTION ===\\n' + $json.question +
-            '\\n\\n=== AUTHOR NOTES (LOUIS VOICE) ===\\n' + ($json.authorNotes || '') +
+            '\\n\\n=== AUTHOR NOTES (LOUIS VOICE — read carefully) ===\\n' + ($json.authorNotes || '') +
             '\\n\\n=== CONVERSATION SO FAR ===\\n' + JSON.stringify($json.history, null, 2) +
             '\\n\\n=== STUDENT JUST SAID ===\\n' + $json.studentMessage +
             '\\n\\n=== EVALUATION ===\\n' + JSON.stringify($json.evaluation, null, 2) +
@@ -516,15 +599,17 @@ nodes.push(
         max_tokens: 500,
         system: ${JSON.stringify(`${VOICE_PRINCIPLES}
 
-The student asked a question rather than answered the checkpoint. Answer from the section material only. If outside scope, use the author's off_scope_hint to scope back.`)},
+The student asked a question rather than answered the checkpoint. Answer from the section material first; if the question is about an adjacent module/section, you may name the module by its outline title but you cannot quote material from it. If outside the course entirely, use the off_scope_hint to scope back.`)},
         messages: [{
           role: 'user',
           content:
-            '=== SECTION: ' + $json.sectionTitle + ' ===\\n' + $json.sectionText +
+            '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
+            '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
+            '\\n\\n=== SECTION MATERIAL (use ONLY this for quotes) ===\\n' + $json.sectionText +
             '\\n\\n=== CHECKPOINT WE WERE WORKING ON ===\\n' + $json.question +
             '\\n\\n=== OFF-SCOPE HINT (if needed) ===\\n' + ($json.offScopeHint || '') +
             '\\n\\n=== STUDENT QUESTION ===\\n' + $json.studentMessage +
-            '\\n\\nAnswer their question grounded ONLY in the section above. Cite the section concept by name. 2-4 sentences. End by gently inviting them back to the checkpoint.\\n\\n' +
+            '\\n\\nAnswer their question. If the answer lives in the current section material, quote/cite from there. If it lives in another module visible in the outline, name the module but say it\\'s covered there. 2-4 sentences. End by inviting them back to the checkpoint — but do NOT say "good question" or similar opener.\\n\\n' +
             'Output ONLY the reply text.'
         }]
       }) }}`
@@ -561,15 +646,16 @@ nodes.push(
         max_tokens: 250,
         system: ${JSON.stringify(`${VOICE_PRINCIPLES}
 
-Student went off-topic. Use the off_scope_hint to scope back politely. ONE-TWO sentences. Invite them back to the checkpoint.`)},
+Student went off-topic. Use the off_scope_hint to scope back politely. 1-2 sentences. Invite them back to the checkpoint. NEVER open with "Good question" or any sycophancy bigram.`)},
         messages: [{
           role: 'user',
           content:
             'Section: ' + $json.sectionTitle +
             '\\nCheckpoint: ' + $json.question +
             '\\nOff-scope hint: ' + ($json.offScopeHint || '(none)') +
+            '\\nCourse outline (so you know what IS covered elsewhere):\\n' + $json.courseOutline +
             '\\n\\nStudent said: ' + $json.studentMessage +
-            '\\n\\nScope back. 1-2 sentences. Output only the reply.'
+            '\\n\\nScope back. 1-2 sentences. If their question is covered in another module visible in the outline, name that module. If not in the course at all, simply note the focus is on the current checkpoint. Output only the reply.'
         }]
       }) }}`
     },
@@ -675,21 +761,28 @@ nodes.push(
         max_tokens: 400,
         system: ${JSON.stringify(`${VOICE_PRINCIPLES}
 
-You are the CRITIC. You review the tutor's proposed reply before it's sent. You are looking for: sycophancy, multiple questions, generic responses, revealing the answer too early, missing concept citation. You are NOT looking for stylistic preferences — only the failure modes above. Be strict but specific.`)},
+You are the CRITIC. You review the tutor's proposed reply before it's sent. You catch these specific failure modes:
+1. SYCOPHANCY BIGRAMS — instant fail if the reply contains, case-insensitive, any of: ${SYCOPHANCY_BIGRAMS.map(b => '"' + b + '"').join(', ')}. No exceptions, even as an opener.
+2. MULTIPLE QUESTIONS — instant fail if the reply contains more than one question mark, OR contains two questions chained ("X? And Y?" or "Y? What about Z?"). A statement + ONE question is fine. Two questions is not.
+3. ANSWER-REVEAL — if the evaluation verdict was shallow/wrong/partial, the reply must NOT reveal the correct answer or the gap directly. Probing/leading questions only.
+4. MISSING CONCEPT CITATION — if the evaluation verdict was "pass", the reply must name the specific section concept the student got right. Generic praise = fail.
+5. OFF-VOICE — if the reply is corporate/cheerleader-toned rather than Louis-direct (Louis voice: declarative, short, anti-vagueness).
+
+You are NOT a style critic for everything else. Only check those five.`)},
         messages: [{
           role: 'user',
           content:
             '=== STUDENT MESSAGE ===\\n' + $json.studentMessage +
             '\\n\\n=== EVALUATION (if answer branch) ===\\n' + JSON.stringify($json.evaluation || null) +
             '\\n\\n=== PROPOSED REPLY ===\\n' + $json.replyText +
-            '\\n\\nCheck:\\n' +
-            '1. Sycophancy? ("great answer!", "wonderful insight!", unjustified praise) — fail\\n' +
-            '2. Multiple questions in one turn? — fail\\n' +
-            '3. Generic — doesn\\'t engage with what the student actually said? — fail\\n' +
-            '4. If verdict was pass: does it cite the specific concept they got right? Required.\\n' +
-            '5. If verdict was shallow/wrong/partial: does it avoid revealing the answer? Required.\\n\\n' +
-            'Output ONLY JSON:\\n' +
-            '{ "pass": true | false, "issues": [<list of issue strings>], "rewrite_hint": "<if !pass, one-line hint>" }'
+            '\\n\\nRun the 5 checks above. Output ONLY JSON:\\n' +
+            '{\\n' +
+            '  "pass": true | false,\\n' +
+            '  "issues": [<list of issue strings, one per failed check>],\\n' +
+            '  "sycophancy_bigram_found": "<bigram string or null>",\\n' +
+            '  "question_count": <integer>,\\n' +
+            '  "rewrite_hint": "<if !pass, ONE-line specific fix instruction for the responder>"\\n' +
+            '}'
         }]
       }) }}`
     },
@@ -713,11 +806,31 @@ nodes.push(
 const ctx = $('Normalize Reply').first().json;
 const raw = items[0].json;
 const text = raw?.content?.[0]?.text || '';
-let crit = { pass: true, issues: [], rewrite_hint: '' };
+let crit = { pass: true, issues: [], rewrite_hint: '', sycophancy_bigram_found: null, question_count: 0 };
 try {
   const m = text.match(/\\{[\\s\\S]*\\}/);
   if (m) crit = JSON.parse(m[0]);
 } catch (e) {}
+
+// Deterministic local check for sycophancy bigrams — backup to the LLM critic.
+const BIGRAMS = ${JSON.stringify(SYCOPHANCY_BIGRAMS)};
+const lower = (ctx.replyText || '').toLowerCase();
+const localBigram = BIGRAMS.find(b => lower.includes(b));
+if (localBigram && !crit.sycophancy_bigram_found) {
+  crit.pass = false;
+  crit.sycophancy_bigram_found = localBigram;
+  crit.issues = [...(crit.issues || []), 'Sycophancy bigram detected: "' + localBigram + '"'];
+  crit.rewrite_hint = (crit.rewrite_hint || '') + ' Remove the phrase "' + localBigram + '". Open with a declarative sentence or "Not quite —" instead.';
+}
+
+// Deterministic local check: count question marks.
+const qmarks = (ctx.replyText || '').split('?').length - 1;
+if (qmarks > 1 && crit.question_count <= 1) crit.question_count = qmarks;
+if (qmarks > 1 && crit.pass) {
+  crit.pass = false;
+  crit.issues = [...(crit.issues || []), 'Multiple question marks detected (' + qmarks + ')'];
+  crit.rewrite_hint = (crit.rewrite_hint || '') + ' Reduce to exactly one question.';
+}
 
 const flagged = !crit.pass;
 const flagReason = flagged ? (crit.issues || []).join('; ') : null;
@@ -726,6 +839,111 @@ return [{ json: { ...ctx, critic: crit, flagged_for_review: flagged, flag_reason
 `.trim()
     },
     { typeVersion: 2, position: [col(12), row(2)] }
+  )
+);
+
+// 18b. IF critic passed → Persist directly; otherwise → Rewrite Responder
+nodes.push(
+  node(
+    181,
+    'Critic Decision',
+    'n8n-nodes-base.if',
+    {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+        conditions: [{
+          id: 'cd1',
+          leftValue: '={{$json.critic.pass}}',
+          rightValue: 'true',
+          operator: { type: 'boolean', operation: 'true', singleValue: true }
+        }],
+        combinator: 'and'
+      },
+      options: {}
+    },
+    { typeVersion: 2.2, position: [col(12), row(3)] }
+  )
+);
+
+// 18c. Rewrite Responder (only fires on critic fail) ----------------------
+nodes.push(
+  node(
+    182,
+    'Rewrite Responder',
+    'n8n-nodes-base.httpRequest',
+    {
+      method: 'POST',
+      url: 'https://api.anthropic.com/v1/messages',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpHeaderAuth',
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'anthropic-version', value: '2023-06-01' },
+        { name: 'Content-Type', value: 'application/json' }
+      ]},
+      sendBody: true,
+      specifyBody: 'json',
+      jsonBody: `={{ JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 500,
+        system: ${JSON.stringify(`${VOICE_PRINCIPLES}
+
+You are the REWRITE stage. The first draft of the tutor's reply failed the critic. Produce a tightened version that fixes the specific issues the critic identified. Keep the voice; just fix the failures.`)},
+        messages: [{
+          role: 'user',
+          content:
+            '=== STUDENT MESSAGE ===\\n' + $json.studentMessage +
+            '\\n\\n=== EVALUATION (if answer branch) ===\\n' + JSON.stringify($json.evaluation || null) +
+            '\\n\\n=== ORIGINAL REPLY (the one the critic rejected) ===\\n' + $json.replyText +
+            '\\n\\n=== CRITIC ISSUES ===\\n' + JSON.stringify($json.critic.issues || []) +
+            '\\n\\n=== REWRITE HINT FROM CRITIC ===\\n' + ($json.critic.rewrite_hint || '') +
+            '\\n\\n=== AUTHOR NOTES ===\\n' + ($json.authorNotes || '') +
+            '\\n\\nRewrite the reply. Fix EACH issue the critic listed. Keep the same intent (probe / leading question / praise / scope-back) but tighten. ONE question only. No sycophancy bigrams. Output ONLY the new reply text.'
+        }]
+      }) }}`
+    },
+    {
+      typeVersion: 4.2,
+      position: [col(13), row(3)],
+      credentials: httpCred(ANTHROPIC_CRED_ID),
+      retryOnFail: true
+    }
+  )
+);
+
+// 18d. Apply Rewrite — replaces replyText with the rewritten version,
+// keeps the flag so we can still review which turns required rewriting.
+nodes.push(
+  node(
+    183,
+    'Apply Rewrite',
+    'n8n-nodes-base.code',
+    {
+      jsCode: `
+const ctx = $('Parse Critic').first().json;
+const raw = items[0].json;
+const newText = (raw?.content?.[0]?.text || '').trim();
+return [{ json: { ...ctx, replyText: newText || ctx.replyText, rewritten: true } }];
+`.trim()
+    },
+    { typeVersion: 2, position: [col(14), row(3)] }
+  )
+);
+
+// 18e. Finalize Reply — converges critic-pass and rewrite paths into a
+// single output shape so downstream nodes can use $json uniformly.
+nodes.push(
+  node(
+    184,
+    'Finalize Reply',
+    'n8n-nodes-base.code',
+    {
+      jsCode: `
+const item = items[0]?.json || {};
+return [{ json: { ...item, rewritten: item.rewritten === true } }];
+`.trim()
+    },
+    { typeVersion: 2, position: [col(15), row(2)] }
   )
 );
 
@@ -781,7 +999,7 @@ nodes.push(
     'n8n-nodes-base.httpRequest',
     {
       method: 'PATCH',
-      url: `=${SUPABASE_URL}/rest/v1/tutor_sessions?id=eq.{{$('Parse Critic').item.json.sessionId}}`,
+      url: `=${SUPABASE_URL}/rest/v1/tutor_sessions?id=eq.{{$('Finalize Reply').item.json.sessionId}}`,
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
@@ -793,13 +1011,13 @@ nodes.push(
       sendBody: true,
       specifyBody: 'json',
       jsonBody: `={{ JSON.stringify({
-        turn_count: $('Parse Critic').item.json.turnNumber,
-        probe_count: $('Parse Critic').item.json.probeCount + ($('Parse Critic').item.json.verdict === 'shallow' || $('Parse Critic').item.json.verdict === 'wrong' || $('Parse Critic').item.json.verdict === 'partial' ? 1 : 0),
-        mastery_reached: $('Parse Critic').item.json.verdict === 'pass',
-        status: $('Parse Critic').item.json.verdict === 'pass' ? 'mastered' : 'active',
+        turn_count: $('Finalize Reply').item.json.turnNumber,
+        probe_count: $('Finalize Reply').item.json.probeCount + ($('Finalize Reply').item.json.verdict === 'shallow' || $('Finalize Reply').item.json.verdict === 'wrong' || $('Finalize Reply').item.json.verdict === 'partial' ? 1 : 0),
+        mastery_reached: $('Finalize Reply').item.json.verdict === 'pass',
+        status: $('Finalize Reply').item.json.verdict === 'pass' ? 'mastered' : 'active',
         last_turn_at: new Date().toISOString(),
-        ended_at: $('Parse Critic').item.json.verdict === 'pass' ? new Date().toISOString() : null,
-        rubric_id: $('Parse Critic').item.json.rubricId
+        ended_at: $('Finalize Reply').item.json.verdict === 'pass' ? new Date().toISOString() : null,
+        rubric_id: $('Finalize Reply').item.json.rubricId
       }) }}`
     },
     {
@@ -831,12 +1049,12 @@ nodes.push(
       sendBody: true,
       specifyBody: 'json',
       jsonBody: `={{ JSON.stringify({
-        user_id: $('Parse Critic').item.json.userId,
-        section_id: $('Parse Critic').item.json.sectionId,
-        status: $('Parse Critic').item.json.verdict === 'pass' ? 'mastered' : 'in_progress',
+        user_id: $('Finalize Reply').item.json.userId,
+        section_id: $('Finalize Reply').item.json.sectionId,
+        status: $('Finalize Reply').item.json.verdict === 'pass' ? 'mastered' : 'in_progress',
         attempts: 1,
-        total_probes: $('Parse Critic').item.json.probeCount,
-        first_mastered_at: $('Parse Critic').item.json.verdict === 'pass' ? new Date().toISOString() : null,
+        total_probes: $('Finalize Reply').item.json.probeCount,
+        first_mastered_at: $('Finalize Reply').item.json.verdict === 'pass' ? new Date().toISOString() : null,
         last_attempt_at: new Date().toISOString()
       }) }}`
     },
@@ -858,13 +1076,14 @@ nodes.push(
     {
       respondWith: 'json',
       responseBody: `={{ JSON.stringify({
-        reply: $('Parse Critic').item.json.replyText,
-        intent: $('Parse Critic').item.json.intent,
-        verdict: $('Parse Critic').item.json.verdict,
-        mastery: $('Parse Critic').item.json.verdict === 'pass' ? 'mastered' : 'in_progress',
-        probeCount: $('Parse Critic').item.json.probeCount,
-        flagged: $('Parse Critic').item.json.flagged_for_review,
-        sessionId: $('Parse Critic').item.json.sessionId
+        reply: $('Finalize Reply').item.json.replyText,
+        intent: $('Finalize Reply').item.json.intent,
+        verdict: $('Finalize Reply').item.json.verdict,
+        mastery: $('Finalize Reply').item.json.verdict === 'pass' ? 'mastered' : 'in_progress',
+        probeCount: $('Finalize Reply').item.json.probeCount,
+        flagged: $('Finalize Reply').item.json.flagged_for_review,
+        rewritten: $('Finalize Reply').item.json.rewritten === true,
+        sessionId: $('Finalize Reply').item.json.sessionId
       }) }}`,
       options: {}
     },
@@ -889,7 +1108,8 @@ link('Tutor Turn Webhook', 'Validate Input');
 link('Validate Input', 'Load Session + Turns');
 link('Load Session + Turns', 'Load Rubric');
 link('Load Rubric', 'Load Section Content');
-link('Load Section Content', 'Build Context');
+link('Load Section Content', 'Load Course Outline');
+link('Load Course Outline', 'Build Context');
 link('Build Context', 'Classify Intent');
 link('Classify Intent', 'Parse Classification');
 link('Parse Classification', 'Route by Intent');
@@ -906,7 +1126,13 @@ link('Scope Back', 'Normalize Reply');
 link('Meta Reply', 'Normalize Reply');
 link('Normalize Reply', 'Critic Review');
 link('Critic Review', 'Parse Critic');
-link('Parse Critic', 'Persist Turn');
+link('Parse Critic', 'Critic Decision');
+// IF node: output 0 = true (critic passed), output 1 = false (failed → rewrite)
+link('Critic Decision', 'Finalize Reply', 0);
+link('Critic Decision', 'Rewrite Responder', 1);
+link('Rewrite Responder', 'Apply Rewrite');
+link('Apply Rewrite', 'Finalize Reply');
+link('Finalize Reply', 'Persist Turn');
 link('Persist Turn', 'Update Session');
 link('Update Session', 'Upsert Mastery');
 link('Upsert Mastery', 'Respond to Webhook');
