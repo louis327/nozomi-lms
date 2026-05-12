@@ -407,3 +407,36 @@ body {
 .nz-table thead .tiptap p.is-editor-empty:first-child::before {
   color: rgba(255, 255, 255, 0.4);
 }
+
+/* Images inside table cells — both during editing (.tiptap) and on the
+ * student-facing render via dangerouslySetInnerHTML. Cap dimensions so a
+ * 4000px PNG doesn't blow up the row, keep them inline-block so they sit
+ * naturally with surrounding cell text. */
+.nz-table td img,
+.nz-table th img,
+.nz-table .tiptap img,
+.nz-cell-image {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+  max-height: 180px;
+  height: auto;
+  width: auto;
+  border-radius: 6px;
+  margin: 4px 0;
+  border: 1px solid #eee;
+}
+
+/* When an image is the only child of a cell, center it neatly. */
+.nz-table td > .tiptap > p:only-child > img:only-child,
+.nz-table td > p:only-child > img:only-child {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Image-selected state inside editor */
+.nz-table .tiptap img.ProseMirror-selectednode {
+  outline: 2px solid #c69a3f;
+  outline-offset: 1px;
+}

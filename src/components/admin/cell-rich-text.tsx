@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
+import Image from '@tiptap/extension-image'
 import { Mark, mergeAttributes } from '@tiptap/core'
-import { Bold, Italic, Underline as UnderlineIcon, Type } from 'lucide-react'
+import { Bold, Italic, Underline as UnderlineIcon, Type, ImagePlus, Loader2 } from 'lucide-react'
 
 const Small = Mark.create({
   name: 'small',
@@ -66,6 +67,8 @@ export function CellRichText({
   placeholder = '',
   variant = 'body',
 }: CellRichTextProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -76,6 +79,12 @@ export function CellRichText({
       }),
       Underline,
       SmallWithCommand,
+      Image.configure({
+        // Images render inline in cells; cap them with CSS in globals.
+        inline: true,
+        allowBase64: false,
+        HTMLAttributes: { class: 'nz-cell-image', loading: 'lazy' }
+      }),
       Placeholder.configure({ placeholder }),
     ],
     content: wrapForEditor(value),
@@ -104,6 +113,54 @@ export function CellRichText({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
+
+  // Upload selected file and insert it as an image at the current cursor.
+  const uploadAndInsert = async (file: File) => {
+    if (!editor || uploading) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Upload failed')
+        return
+      }
+      const data = await res.json()
+      if (data.url) {
+        editor.chain().focus().setImage({ src: data.url, alt: file.name }).run()
+      }
+    } catch {
+      alert('Upload failed')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  // Allow paste-from-clipboard images too
+  useEffect(() => {
+    if (!editor) return
+    const view = editor.view
+    const handler = (event: ClipboardEvent) => {
+      const items = event.clipboardData?.items
+      if (!items) return
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile()
+          if (file) {
+            event.preventDefault()
+            uploadAndInsert(file)
+            return
+          }
+        }
+      }
+    }
+    view.dom.addEventListener('paste', handler as any)
+    return () => view.dom.removeEventListener('paste', handler as any)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor])
 
   if (!editor) return null
 
@@ -171,8 +228,27 @@ export function CellRichText({
         >
           <Type className="w-3.5 h-3.5" />
         </ToolbarButton>
+        <div className="w-px h-4 bg-line mx-0.5" />
+        <ToolbarButton
+          onClick={() => fileInputRef.current?.click()}
+          title="Insert image"
+        >
+          {uploading
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            : <ImagePlus className="w-3.5 h-3.5" />}
+        </ToolbarButton>
       </BubbleMenu>
       <EditorContent editor={editor} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) uploadAndInsert(f)
+        }}
+      />
     </>
   )
 }
