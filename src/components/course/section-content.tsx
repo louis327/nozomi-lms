@@ -235,7 +235,6 @@ export function SectionContent({
   const recapAnswers = extractSectionAnswers(blocks, mergedWorkbook)
 
   useEffect(() => {
-    if (saved) return
     if (!hasPrompts) return
 
     const currentSerialized = JSON.stringify({ w: workbookData, c: checklistData })
@@ -270,7 +269,7 @@ export function SectionContent({
     }, 900)
 
     return () => clearTimeout(timer)
-  }, [workbookData, checklistData, saved, hasPrompts, supabase, section.id])
+  }, [workbookData, checklistData, hasPrompts, supabase, section.id])
 
   const goNext = useCallback(() => {
     if (nextSectionId) {
@@ -894,7 +893,6 @@ export function SectionContent({
                 onChange={(e) =>
                   setWorkbookData((prev) => ({ ...prev, [block.id]: e.target.value }))
                 }
-                disabled={saved}
               />
               <BlockCoach
                 blockId={block.id}
@@ -1005,7 +1003,6 @@ export function SectionContent({
                             onChange={(e) =>
                               setChecklistData((prev) => ({ ...prev, [key]: e.target.checked }))
                             }
-                            disabled={saved}
                             className="mt-[3px] w-4 h-4 rounded border-line accent-[var(--nz-accent)] cursor-pointer shrink-0"
                           />
                           <div className="min-w-0 flex-1">
@@ -1059,7 +1056,6 @@ export function SectionContent({
                         onChange={(e) =>
                           setChecklistData((prev) => ({ ...prev, [key]: e.target.checked }))
                         }
-                        disabled={saved}
                         className="mt-0.5 w-4 h-4 rounded border-line accent-[var(--nz-accent)] cursor-pointer"
                       />
                       <span className={`text-[14px] leading-[1.5] transition-colors ${checked ? 'text-ink-muted line-through' : 'text-ink-soft group-hover:text-ink'}`}>
@@ -1167,7 +1163,6 @@ export function SectionContent({
                           placeholder="…"
                           value={workbookData[fieldKey] ?? ''}
                           onChange={(e) => setWorkbookData((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
-                          disabled={saved}
                         />
                         {field.suffix && (
                           <span className="pr-3 pl-1 text-[13px] text-ink-faint select-none">{field.suffix}</span>
@@ -1288,7 +1283,6 @@ export function SectionContent({
                                     placeholder={cell.placeholder || '…'}
                                     value={workbookData[cellKey] ?? ''}
                                     onChange={(e) => setWorkbookData((prev) => ({ ...prev, [cellKey]: e.target.value }))}
-                                    disabled={saved}
                                   />
                                   {cell.suffix && (
                                     <span className="pr-2.5 pl-0.5 text-[13px] text-ink-faint select-none">{cell.suffix}</span>
