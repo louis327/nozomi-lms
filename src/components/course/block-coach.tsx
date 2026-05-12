@@ -49,6 +49,15 @@ export function BlockCoach({ blockId, sectionId, getAnswer }: Props) {
       .then(({ data }) => setHasRubric(!!data))
   }, [blockId])
 
+  // Pre-warm the streaming endpoint once when the Coach becomes available.
+  // Cheap (single Haiku tokens=1 call), shaves 200-500ms off first Evaluate.
+  const warmedRef = useRef(false)
+  useEffect(() => {
+    if (!hasRubric || warmedRef.current) return
+    warmedRef.current = true
+    fetch('/api/tutor/warm', { method: 'POST' }).catch(() => {})
+  }, [hasRubric])
+
   useEffect(() => () => abortRef.current?.abort(), [])
 
   const ensureSession = useCallback(async (): Promise<string | null> => {

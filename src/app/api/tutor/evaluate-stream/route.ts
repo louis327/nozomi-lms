@@ -88,11 +88,25 @@ export async function POST(request: NextRequest) {
             criteria_met: [], gap: null, reasoning: 'evaluator parse-fail'
           }
         } else {
+          // Defensive enum coercion — Haiku occasionally puts a verdict value
+          // ("wrong", "shallow") in the intent field. Force it back to a valid intent.
+          const VALID_INTENTS = new Set(['answer', 'question', 'off_topic', 'meta'])
+          const VALID_VERDICTS = new Set(['pass', 'shallow', 'wrong', 'partial', null])
+          const rawIntent = toolUseBlock.input.intent
+          const rawVerdict = toolUseBlock.input.verdict
+          const safeIntent: EvaluatorOutput['intent'] = VALID_INTENTS.has(rawIntent)
+            ? rawIntent
+            : VALID_VERDICTS.has(rawIntent) ? 'answer' : 'answer'
+          const safeVerdict: EvaluatorOutput['verdict'] = VALID_VERDICTS.has(rawVerdict)
+            ? rawVerdict
+            // If Haiku stuck a verdict-shaped string into intent and verdict is missing,
+            // promote it back to verdict.
+            : (VALID_VERDICTS.has(rawIntent) && rawVerdict == null ? rawIntent : null)
           evalOut = {
-            intent: toolUseBlock.input.intent ?? 'answer',
-            verdict: toolUseBlock.input.verdict ?? null,
+            intent: safeIntent,
+            verdict: safeVerdict,
             matched_pattern_id: toolUseBlock.input.matched_pattern_id ?? null,
-            criteria_met: toolUseBlock.input.criteria_met ?? [],
+            criteria_met: Array.isArray(toolUseBlock.input.criteria_met) ? toolUseBlock.input.criteria_met : [],
             gap: toolUseBlock.input.gap ?? null,
             reasoning: toolUseBlock.input.reasoning ?? ''
           }
