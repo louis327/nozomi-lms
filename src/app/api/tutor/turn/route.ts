@@ -16,16 +16,16 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-  const { sessionId, sectionId, studentMessage } = await request.json()
-  if (!sessionId || !sectionId || typeof studentMessage !== 'string') {
-    return NextResponse.json({ error: 'sessionId, sectionId, studentMessage required' }, { status: 400 })
+  const { sessionId, sectionId, blockId, studentMessage } = await request.json()
+  if (!sessionId || !sectionId || !blockId || typeof studentMessage !== 'string') {
+    return NextResponse.json({ error: 'sessionId, sectionId, blockId, studentMessage required' }, { status: 400 })
   }
 
   // Confirm the session belongs to this user. RLS would also enforce this,
   // but we want a clean 403 not a silent miss.
   const { data: session } = await supabase
     .from('tutor_sessions')
-    .select('id, user_id, section_id, status')
+    .select('id, user_id, section_id, block_id, status')
     .eq('id', sessionId)
     .single()
 
@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
   }
   if (session.section_id !== sectionId) {
     return NextResponse.json({ error: 'Section mismatch' }, { status: 400 })
+  }
+  if (session.block_id && session.block_id !== blockId) {
+    return NextResponse.json({ error: 'Block mismatch' }, { status: 400 })
   }
   if (session.status !== 'active') {
     return NextResponse.json({ error: 'Session already ended', status: session.status }, { status: 409 })
@@ -46,6 +49,7 @@ export async function POST(request: NextRequest) {
       sessionId,
       userId: user.id,
       sectionId,
+      blockId,
       studentMessage
     })
   })

@@ -112,7 +112,7 @@ nodes.push(
     {
       jsCode: `
 const b = items[0]?.json?.body ?? items[0]?.json ?? {};
-const required = ['sessionId', 'userId', 'sectionId', 'studentMessage'];
+const required = ['sessionId', 'userId', 'sectionId', 'blockId', 'studentMessage'];
 for (const k of required) {
   if (!b[k]) throw new Error('Missing field: ' + k);
 }
@@ -120,7 +120,8 @@ return [{ json: {
   sessionId: b.sessionId,
   userId: b.userId,
   sectionId: b.sectionId,
-  studentMessage: String(b.studentMessage).slice(0, 4000),
+  blockId: b.blockId,
+  studentMessage: String(b.studentMessage).slice(0, 8000),
   isOpener: !!b.isOpener
 }}];
 `.trim()
@@ -171,7 +172,7 @@ nodes.push(
     'n8n-nodes-base.httpRequest',
     {
       method: 'GET',
-      url: `=${SUPABASE_URL}/rest/v1/tutor_rubrics?section_id=eq.{{$('Validate Input').item.json.sectionId}}&status=eq.approved&select=id,question,pass_criteria,shallow_patterns,wrong_patterns,off_scope_hint,notes&limit=1`,
+      url: `=${SUPABASE_URL}/rest/v1/tutor_rubrics?block_id=eq.{{$('Validate Input').item.json.blockId}}&status=eq.approved&select=id,question,pass_criteria,shallow_patterns,wrong_patterns,off_scope_hint,notes&limit=1`,
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
@@ -214,7 +215,10 @@ nodes.push(
   )
 );
 
-// 5b. Load Course Outline (modules + section titles for the whole course) ---
+// 5b. Load Course Outline + Workbook Prompts ------------------------------
+// Pulls every module + section title in the course AND every workbook_prompt
+// / structured_prompt block content. Used to map the student's stored
+// workbook_data answers to the prompts they answer.
 nodes.push(
   node(
     51,
@@ -222,7 +226,7 @@ nodes.push(
     'n8n-nodes-base.httpRequest',
     {
       method: 'GET',
-      url: `=${SUPABASE_URL}/rest/v1/modules?course_id=eq.{{$('Load Section Content').item.json.modules.course_id}}&select=id,title,sort_order,sections(id,title,sort_order,status)&order=sort_order`,
+      url: `=${SUPABASE_URL}/rest/v1/modules?course_id=eq.{{$('Load Section Content').item.json.modules.course_id}}&select=id,title,sort_order,sections(id,title,sort_order,status,content_blocks(id,type,content,sort_order))&sections.content_blocks.type=in.(workbook_prompt,structured_prompt)&order=sort_order`,
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
@@ -234,6 +238,35 @@ nodes.push(
     {
       typeVersion: 4.2,
       position: [col(2), row(5)],
+      credentials: httpCred(SUPABASE_CRED_ID),
+      retryOnFail: true
+    }
+  )
+);
+
+// 5c. Load Student Portfolio ---------------------------------------------
+// Every section_progress row for this user, scoped to sections in the
+// current course. Carries workbook_data + completed flag — the agent uses
+// this to give coherent feedback that knows the student's prior answers.
+nodes.push(
+  node(
+    52,
+    'Load Student Portfolio',
+    'n8n-nodes-base.httpRequest',
+    {
+      method: 'GET',
+      url: `=${SUPABASE_URL}/rest/v1/section_progress?user_id=eq.{{$('Validate Input').item.json.userId}}&select=section_id,workbook_data,completed,updated_at`,
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpHeaderAuth',
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: 'apikey', value: SUPABASE_ANON },
+        { name: 'Accept', value: 'application/json' }
+      ]}
+    },
+    {
+      typeVersion: 4.2,
+      position: [col(2), row(6)],
       credentials: httpCred(SUPABASE_CRED_ID),
       retryOnFail: true
     }
@@ -297,6 +330,96 @@ const currentSectionsList = outlineModules[currentModuleIdx]?.sections
   ?.sort((a,b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) || [];
 const currentSectionIdx = currentSectionsList.findIndex(s => s.id === sec.id);
 
+// --- STUDENT PORTFOLIO --------------------------------------------------
+// Build { sectionId -> { title, prompts: [{ block_id, prompt_text }], workbook_data } }
+// then render a readable summary of what the student has answered so far.
+const courseSectionIds = new Set();
+const promptsByBlockId = new Map();
+const sectionTitleByBlockId = new Map();
+const sectionTitleBySectionId = new Map();
+for (const m of outlineModules) {
+  for (const s of (m.sections || [])) {
+    courseSectionIds.add(s.id);
+    sectionTitleBySectionId.set(s.id, s.title);
+    for (const cb of (s.content_blocks || [])) {
+      if (cb.type !== 'workbook_prompt' && cb.type !== 'structured_prompt') continue;
+      const c = cb.content || {};
+      const parts = [];
+      if (c.label) parts.push(c.label);
+      if (c.html) parts.push(String(c.html).replace(/<[^>]+>/g,' ').replace(/\\s+/g,' '));
+      if (c.text) parts.push(c.text);
+      if (c.prompt) parts.push(c.prompt);
+      if (c.question) parts.push(c.question);
+      if (Array.isArray(c.fields)) for (const f of c.fields) parts.push('  · ' + (f.label || f.key || ''));
+      const promptText = parts.join(' / ').trim();
+      promptsByBlockId.set(cb.id, promptText);
+      sectionTitleByBlockId.set(cb.id, s.title);
+    }
+  }
+}
+
+const portfolioRaw = ($('Load Student Portfolio').all() || []).map(it => it.json);
+
+// Group workbook_data keys by their leading blockId (UUID prefix before "_")
+// Answers in workbook_data are keyed "<block_uuid>_<field_key>".
+function answersByBlock(workbookData) {
+  const out = {};
+  if (!workbookData || typeof workbookData !== 'object') return out;
+  for (const [k, v] of Object.entries(workbookData)) {
+    if (k === '_checklists') continue;
+    const m = k.match(/^([0-9a-f-]{36})_(.+)$/);
+    if (!m) continue;
+    const blockId = m[1];
+    const fieldKey = m[2];
+    if (v === '' || v === null || v === undefined) continue;
+    if (!out[blockId]) out[blockId] = [];
+    out[blockId].push({ field: fieldKey, answer: String(v) });
+  }
+  return out;
+}
+
+const portfolioBlocks = [];
+for (const row of portfolioRaw) {
+  if (!courseSectionIds.has(row.section_id)) continue; // skip other courses
+  const grouped = answersByBlock(row.workbook_data);
+  for (const [bid, answers] of Object.entries(grouped)) {
+    const promptText = promptsByBlockId.get(bid) || '(prompt content not in current course outline)';
+    const sectionTitle = sectionTitleByBlockId.get(bid) || sectionTitleBySectionId.get(row.section_id) || 'Unknown section';
+    portfolioBlocks.push({
+      sectionTitle,
+      blockId: bid,
+      promptText,
+      answers
+    });
+  }
+}
+
+// Sort portfolio by section order (rough — by section title alphabetisation is
+// fine fallback; we already have the section sort order via outlineModules).
+const sectionOrder = new Map();
+let n = 0;
+for (const m of outlineModules) for (const s of (m.sections || [])) sectionOrder.set(s.id, n++);
+portfolioBlocks.sort((a,b) => {
+  const ao = sectionOrder.get([...sectionTitleBySectionId.entries()].find(([k,v]) => v === a.sectionTitle)?.[0]) ?? 999;
+  const bo = sectionOrder.get([...sectionTitleBySectionId.entries()].find(([k,v]) => v === b.sectionTitle)?.[0]) ?? 999;
+  return ao - bo;
+});
+
+// Render as a compact text block for the prompt — XML-tagged for the model.
+const studentPortfolio = portfolioBlocks.length === 0
+  ? '(No prior answers in this course yet.)'
+  : portfolioBlocks.map(p => {
+      const answers = p.answers.map(a => '  ' + a.field + ': ' + a.answer).join('\\n');
+      return '<work section="' + p.sectionTitle + '" block_id="' + p.blockId + '">\\n' +
+             'PROMPT: ' + (p.promptText || '(unknown)').slice(0, 300) + '\\n' +
+             'STUDENT ANSWER:\\n' + answers + '\\n</work>';
+    }).join('\\n\\n');
+
+// Identify which portfolio entry corresponds to THIS prompt (the one being graded)
+const currentBlockId = input.blockId;
+const currentPromptText = promptsByBlockId.get(currentBlockId) || '';
+const currentBlockPriorAnswer = portfolioBlocks.find(p => p.blockId === currentBlockId);
+
 const history = ((sess?.tutor_turns) || [])
   .sort((a,b) => a.turn_number - b.turn_number)
   .slice(-8)
@@ -326,6 +449,9 @@ return [{ json: {
   courseOutline,
   sectionTitle: sec.title,
   sectionText,
+  currentPromptText,
+  studentPortfolio,
+  hasPriorAnswerHere: !!currentBlockPriorAnswer,
   history,
   turnNumber,
   probeCount,
@@ -468,7 +594,8 @@ You are the EVALUATOR stage. Grade the student's answer hard but fair. Do NOT re
             '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
             '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
             '\\n\\n=== SECTION MATERIAL (use ONLY this for grounding) ===\\n' + $json.sectionText +
-            '\\n\\n=== CHECKPOINT QUESTION ===\\n' + $json.question +
+            '\\n\\n=== STUDENT PORTFOLIO (answers they have already written elsewhere in the course — use this to check consistency and reference prior commitments) ===\\n' + $json.studentPortfolio +
+            '\\n\\n=== PROMPT BEING GRADED ===\\n' + $json.question +
             '\\n\\n=== PASS CRITERIA ===\\n' + JSON.stringify($json.passCriteria, null, 2) +
             '\\n\\n=== KNOWN SHALLOW PATTERNS ===\\n' + JSON.stringify($json.shallowPatterns, null, 2) +
             '\\n\\n=== KNOWN WRONG PATTERNS ===\\n' + JSON.stringify($json.wrongPatterns, null, 2) +
@@ -549,7 +676,8 @@ You are the RESPONDER stage. Write the next message to the student. Follow the v
             '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
             '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
             '\\n\\n=== SECTION MATERIAL (use ONLY this for quotes/citations) ===\\n' + $json.sectionText +
-            '\\n\\n=== CHECKPOINT QUESTION ===\\n' + $json.question +
+            '\\n\\n=== STUDENT PORTFOLIO (their prior answers across the course — reference these when inconsistencies appear) ===\\n' + $json.studentPortfolio +
+            '\\n\\n=== PROMPT BEING GRADED ===\\n' + $json.question +
             '\\n\\n=== AUTHOR NOTES (LOUIS VOICE — read carefully) ===\\n' + ($json.authorNotes || '') +
             '\\n\\n=== CONVERSATION SO FAR ===\\n' + JSON.stringify($json.history, null, 2) +
             '\\n\\n=== STUDENT JUST SAID ===\\n' + $json.studentMessage +
@@ -606,7 +734,8 @@ The student asked a question rather than answered the checkpoint. Answer from th
             '=== COURSE: ' + $json.courseTitle + ' ===\\n' + $json.courseOutline +
             '\\n\\n=== CURRENT POSITION ===\\nModule ' + ($json.modulePosition || '?') + ': ' + $json.moduleTitle + '\\nSection ' + ($json.sectionPosition || '?') + ': ' + $json.sectionTitle +
             '\\n\\n=== SECTION MATERIAL (use ONLY this for quotes) ===\\n' + $json.sectionText +
-            '\\n\\n=== CHECKPOINT WE WERE WORKING ON ===\\n' + $json.question +
+            '\\n\\n=== STUDENT PORTFOLIO ===\\n' + $json.studentPortfolio +
+            '\\n\\n=== PROMPT WE WERE WORKING ON ===\\n' + $json.question +
             '\\n\\n=== OFF-SCOPE HINT (if needed) ===\\n' + ($json.offScopeHint || '') +
             '\\n\\n=== STUDENT QUESTION ===\\n' + $json.studentMessage +
             '\\n\\nAnswer their question. If the answer lives in the current section material, quote/cite from there. If it lives in another module visible in the outline, name the module but say it\\'s covered there. 2-4 sentences. End by inviting them back to the checkpoint — but do NOT say "good question" or similar opener.\\n\\n' +
@@ -1000,6 +1129,7 @@ nodes.push(
     {
       method: 'PATCH',
       url: `=${SUPABASE_URL}/rest/v1/tutor_sessions?id=eq.{{$('Finalize Reply').item.json.sessionId}}`,
+      // block_id is stamped on session creation by the start API; nothing to update here.
       authentication: 'genericCredentialType',
       genericAuthType: 'httpHeaderAuth',
       sendHeaders: true,
@@ -1109,7 +1239,8 @@ link('Validate Input', 'Load Session + Turns');
 link('Load Session + Turns', 'Load Rubric');
 link('Load Rubric', 'Load Section Content');
 link('Load Section Content', 'Load Course Outline');
-link('Load Course Outline', 'Build Context');
+link('Load Course Outline', 'Load Student Portfolio');
+link('Load Student Portfolio', 'Build Context');
 link('Build Context', 'Classify Intent');
 link('Classify Intent', 'Parse Classification');
 link('Parse Classification', 'Route by Intent');

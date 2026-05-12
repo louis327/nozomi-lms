@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/toast'
 import { InlineBlockEditor } from '@/components/course/inline-block-editor'
 import { SortableBlocksContainer, SortableBlockWrapper } from '@/components/course/sortable-blocks'
 import { BlockGutter } from '@/components/course/block-gutter'
+import { BlockCoach } from '@/components/course/block-coach'
 import {
   createBlock,
   reorderBlocks,
@@ -895,6 +896,11 @@ export function SectionContent({
                 }
                 disabled={saved}
               />
+              <BlockCoach
+                blockId={block.id}
+                sectionId={section.id}
+                getAnswer={() => workbookData[block.id] ?? ''}
+              />
             </DoBlock>
           </div>
         )
@@ -1171,6 +1177,20 @@ export function SectionContent({
                   )
                 })}
               </div>
+              <BlockCoach
+                blockId={block.id}
+                sectionId={section.id}
+                getAnswer={() => {
+                  const lines: string[] = []
+                  for (const f of spFields) {
+                    const val = f.computed === 'sum'
+                      ? formatNum(resolveValue(f.key, new Set()))
+                      : (workbookData[`${block.id}_${f.key}`] ?? '').trim()
+                    if (val) lines.push(`${f.label}: ${val}`)
+                  }
+                  return lines.join('\n')
+                }}
+              />
             </DoBlock>
           </div>
         )

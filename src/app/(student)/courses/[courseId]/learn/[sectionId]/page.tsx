@@ -8,7 +8,6 @@ import { InlineSectionTitle } from '@/components/course/inline-section-title'
 import { SectionStatusToggle } from '@/components/course/section-status-toggle'
 import { ModuleHero } from '@/components/course/module-hero'
 import { SectionHighlights } from '@/components/course/section-highlights'
-import { TutorCoach } from '@/components/course/tutor-coach'
 
 export default async function SectionPage({
   params,
@@ -231,8 +230,6 @@ export default async function SectionPage({
       />
 
       <SectionHighlights sectionId={sectionId} />
-
-      <TutorCoach sectionId={sectionId} sectionTitle={section.title} />
     </div>
   )
 }
