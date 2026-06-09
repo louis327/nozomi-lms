@@ -41,11 +41,6 @@ function buildGroups(opts: {
           content: "Your courses live here. Click any tile to keep going from where you stopped.",
           placement: 'bottom',
         },
-        {
-          target: '[data-tour="dashboard-coach"]',
-          content: "Stuck on something? Ask your AI coach — it knows your progress.",
-          placement: 'top',
-        },
       ],
       nextHref: '/courses',
     },

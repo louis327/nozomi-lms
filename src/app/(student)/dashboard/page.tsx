@@ -14,6 +14,9 @@ import { ArrowUpRight, Sparkles, BookOpen } from 'lucide-react'
 
 export const metadata = { title: 'Dashboard — Nozomi' }
 
+// AI Coach temporarily hidden from students. Set to true to re-enable.
+const SHOW_COACH = false
+
 function formatMasthead(d = new Date()) {
   const day = d.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase()
   const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()
@@ -285,9 +288,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* Compact coach */}
-      <div data-tour="dashboard-coach">
-        <AiCoach starters={starters} compact />
-      </div>
+      {SHOW_COACH && (
+        <div data-tour="dashboard-coach">
+          <AiCoach starters={starters} compact />
+        </div>
+      )}
     </div>
   )
 }
