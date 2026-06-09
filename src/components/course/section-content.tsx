@@ -28,6 +28,9 @@ import { imageFigureClass, normalizeImageAlign, normalizeImageWidth } from '@/li
 import { ArrowLeft, ArrowRight, Check, Download, Pencil, Plus } from 'lucide-react'
 import type { Section, ContentBlock, SectionProgress } from '@/lib/types'
 
+// Section/AI Coach temporarily hidden from students. Set to true to re-enable.
+const SHOW_COACH = false
+
 const blockTypeOptions: { type: ContentBlock['type']; label: string }[] = [
   { type: 'rich_text', label: 'Rich Text' },
   { type: 'callout', label: 'Callout' },
@@ -894,11 +897,13 @@ export function SectionContent({
                   setWorkbookData((prev) => ({ ...prev, [block.id]: e.target.value }))
                 }
               />
-              <BlockCoach
-                blockId={block.id}
-                sectionId={section.id}
-                getAnswer={() => workbookData[block.id] ?? ''}
-              />
+              {SHOW_COACH && (
+                <BlockCoach
+                  blockId={block.id}
+                  sectionId={section.id}
+                  getAnswer={() => workbookData[block.id] ?? ''}
+                />
+              )}
             </DoBlock>
           </div>
         )
@@ -1172,20 +1177,22 @@ export function SectionContent({
                   )
                 })}
               </div>
-              <BlockCoach
-                blockId={block.id}
-                sectionId={section.id}
-                getAnswer={() => {
-                  const lines: string[] = []
-                  for (const f of spFields) {
-                    const val = f.computed === 'sum'
-                      ? formatNum(resolveValue(f.key, new Set()))
-                      : (workbookData[`${block.id}_${f.key}`] ?? '').trim()
-                    if (val) lines.push(`${f.label}: ${val}`)
-                  }
-                  return lines.join('\n')
-                }}
-              />
+              {SHOW_COACH && (
+                <BlockCoach
+                  blockId={block.id}
+                  sectionId={section.id}
+                  getAnswer={() => {
+                    const lines: string[] = []
+                    for (const f of spFields) {
+                      const val = f.computed === 'sum'
+                        ? formatNum(resolveValue(f.key, new Set()))
+                        : (workbookData[`${block.id}_${f.key}`] ?? '').trim()
+                      if (val) lines.push(`${f.label}: ${val}`)
+                    }
+                    return lines.join('\n')
+                  }}
+                />
+              )}
             </DoBlock>
           </div>
         )
