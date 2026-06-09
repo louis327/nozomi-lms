@@ -43,5 +43,16 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/courses/:path*/learn/:path*'],
+  // Run on every authenticated surface so the Supabase session is kept fresh
+  // there. Previously `/onboarding` and the `/courses` list/detail pages were
+  // omitted, so their auth token was never rotated — that caused stale sessions
+  // and forced page refreshes mid-flow. `:path*` is zero-or-more, so each entry
+  // also matches its own base path (e.g. `/onboarding`, `/courses`). Public,
+  // auth, and API routes are intentionally excluded to avoid added latency.
+  matcher: [
+    '/dashboard/:path*',
+    '/admin/:path*',
+    '/onboarding/:path*',
+    '/courses/:path*',
+  ],
 }
