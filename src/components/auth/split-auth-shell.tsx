@@ -143,10 +143,9 @@ export function SplitAuthShell({ tagline, children }: Props) {
               style={{
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 700,
-                fontStyle: 'italic',
                 fontSize: 'clamp(28px, 2.6vw, 36px)',
                 lineHeight: 1.05,
-                letterSpacing: '-0.025em',
+                letterSpacing: '-0.03em',
               }}
             >
               {PREVIEW_TITLE_PREFIX}{' '}
