@@ -2,13 +2,16 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Course } from '@/lib/types'
-import { PageTopbar } from '@/components/layout/page-topbar'
-import { CourseThumb } from '@/components/ui/course-thumb'
 import { Badge } from '@/components/ui/badge'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { ArrowRight, Clock } from 'lucide-react'
 
 export const metadata = { title: 'My Courses — Nozomi' }
+
+const PANEL =
+  'rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
+const EYEBROW =
+  'text-[11.5px] font-semibold uppercase tracking-[0.04em] text-ink-muted'
 
 export default async function CoursesPage() {
   const supabase = await createClient()
@@ -16,18 +19,26 @@ export default async function CoursesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('*, modules(id, sections(id))')
-    .eq('status', 'published')
-    .order('sort_order', { ascending: true })
-
+  // Enrollments first, so we can surface enrolled courses even when they're
+  // still in draft (mirrors the dashboard, which never filtered on status).
   const { data: enrollments } = await supabase
     .from('enrollments')
     .select('course_id')
     .eq('user_id', user.id)
 
   const enrolledIds = new Set((enrollments ?? []).map((e) => e.course_id))
+
+  const enrolledIdList = [...enrolledIds]
+  const orFilter =
+    enrolledIdList.length > 0
+      ? `status.eq.published,id.in.(${enrolledIdList.join(',')})`
+      : 'status.eq.published'
+
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('*, modules(id, sections(id))')
+    .or(orFilter)
+    .order('sort_order', { ascending: true })
 
   const allSectionIds = (courses ?? []).flatMap((c: Course & { modules: { id: string; sections: { id: string }[] }[] }) =>
     c.modules?.flatMap((m) => m.sections?.map((s) => s.id) ?? []) ?? []
@@ -147,205 +158,190 @@ export default async function CoursesPage() {
     }
   }
 
-  const summary = (() => {
-    const parts: string[] = []
-    if (inProgressCourses.length > 0) {
-      parts.push(`${inProgressCourses.length} in progress`)
-    }
-    if (completedCourses.length > 0) {
-      parts.push(`${completedCourses.length} completed`)
-    }
-    if (otherCourses.length > 0) {
-      parts.push(`${otherCourses.length} to explore`)
-    }
-    if (parts.length === 0) {
-      return `${coursesList.length} ${coursesList.length === 1 ? 'course' : 'courses'} available — pick something that calls to you.`
-    }
-    return parts.join(' · ')
-  })()
+  const summaryParts: string[] = []
+  if (inProgressCourses.length > 0) summaryParts.push(`${inProgressCourses.length} in progress`)
+  if (completedCourses.length > 0) summaryParts.push(`${completedCourses.length} completed`)
+  if (otherCourses.length > 0) summaryParts.push(`${otherCourses.length} to explore`)
+  const summary =
+    summaryParts.length > 0
+      ? summaryParts.join(' · ')
+      : `${coursesList.length} ${coursesList.length === 1 ? 'course' : 'courses'} available`
 
   return (
-    <div className="px-6 lg:px-10 pb-16" data-tour="courses-grid">
-      <PageTopbar breadcrumb={[{ label: 'Nozomi', href: '/dashboard' }, { label: 'My Courses' }]} />
+    <div className="px-6 pb-16 pt-8 lg:px-10" data-tour="courses-grid">
+      {/* Header */}
+      <div className="mb-7">
+        <p className="mb-1.5 text-[13.5px] text-ink-muted">Your library</p>
+        <h1 className="mb-1.5 text-[28px] font-bold tracking-[-0.03em] text-ink">My courses</h1>
+        <p className="text-[14px] text-ink-soft">{summary}</p>
+      </div>
 
-      <section className="mt-6 mb-10">
-        <p className="eyebrow mb-4">Your library</p>
-        <h1 className="display text-[48px] md:text-[56px] mb-3 max-w-2xl">
-          Your <em>courses</em>.
-        </h1>
-        <p className="text-[14px] text-ink-soft max-w-lg">{summary}</p>
-      </section>
-
+      {/* Resume banner */}
       {resume && (
-        <section className="mb-10">
-          <Link
-            href={`/courses/${resume.courseId}/learn/${resume.sectionId}`}
-            className="group flex items-center gap-5 p-5 rounded-2xl border border-line bg-surface hover:border-accent/40 transition-colors"
-          >
-            <div className="w-11 h-11 rounded-full bg-accent-soft text-accent-deep flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" strokeWidth={1.75} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10.5px] font-semibold tracking-[0.2em] uppercase text-ink-muted mb-1">
-                {resume.completed ? 'Up next' : 'Pick up where you left off'}
-              </p>
-              <p className="text-[15px] font-semibold text-ink truncate">
-                {resume.sectionTitle}
-              </p>
-              <p className="text-[12.5px] text-ink-soft truncate">
-                {resume.courseTitle} <span className="text-ink-faint">·</span> {resume.moduleTitle}
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-ink text-ink-inverted text-[12.5px] font-semibold shrink-0 group-hover:bg-accent transition-colors">
-              {resume.completed ? 'Continue' : 'Resume'}
-              <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
-            </span>
-          </Link>
-        </section>
+        <Link
+          href={`/courses/${resume.courseId}/learn/${resume.sectionId}`}
+          className="group mb-9 flex items-center gap-4 rounded-[14px] border border-line bg-surface px-[18px] py-[15px] shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[box-shadow,border-color,transform] hover:-translate-y-px hover:border-line-strong hover:shadow-[0_8px_24px_-8px_rgba(16,24,40,0.16)]"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-accent-soft text-accent-deep">
+            <Clock size={19} strokeWidth={1.8} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className={`${EYEBROW} mb-1 text-[10.5px]`}>
+              {resume.completed ? 'Up next' : 'Pick up where you left off'}
+            </p>
+            <p className="truncate text-[15.5px] font-semibold text-ink">{resume.sectionTitle}</p>
+            <p className="truncate text-[12.5px] text-ink-muted">
+              {resume.courseTitle} <span className="text-ink-faint">·</span> {resume.moduleTitle}
+            </p>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] bg-ink px-4 py-2.5 text-[13px] font-semibold text-white transition-[filter] group-hover:brightness-110">
+            {resume.completed ? 'Continue' : 'Resume'}
+            <ArrowRight size={14} strokeWidth={2.2} />
+          </span>
+        </Link>
       )}
 
-      {inProgressCourses.length > 0 && (
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="eyebrow">In Progress</h2>
-            <span className="text-[12px] text-ink-muted">{inProgressCourses.length}</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {inProgressCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}`}
-                className="group flex flex-col bg-surface border border-line rounded-2xl overflow-hidden hover:border-line-strong transition-colors"
-              >
-                <div className="aspect-[16/9] bg-surface-muted relative overflow-hidden">
-                  {course.cover_image ? (
-                    <img src={course.cover_image} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <CourseThumb title={course.title} size="xl" />
-                    </div>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="accent">Enrolled</Badge>
-                  </div>
-                </div>
-                <div className="flex-1 p-5 flex flex-col">
-                  <h3 className="font-serif text-[18px] text-ink leading-tight mb-1 group-hover:text-accent-deep transition-colors">
-                    {course.title}
-                  </h3>
-                  {course.description && (
-                    <p className="text-[12.5px] text-ink-soft line-clamp-2 mb-4">{course.description}</p>
-                  )}
-                  <div className="mt-auto">
-                    <div className="flex items-center justify-between text-[11px] text-ink-muted mb-2">
-                      <span className="uppercase tracking-[0.12em] font-semibold">Progress</span>
-                      <span className="font-semibold text-ink tabular-nums">{course.pct}%</span>
-                    </div>
-                    <ProgressBar value={course.pct} />
-                    <p className="text-[11px] text-ink-muted mt-2">
-                      {course.sectionDone} / {course.sectionTotal} sections · {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+      {/* Enrolled — full-width rows */}
+      {enrolledCourses.length > 0 && (
+        <Section title="Enrolled" count={enrolledCourses.length}>
+          <div className="flex flex-col gap-3">
+            {enrolledCourses.map((c) => (
+              <CourseRow key={c.id} c={c} />
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
-      {completedCourses.length > 0 && (
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="eyebrow">Completed</h2>
-            <span className="text-[12px] text-ink-muted">{completedCourses.length}</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {completedCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}`}
-                className="group flex flex-col bg-surface border border-line rounded-2xl overflow-hidden hover:border-line-strong transition-colors"
-              >
-                <div className="aspect-[16/9] bg-surface-muted relative overflow-hidden">
-                  {course.cover_image ? (
-                    <img src={course.cover_image} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <CourseThumb title={course.title} size="xl" />
-                    </div>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <Badge variant="success">Complete</Badge>
-                  </div>
-                </div>
-                <div className="flex-1 p-5 flex flex-col">
-                  <h3 className="font-serif text-[18px] text-ink leading-tight mb-1 group-hover:text-accent-deep transition-colors">
-                    {course.title}
-                  </h3>
-                  {course.description && (
-                    <p className="text-[12.5px] text-ink-soft line-clamp-2 mb-4">{course.description}</p>
-                  )}
-                  <div className="mt-auto flex items-center justify-between pt-2 border-t border-line-soft">
-                    <span className="text-[11px] text-ink-muted">
-                      {course.sectionTotal} sections · {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}
-                    </span>
-                    <span className="text-[11.5px] font-medium text-accent">Review →</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
+      {/* Explore — card grid */}
       {otherCourses.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="eyebrow">Explore more</h2>
-            <span className="text-[12px] text-ink-muted">{otherCourses.length}</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {otherCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.id}`}
-                className="group flex flex-col bg-surface border border-line rounded-2xl overflow-hidden hover:border-line-strong transition-colors"
-              >
-                <div className="aspect-[16/9] bg-surface-muted relative overflow-hidden">
-                  {course.cover_image ? (
-                    <img src={course.cover_image} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <CourseThumb title={course.title} size="xl" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 p-5">
-                  <h3 className="font-serif text-[18px] text-ink leading-tight mb-1 group-hover:text-accent-deep transition-colors">
-                    {course.title}
-                  </h3>
-                  {course.description && (
-                    <p className="text-[12.5px] text-ink-soft line-clamp-2 mb-4">{course.description}</p>
-                  )}
-                  <div className="flex items-center justify-between pt-2 border-t border-line-soft">
-                    <span className="text-[11px] text-ink-muted">
-                      {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'} · {course.sectionTotal} sections
-                    </span>
-                    <span className="text-[11.5px] font-medium text-accent">View →</span>
-                  </div>
-                </div>
-              </Link>
+        <Section title="Explore more" count={otherCourses.length}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {otherCourses.map((c) => (
+              <CourseCard key={c.id} c={c} />
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       {coursesList.length === 0 && (
-        <div className="bg-surface border border-line rounded-2xl p-16 text-center">
-          <p className="font-serif text-[22px] text-ink mb-2">No courses yet</p>
+        <div className={`${PANEL} px-6 py-16 text-center`}>
+          <p className="mb-2 text-[19px] font-bold tracking-[-0.02em] text-ink">No courses yet</p>
           <p className="text-[13px] text-ink-muted">New courses are being prepared. Check back soon.</p>
         </div>
       )}
     </div>
+  )
+}
+
+function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+  return (
+    <section className="mb-8">
+      <div className="mb-3.5 flex items-center justify-between">
+        <p className={EYEBROW}>{title}</p>
+        <span className="text-[12.5px] tabular-nums text-ink-muted">{count}</span>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function Thumb({ title, cover }: { title: string; cover?: string | null }) {
+  if (cover) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={cover} alt="" className="h-full w-full object-cover" />
+  }
+  const initials =
+    title.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'N'
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fafafa] to-[#f1f1f0]">
+      <span className="text-[38px] font-bold tracking-[-0.04em] text-ink-faint">{initials}</span>
+    </div>
+  )
+}
+
+type RowCourse = {
+  id: string
+  title: string
+  description: string | null
+  cover_image: string | null
+  moduleCount: number
+  sectionTotal: number
+  sectionDone: number
+  pct: number
+}
+
+// Full-width horizontal row for an enrolled course.
+function CourseRow({ c }: { c: RowCourse }) {
+  const done = c.pct >= 100
+  return (
+    <Link
+      href={`/courses/${c.id}`}
+      className="flex min-h-[116px] items-stretch overflow-hidden rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[box-shadow,border-color,transform] hover:-translate-y-px hover:border-line-strong hover:shadow-[0_8px_24px_-8px_rgba(16,24,40,0.16)]"
+    >
+      <div className="relative w-[168px] shrink-0 border-r border-line">
+        <Thumb title={c.title} cover={c.cover_image} />
+      </div>
+      <div className="flex flex-1 items-center gap-7 px-[22px] py-[18px]">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-center gap-2.5">
+            <h3 className="truncate text-[16.5px] font-bold tracking-[-0.02em] text-ink">{c.title}</h3>
+            {done ? <Badge variant="success">Complete</Badge> : <Badge variant="accent">Enrolled</Badge>}
+          </div>
+          {c.description && (
+            <p className="line-clamp-2 text-[13px] leading-[1.5] text-ink-soft">{c.description}</p>
+          )}
+        </div>
+        <div className="hidden w-[200px] shrink-0 sm:block">
+          <div className="mb-[7px] flex items-center justify-between">
+            <span className={`${EYEBROW} text-[10px]`}>{done ? 'Done' : 'Progress'}</span>
+            <span className={`text-[12.5px] font-semibold tabular-nums ${done ? 'text-success' : 'text-ink'}`}>
+              {c.pct}%
+            </span>
+          </div>
+          <ProgressBar value={c.pct} />
+          <p className="mt-2 text-[11.5px] tabular-nums text-ink-muted">
+            {c.sectionDone} / {c.sectionTotal} sections · {c.moduleCount} {c.moduleCount === 1 ? 'module' : 'modules'}
+          </p>
+        </div>
+        <ArrowRight size={18} strokeWidth={1.9} className="shrink-0 text-ink-faint" />
+      </div>
+    </Link>
+  )
+}
+
+type CardCourse = {
+  id: string
+  title: string
+  description: string | null
+  cover_image: string | null
+  moduleCount: number
+  sectionTotal: number
+}
+
+// Compact card for an unenrolled course.
+function CourseCard({ c }: { c: CardCourse }) {
+  return (
+    <Link
+      href={`/courses/${c.id}`}
+      className="group flex flex-col overflow-hidden rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[box-shadow,border-color,transform] hover:-translate-y-px hover:border-line-strong hover:shadow-[0_8px_24px_-8px_rgba(16,24,40,0.16)]"
+    >
+      <div className="relative h-28 border-b border-line">
+        <Thumb title={c.title} cover={c.cover_image} />
+      </div>
+      <div className="flex flex-1 flex-col p-[18px]">
+        <h3 className="mb-1.5 text-[16px] font-bold leading-tight tracking-[-0.02em] text-ink">{c.title}</h3>
+        {c.description && (
+          <p className="mb-4 line-clamp-2 text-[13px] leading-[1.5] text-ink-soft">{c.description}</p>
+        )}
+        <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
+          <span className="text-[11.5px] tabular-nums text-ink-muted">
+            {c.moduleCount} {c.moduleCount === 1 ? 'module' : 'modules'} · {c.sectionTotal} sections
+          </span>
+          <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-accent">
+            View <ArrowRight size={13} strokeWidth={2.2} />
+          </span>
+        </div>
+      </div>
+    </Link>
   )
 }
