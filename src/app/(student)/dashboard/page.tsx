@@ -154,8 +154,14 @@ export default async function DashboardPage() {
           </h1>
         </div>
         {snap.daysToClose !== null && snap.daysToClose >= 0 && (
-          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3.5 py-2">
-            <span className="h-[7px] w-[7px] rounded-full bg-accent" />
+          <div className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3.5 py-2 transition-colors hover:border-accent/40">
+            <span className="relative flex h-[7px] w-[7px] items-center justify-center">
+              <span
+                className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 motion-safe:animate-ping"
+                style={{ animationDuration: '2.2s' }}
+              />
+              <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-accent" />
+            </span>
             <span className="text-[13px] font-semibold text-accent-deep">
               Raise closing in {snap.daysToClose} days
             </span>
