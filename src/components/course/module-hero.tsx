@@ -100,7 +100,7 @@ function InlineField({
         }}
         rows={1}
         placeholder={placeholder}
-        className={`bg-transparent w-full resize-none overflow-hidden border-b border-transparent hover:border-white/20 focus:border-white/40 focus:outline-none transition-colors ${className ?? ''} ${saving ? 'opacity-60' : ''}`}
+        className={`bg-transparent w-full resize-none overflow-hidden border-b border-transparent hover:border-line-strong focus:border-accent focus:outline-none transition-colors ${className ?? ''} ${saving ? 'opacity-60' : ''}`}
         style={style}
       />
     )
@@ -116,7 +116,7 @@ function InlineField({
         if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
       }}
       placeholder={placeholder}
-      className={`bg-transparent w-full border-b border-transparent hover:border-white/20 focus:border-white/40 focus:outline-none transition-colors ${className ?? ''} ${saving ? 'opacity-60' : ''}`}
+      className={`bg-transparent w-full border-b border-transparent hover:border-line-strong focus:border-accent focus:outline-none transition-colors ${className ?? ''} ${saving ? 'opacity-60' : ''}`}
       style={style}
     />
   )
@@ -181,74 +181,47 @@ export function ModuleHero({
   const eyebrowValue = eyebrow && eyebrow.trim() ? eyebrow : courseTitle
 
   return (
-    <div
-      className="mb-10 rounded-2xl px-8 sm:px-10 py-10 sm:py-12 relative"
-      style={{
-        background: '#0d0d0e',
-        color: '#fafafa',
-      }}
-    >
-      <div className="mb-6">
+    <div className="mb-9 border-b border-line pb-7">
+      <div className="mb-3.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-accent">
         <InlineField
           value={eyebrowValue}
           onSave={handleEyebrow}
           placeholder={courseTitle}
           editable={editable}
-          className="text-[10.5px] font-semibold uppercase tracking-[0.22em]"
-          style={{ color: '#c69a3f' }}
+          className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent"
         />
-      </div>
-
-      <h1
-        className="text-[44px] sm:text-[52px] leading-[1.05] font-bold tracking-tight"
-        style={{
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          color: '#fafafa',
-        }}
-      >
+        <span className="text-ink-faint">·</span>
         <InlineField
           value={labelValue}
           onSave={handleLabel}
           placeholder={defaultLabel}
           editable={editable}
-          className="text-[44px] sm:text-[52px] leading-[1.05] font-bold tracking-tight"
-          style={{
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            color: '#fafafa',
-          }}
+          className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent"
         />
-      </h1>
+      </div>
 
-      <div className="mt-1">
+      <h1 className="text-[34px] font-bold leading-[1.06] tracking-[-0.035em] text-ink sm:text-[38px]">
         <InlineField
           value={moduleTitle}
           onSave={handleTitle}
           placeholder="Module title"
           editable={editable}
-          className="text-[24px] sm:text-[28px] leading-[1.2]"
-          style={{
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontStyle: 'italic',
-            color: '#cfcab8',
-            fontWeight: 400,
-          }}
+          className="text-[34px] font-bold leading-[1.06] tracking-[-0.035em] text-ink sm:text-[38px]"
         />
-      </div>
+      </h1>
 
-      <div className="mt-4">
-        <InlineField
-          value={taglineValue}
-          onSave={handleTagline}
-          placeholder={editable ? 'Add a one-line tagline (optional)' : ''}
-          editable={editable}
-          multiline
-          className="text-[16px] sm:text-[17px] leading-[1.45]"
-          style={{
-            color: '#c69a3f',
-            fontWeight: 400,
-          }}
-        />
-      </div>
+      {(taglineValue || editable) && (
+        <div className="mt-3 max-w-[560px]">
+          <InlineField
+            value={taglineValue}
+            onSave={handleTagline}
+            placeholder={editable ? 'Add a one-line tagline (optional)' : ''}
+            editable={editable}
+            multiline
+            className="text-[16px] font-normal leading-[1.55] text-ink-soft sm:text-[16.5px]"
+          />
+        </div>
+      )}
     </div>
   )
 }
