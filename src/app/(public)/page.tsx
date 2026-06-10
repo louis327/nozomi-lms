@@ -64,7 +64,7 @@ export default async function HomePage() {
           style={{ background: 'radial-gradient(circle, var(--nz-accent-soft), transparent 64%)', opacity: 0.85 }}
         />
         <div className="relative mx-auto max-w-[1140px] px-6 sm:px-11">
-          <div className="relative pb-14 pt-12 lg:pl-[74px]">
+          <div className="relative pb-16 pt-20 sm:pt-28 lg:pl-[74px]">
             {/* Vertical spine — desktop only */}
             <div className="absolute left-[14px] top-1/2 hidden -translate-y-1/2 flex-col items-center gap-[18px] lg:flex">
               <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.26em] text-ink-muted [writing-mode:vertical-rl] [transform:rotate(180deg)]">
@@ -109,8 +109,8 @@ export default async function HomePage() {
       </header>
 
       {/* Curriculum index */}
-      <section id="courses" className="pb-24 pt-10">
-        <div className="mx-auto max-w-[1140px] px-6 sm:px-11">
+      <section id="courses" className="flex flex-1 flex-col pb-20 pt-6">
+        <div className="mx-auto w-full max-w-[1140px] px-6 sm:px-11">
           <div className="flex items-baseline justify-between gap-5 pb-2">
             <span className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Courses</span>
             <span className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Self-paced</span>
