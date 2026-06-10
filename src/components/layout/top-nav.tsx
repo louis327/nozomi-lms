@@ -43,10 +43,10 @@ export function TopNav({
         <div className="flex items-center gap-7">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2.5 text-[17px] font-bold tracking-[-0.02em] text-ink"
+            className="inline-flex items-baseline text-[19px] font-bold tracking-[-0.025em] text-ink"
           >
-            <span className="inline-block h-[21px] w-[21px] rounded-[7px] bg-accent" />
             Nozomi
+            <span className="ml-[1px] text-accent">.</span>
           </Link>
           <nav className="hidden items-center gap-0.5 sm:flex">
             {NAV.map((item) => {
