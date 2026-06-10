@@ -73,10 +73,6 @@ export default async function HomePage() {
               <span className="h-16 w-px bg-line-strong" />
             </div>
 
-            <div className="mb-11 inline-flex items-center text-[18px] font-bold tracking-[-0.02em] text-ink">
-              Nozomi <span className="ml-1.5 font-semibold text-ink-muted">Learn</span>
-            </div>
-
             <p className="mb-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-accent">
               The YC for Web3 fundraising
             </p>
