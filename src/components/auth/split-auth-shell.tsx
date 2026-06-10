@@ -7,45 +7,6 @@ type Props = {
   children: ReactNode
 }
 
-type PreviewItem = { label: string; state: 'done' | 'active' | 'todo' }
-
-const PREVIEW_EYEBROW = 'Module 04 · Sample'
-const PREVIEW_TITLE_PREFIX = 'The pitch'
-const PREVIEW_TITLE_ACCENT = 'deck.'
-const PREVIEW_ITEMS: PreviewItem[] = [
-  { label: 'TL;DR & module overview', state: 'done' },
-  { label: 'The ten-slide structure', state: 'done' },
-  { label: 'Building the ask', state: 'active' },
-  { label: 'Mistakes that kill rounds', state: 'todo' },
-  { label: 'Final check', state: 'todo' },
-]
-
-function ItemMark({ state }: { state: PreviewItem['state'] }) {
-  if (state === 'done') {
-    return (
-      <span className="w-[18px] h-[18px] rounded-full bg-accent flex items-center justify-center shrink-0">
-        <svg
-          className="w-[10px] h-[10px] text-white"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={3}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </span>
-    )
-  }
-  if (state === 'active') {
-    return (
-      <span className="w-[18px] h-[18px] rounded-full border-[2px] border-accent shrink-0 relative">
-        <span className="absolute inset-1 rounded-full bg-accent/40 animate-pulse" />
-      </span>
-    )
-  }
-  return <span className="w-[18px] h-[18px] rounded-full border border-white/20 shrink-0" />
-}
-
 export function SplitAuthShell({ tagline, children }: Props) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-canvas">
@@ -122,54 +83,30 @@ export function SplitAuthShell({ tagline, children }: Props) {
           </p>
         </div>
 
-        {/* Center: floating course-preview card - what Nozomi actually looks like */}
-        <div className="relative flex-1 flex items-center justify-center py-12 lg:py-8">
-          <div
-            className="relative w-full max-w-[420px] rounded-2xl border border-white/10 p-7 lg:p-8 animate-[fadeUp_900ms_cubic-bezier(0.2,0.8,0.2,1)_400ms_both]"
-            style={{
-              background: 'rgba(255,255,255,0.035)',
-              backdropFilter: 'blur(24px) saturate(140%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-              boxShadow:
-                '0 40px 80px -24px rgba(233,30,99,0.18), 0 12px 36px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-              transform: 'rotate(-1.4deg)',
-            }}
-          >
-            <p className="text-[10px] font-semibold tracking-[0.22em] text-accent uppercase mb-4">
-              {PREVIEW_EYEBROW}
+        {/* Center: editorial copy */}
+        <div className="relative flex flex-1 items-center py-12 lg:py-8">
+          <div className="max-w-[360px] animate-[fadeUp_900ms_cubic-bezier(0.2,0.8,0.2,1)_400ms_both]">
+            <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60">
+              The YC for Web3 fundraising
             </p>
             <h2
-              className="text-white tracking-tight mb-7"
+              className="text-white"
               style={{
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 700,
-                fontSize: 'clamp(28px, 2.6vw, 36px)',
-                lineHeight: 1.05,
-                letterSpacing: '-0.03em',
+                fontSize: 'clamp(30px, 3vw, 38px)',
+                lineHeight: 1.04,
+                letterSpacing: '-0.035em',
+                textShadow: '0 2px 40px rgba(0,0,0,0.35)',
               }}
             >
-              {PREVIEW_TITLE_PREFIX}{' '}
-              <span className="text-accent">{PREVIEW_TITLE_ACCENT}</span>
+              Your raise,
+              <br />
+              in <span className="text-[#ff7aa3]">focus.</span>
             </h2>
-            <div className="h-px bg-white/10 mb-5" />
-            <div className="space-y-3.5">
-              {PREVIEW_ITEMS.map((item) => (
-                <div key={item.label} className="flex items-center gap-3 text-[13px]">
-                  <ItemMark state={item.state} />
-                  <span
-                    className={
-                      item.state === 'done'
-                        ? 'text-white/40 line-through decoration-white/20'
-                        : item.state === 'active'
-                          ? 'text-white font-medium'
-                          : 'text-white/55'
-                    }
-                  >
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <p className="mt-5 text-[15.5px] leading-[1.6] text-white/[0.66]">
+              One place for your coach, your pipeline, and the plan that closes your round.
+            </p>
           </div>
         </div>
 
