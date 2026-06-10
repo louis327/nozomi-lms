@@ -131,12 +131,19 @@ export default async function HomePage() {
                     className="lr-row group grid items-center gap-5 border-t border-line px-2 py-[26px] last:border-b sm:gap-[30px] sm:px-[18px] sm:py-[34px] [grid-template-columns:1fr_auto] sm:[grid-template-columns:76px_1fr_auto]"
                     style={{ '--c': p.c, '--c-deep': p.deep, '--tint': p.tint } as React.CSSProperties}
                   >
-                    <span
-                      className="lr-swatch hidden h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[18px] text-[24px] font-bold tracking-[-0.03em] text-white shadow-[0_8px_22px_-10px_rgba(16,24,40,0.4)] sm:flex"
-                      style={{ background: p.grad }}
-                    >
-                      {initials(course.title)}
-                    </span>
+                    {course.cover_image ? (
+                      <span className="lr-swatch hidden h-[76px] w-[76px] shrink-0 overflow-hidden rounded-[18px] shadow-[0_8px_22px_-10px_rgba(16,24,40,0.4)] sm:block">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={course.cover_image} alt="" className="h-full w-full object-cover" />
+                      </span>
+                    ) : (
+                      <span
+                        className="lr-swatch hidden h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[18px] text-[24px] font-bold tracking-[-0.03em] text-white shadow-[0_8px_22px_-10px_rgba(16,24,40,0.4)] sm:flex"
+                        style={{ background: p.grad }}
+                      >
+                        {initials(course.title)}
+                      </span>
+                    )}
                     <span className="min-w-0">
                       <h3 className="mb-[7px] text-[clamp(22px,2.6vw,32px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink transition-colors">
                         {course.title}
