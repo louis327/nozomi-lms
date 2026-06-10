@@ -738,7 +738,7 @@ export function SectionContent({
                 className="mt-2 text-[13px] not-italic"
                 style={{ color: '#6b6b6b', fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-               , {attribution}
+                - {attribution}
               </figcaption>
             )}
           </figure>
@@ -1580,7 +1580,7 @@ function FooterBar({
                 Saved
               </>
             )}
-            {autosaveStatus === 'error' && 'Failed, retrying'}
+            {autosaveStatus === 'error' && 'Failed - retrying'}
           </span>
         )}
         {saveError && (

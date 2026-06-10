@@ -57,7 +57,7 @@ export default async function TutorReviewsPage() {
           Recent unflagged · {passes.length}
         </h2>
         <p className="text-[12.5px] text-[#888] mb-3 max-w-[600px]">
-          Sample these too, the critic isn't infallible. If a "clean" turn is actually bad, mark it.
+          Sample these too - the critic isn't infallible. If a "clean" turn is actually bad, mark it.
         </p>
         <TutorReviewList turns={passes as any} existingReviews={reviewByTurn} />
       </section>

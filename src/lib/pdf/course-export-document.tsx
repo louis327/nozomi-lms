@@ -518,7 +518,7 @@ export function CourseExportDocument({ data }: { data: ExportData }) {
 
   return (
     <Document
-      title={`${courseTitle}, Nozomi workbook`}
+      title={`${courseTitle} - Nozomi workbook`}
       author={founderName}
       creator="Nozomi"
       producer="Nozomi"

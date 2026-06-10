@@ -172,7 +172,7 @@ export async function GET(
 
   const safeTitle = (course as any).title.replace(/[^\w\s-]/g, '').trim()
   const asciiFilename = `${safeTitle} - Nozomi workbook.pdf`
-  const utf8Filename = `${safeTitle}, Nozomi workbook.pdf`
+  const utf8Filename = `${safeTitle} - Nozomi workbook.pdf`
 
   return new Response(new Uint8Array(pdfBuffer), {
     status: 200,

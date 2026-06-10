@@ -5,7 +5,7 @@ import { buildRaiseSnapshot, type OnboardingData } from '@/lib/raise-context'
 import type { Course } from '@/lib/types'
 import { ArrowUpRight, Check, ArrowRight, BookOpen } from 'lucide-react'
 
-export const metadata = { title: 'Dashboard, Nozomi' }
+export const metadata = { title: 'Dashboard - Nozomi' }
 
 const PANEL =
   'rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]'

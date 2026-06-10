@@ -187,7 +187,7 @@ const tools: Anthropic.Tool[] = [
   },
   {
     name: 'update_content_block',
-    description: 'Update an existing content block in place. Preserves block_id, sort_order, and any progress/highlights tied to it. Use this instead of delete+create when fixing or rewriting a block. Pass the full new content object, it replaces the previous content. Optionally change the type or sort_order.',
+    description: 'Update an existing content block in place. Preserves block_id, sort_order, and any progress/highlights tied to it. Use this instead of delete+create when fixing or rewriting a block. Pass the full new content object - it replaces the previous content. Optionally change the type or sort_order.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -469,16 +469,16 @@ export async function POST(request: NextRequest) {
 You have tools to create, update, and manage courses, modules, sections, and content blocks.
 
 Content block types and their content structure:
-- rich_text: { html: "<p>HTML content</p>" }, use proper HTML with <p>, <h2>, <h3>, <strong>, <em>, <ul>/<li>, <ol>/<li> tags
+- rich_text: { html: "<p>HTML content</p>" } - use proper HTML with <p>, <h2>, <h3>, <strong>, <em>, <ul>/<li>, <ol>/<li> tags
 - callout: { calloutType: "tip"|"warning"|"formula"|"key-insight", title: "Title", body: "<p>HTML body</p>" }
-- table: { rows: [["Header1", "Header2"], ["Cell1", "Cell2"]] }, first row is header. Cells starting with "=" are formulas, evaluated at render time. Refs use A1 style (column letter, 1-indexed row INCLUDING the header row, so the first body row is row 2). Functions: sum, avg, min, max, count, product, round. Operators: + - * /, parens, unary minus. Trailing % means percent (30% → 0.3). Examples: "=sum(B2:B6)" totals a column, "=B7*0.3" computes 30% of B7, "=B7+B8" sums two cells. Always prefer formulas over pre-computed values for budget tables, totals, buffers, etc., so the math stays live when line items change.
+- table: { rows: [["Header1", "Header2"], ["Cell1", "Cell2"]] } - first row is header. Cells starting with "=" are formulas, evaluated at render time. Refs use A1 style (column letter, 1-indexed row INCLUDING the header row, so the first body row is row 2). Functions: sum, avg, min, max, count, product, round. Operators: + - * /, parens, unary minus. Trailing % means percent (30% → 0.3). Examples: "=sum(B2:B6)" totals a column, "=B7*0.3" computes 30% of B7, "=B7+B8" sums two cells. Always prefer formulas over pre-computed values for budget tables, totals, buffers, etc., so the math stays live when line items change.
 - workbook_prompt: { label: "Question text", placeholder: "Placeholder for student input" }
 - checklist: { title: "Checklist Title", description: "Optional description", items: ["Item 1", "Item 2"] }
 - video: { url: "https://youtube.com/..." }
 - file: { label: "File description", fileUrl: "", fileName: "" }
-- image: { url: "https://...", alt: "Alt text", caption: "", width: "sm"|"md"|"lg"|"full", align: "left"|"center"|"right" }, width defaults to "md" (~70% column), align defaults to "center"; align is ignored when width is "full"
-- spacer: { size: "sm"|"md"|"lg"|"xl" }, vertical breathing room between blocks (16/32/64/96px)
-- divider: {}, hairline horizontal rule
+- image: { url: "https://...", alt: "Alt text", caption: "", width: "sm"|"md"|"lg"|"full", align: "left"|"center"|"right" } - width defaults to "md" (~70% column), align defaults to "center"; align is ignored when width is "full"
+- spacer: { size: "sm"|"md"|"lg"|"xl" } - vertical breathing room between blocks (16/32/64/96px)
+- divider: {} - hairline horizontal rule
 
 When building courses from content:
 1. Create the course first
@@ -493,13 +493,13 @@ When creating rich_text blocks, format HTML properly:
 - Use <strong> for bold, <em> for italic
 - Use <ul>/<li> for bullet lists, <ol>/<li> for numbered lists
 
-Use create_multiple_content_blocks when creating several blocks for a section, it's much faster.
+Use create_multiple_content_blocks when creating several blocks for a section - it's much faster.
 
-When the admin asks you to fix, rewrite, or modify an existing block, use update_content_block, never delete + recreate. Updating in place preserves the block ID, which keeps student highlights, progress, and copy-link anchors intact. If you don't know the block_id, call get_course_structure first.
+When the admin asks you to fix, rewrite, or modify an existing block, use update_content_block - never delete + recreate. Updating in place preserves the block ID, which keeps student highlights, progress, and copy-link anchors intact. If you don't know the block_id, call get_course_structure first.
 
 Be concise in your responses. After creating content, give a brief summary of what was created.
 
-When the admin asks you to build a course from provided content, do it systematically section by section. Don't ask for confirmation, just build it.`
+When the admin asks you to build a course from provided content, do it systematically section by section. Don't ask for confirmation - just build it.`
 
   const encoder = new TextEncoder()
 

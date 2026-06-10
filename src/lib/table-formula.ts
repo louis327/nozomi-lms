@@ -51,7 +51,7 @@ function tokenize(input: string): Token[] {
       i++
       continue
     }
-    // Cell ref or range, must precede number/ident checks because A1 looks like ident
+    // Cell ref or range - must precede number/ident checks because A1 looks like ident
     const upRest = s.slice(i).toUpperCase()
     const cellMatch = RE_CELL.exec(upRest)
     if (cellMatch) {

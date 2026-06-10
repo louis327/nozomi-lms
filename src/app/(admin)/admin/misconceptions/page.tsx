@@ -8,7 +8,7 @@ type Turn = {
   shallow_pattern: string | null
   flagged_for_review: boolean
   created_at: string
-  // PostgREST embed shape is dynamic, we access defensively below.
+  // PostgREST embed shape is dynamic - we access defensively below.
   tutor_sessions: any
 }
 
@@ -93,7 +93,7 @@ export default async function MisconceptionsPage() {
         <h1 className="text-[24px] font-heading font-bold text-[#111] tracking-[-0.02em]">Misconceptions</h1>
         <p className="text-[13.5px] text-[#666] mt-1 max-w-[680px]">
           Where students get stuck across the course. Patterns that fire often = candidates for course content improvement.
-          Anything new firing at a high rate may indicate the rubric is over-triggering, worth a review.
+          Anything new firing at a high rate may indicate the rubric is over-triggering - worth a review.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[12px]">
           <Stat label="Turns" value={turnsList.length} tone="muted" />
@@ -112,7 +112,7 @@ export default async function MisconceptionsPage() {
           Top patterns hit · {topPatterns.length}
         </h2>
         {topPatterns.length === 0 ? (
-          <p className="text-[13px] text-[#888] italic py-4">No misconception data yet, students need to use the Coach first.</p>
+          <p className="text-[13px] text-[#888] italic py-4">No misconception data yet - students need to use the Coach first.</p>
         ) : (
           <div className="space-y-2">
             {topPatterns.map(p => (

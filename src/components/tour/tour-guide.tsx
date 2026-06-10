@@ -42,7 +42,7 @@ function buildGroups(opts: {
           target: '[data-tour="dashboard-greeting"]',
           title: 'Welcome to Nozomi',
           content:
-            'This is your home base. Everything you need to run your raise starts here, and you land back here every time you log in.',
+            'This is your home base. Everything you need to run your raise starts here - and you land back here every time you log in.',
           placement: 'bottom',
         },
         {
@@ -87,7 +87,7 @@ function buildGroups(opts: {
           target: '[data-tour="section-content"]',
           title: 'Your lesson',
           content:
-            'Lessons read top to bottom. Select any passage to save a highlight, it’s stored automatically.',
+            'Lessons read top to bottom. Select any passage to save a highlight - it’s stored automatically.',
           placement: 'auto',
         },
         {
@@ -100,7 +100,7 @@ function buildGroups(opts: {
           target: '[data-tour="section-footer"]',
           title: 'Complete & continue',
           content:
-            'Mark a lesson done to lock in your progress and move to the next. That’s everything, you’re ready to go.',
+            'Mark a lesson done to lock in your progress and move to the next. That’s everything - you’re ready to go.',
           placement: 'top',
         },
       ],

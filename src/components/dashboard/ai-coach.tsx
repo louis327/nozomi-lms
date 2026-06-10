@@ -167,7 +167,7 @@ export function AiCoach({ starters, compact = false }: { starters: string[]; com
         {messages.length === 0 && (
           <div className="py-4">
             <p className="text-[13px] text-ink-soft leading-relaxed mb-4">
-              Ask anything about your raise, valuation, timing, blockers, outreach. I already know your stage and context from onboarding.
+              Ask anything about your raise - valuation, timing, blockers, outreach. I already know your stage and context from onboarding.
             </p>
             <div className="space-y-1.5">
               {starters.map((s) => (

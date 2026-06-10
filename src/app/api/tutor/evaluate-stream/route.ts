@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             criteria_met: [], gap: null, reasoning: 'evaluator parse-fail'
           }
         } else {
-          // Defensive enum coercion, Haiku occasionally puts a verdict value
+          // Defensive enum coercion - Haiku occasionally puts a verdict value
           // ("wrong", "shallow") in the intent field. Force it back to a valid intent.
           const VALID_INTENTS = new Set(['answer', 'question', 'off_topic', 'meta'])
           const VALID_VERDICTS = new Set(['pass', 'shallow', 'wrong', 'partial', null])
@@ -229,7 +229,7 @@ async function runCritic(
       rewrite_hint: tu.input.rewrite_hint ?? null
     }
   } catch (e) {
-    // Critic failure is non-fatal, better to ship the turn unflagged than block persist.
+    // Critic failure is non-fatal - better to ship the turn unflagged than block persist.
     return { pass: true, issues: [], rewrite_hint: null }
   }
 }
@@ -247,7 +247,7 @@ async function persistAsync(args: {
   const turnNumber = (ctx.session.turn_count ?? 0) + 1
 
   // Run the LLM critic in parallel with persisting the turn.
-  // The student already saw the reply, this is calibration data, not a gate.
+  // The student already saw the reply - this is calibration data, not a gate.
   const [criticResult] = await Promise.all([
     runCritic(ctx, studentMessage, fullReply, evalOut),
     // No-op promise to keep the array shape stable
@@ -292,7 +292,7 @@ async function persistAsync(args: {
     })
     .eq('id', ctx.session.id)
 
-  // Upsert mastery, fetch existing first so we increment attempts properly
+  // Upsert mastery - fetch existing first so we increment attempts properly
   // and don't clobber an earlier first_mastered_at.
   const { data: existing } = await admin
     .from('tutor_mastery')

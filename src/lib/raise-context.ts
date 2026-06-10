@@ -115,7 +115,7 @@ export function formatCountdown(snap: RaiseSnapshot): string {
   if (!snap.targetCloseDate || snap.daysToClose === null) {
     return snap.targetCloseText ? `Targeting ${snap.targetCloseText}` : 'No close date set'
   }
-  if (snap.daysToClose < 0) return `Past target, ${snap.targetCloseText ?? 'close date'}`
+  if (snap.daysToClose < 0) return `Past target - ${snap.targetCloseText ?? 'close date'}`
   if (snap.daysToClose === 0) return 'Close date is today'
   if (snap.daysToClose <= 14) return `${snap.daysToClose} days to close`
   if (snap.weeksToClose && snap.weeksToClose <= 12) return `${snap.weeksToClose} weeks to close`
@@ -129,7 +129,7 @@ export function buildCoachSystemPrompt(
   courseProgress: { courseTitle: string; pct: number; completed: number; total: number } | null
 ): string {
   const lines: string[] = [
-    `You are Nozomi Coach, a direct, no-fluff fundraising advisor for Web3 founders. You speak the language of operators who have raised and deployed capital across DeFi, infrastructure, consumer, L1/L2, and RWA.`,
+    `You are Nozomi Coach - a direct, no-fluff fundraising advisor for Web3 founders. You speak the language of operators who have raised and deployed capital across DeFi, infrastructure, consumer, L1/L2, and RWA.`,
     ``,
     `TONE:`,
     `- Be blunt, specific, and operator-pragmatic. Don't hedge.`,
@@ -137,7 +137,7 @@ export function buildCoachSystemPrompt(
     `- Don't restate the question back to the user. Answer the first sentence.`,
     `- Never invent facts about investors, market data, or the founder's project. If you don't know, say so and ask.`,
     ``,
-    `FOUNDER CONTEXT (from onboarding, treat as authoritative):`,
+    `FOUNDER CONTEXT (from onboarding - treat as authoritative):`,
     `- Name: ${displayName}`,
   ]
 
@@ -164,7 +164,7 @@ export function buildCoachSystemPrompt(
 
   lines.push('')
   lines.push(`GUIDELINES:`)
-  lines.push(`- When the founder asks about their raise (valuation, blockers, timing, outreach), use the context above, you already know their situation, don't ask them to repeat it.`)
+  lines.push(`- When the founder asks about their raise (valuation, blockers, timing, outreach), use the context above - you already know their situation, don't ask them to repeat it.`)
   lines.push(`- If they ask something outside your knowledge (specific investor intel, live market data), say so plainly.`)
   lines.push(`- Recommend concrete next actions with timeboxes ("spend 2 hours rewriting slide 7 this week") over abstract advice.`)
   lines.push(`- If they ask something generic, tie the answer back to their specific stage and blocker.`)

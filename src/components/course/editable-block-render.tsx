@@ -220,7 +220,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
             <EditableText
               value={title}
               onChange={(v) => update({ title: v })}
-              placeholder="Optional title, defaults to style name"
+              placeholder="Optional title - defaults to style name"
               className="mb-2"
               style={{ fontSize: '13px' }}
               inheritFont={false}
@@ -323,7 +323,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
             <RichTextEditor
               content={body}
               onChange={(html) => update({ body: html, html })}
-              placeholder="Bucket body, describe what this stage covers, common mistakes, etc."
+              placeholder="Bucket body - describe what this stage covers, common mistakes, etc."
             />
           </div>
         </section>
@@ -440,7 +440,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
             <AddButton onClick={addCol} label="Add column" />
           </div>
           <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            Tip: select cell text to format it. Start a cell with <span className="normal-case tracking-normal text-ink-soft">=</span> for a formula, e.g. <span className="normal-case tracking-normal text-ink-soft">=sum(B2:B6)</span>, <span className="normal-case tracking-normal text-ink-soft">=B7*0.3</span>.
+            Tip: select cell text to format it. Start a cell with <span className="normal-case tracking-normal text-ink-soft">=</span> for a formula - e.g. <span className="normal-case tracking-normal text-ink-soft">=sum(B2:B6)</span>, <span className="normal-case tracking-normal text-ink-soft">=B7*0.3</span>.
           </p>
         </div>
       )
@@ -857,7 +857,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
                   Click to upload an image
                 </p>
                 <p className="text-[11px] text-ink-muted mt-1">
-                  PNG, JPG, GIF, WebP, or SVG, up to 50MB
+                  PNG, JPG, GIF, WebP, or SVG - up to 50MB
                 </p>
               </div>
               <input
@@ -1345,7 +1345,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
             <AddButton onClick={addColumn} label="Add column" />
           </div>
           <p className="mt-2 text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            Toggle <span className="font-mono">E/S</span> per cell, <b>E</b>ditable cells let students fill in; <b>S</b>tatic cells show your value.
+            Toggle <span className="font-mono">E/S</span> per cell - <b>E</b>ditable cells let students fill in; <b>S</b>tatic cells show your value.
           </p>
         </DoBlockShell>
       )

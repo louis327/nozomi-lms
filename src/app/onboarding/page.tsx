@@ -34,7 +34,7 @@ const STEPS: Step[] = [
   {
     id: 'project_type',
     title: 'What type of project are you building?',
-    subtitle: 'Tap one, or press its number.',
+    subtitle: 'Tap one - or press its number.',
     type: 'single',
     columns: 3,
     options: [
@@ -59,19 +59,19 @@ const STEPS: Step[] = [
     examples: [
       'We give GameFi studios the infrastructure to let players rent in-game assets to each other on-chain.',
       'We help institutional traders move stablecoins between chains in under 10 seconds without exposing them to bridge risk.',
-      'We’re building a self-custody wallet for people who have never used crypto before, no seed phrases, no gas fees.',
+      'We’re building a self-custody wallet for people who have never used crypto before - no seed phrases, no gas fees.',
     ],
   },
   {
     id: 'competitive_advantage',
     title: 'Compared to your competition, what makes you different?',
-    subtitle: 'One sentence. Be specific. “Faster and cheaper” is what everyone says, it’s not an answer.',
+    subtitle: 'One sentence. Be specific. “Faster and cheaper” is what everyone says - it’s not an answer.',
     type: 'text',
     maxLength: 280,
     placeholder: 'Unlike...',
     examples: [
-      'Unlike MetaMask, users never see a seed phrase, recovery is handled through social accounts they already trust.',
-      'We’re the first bridge where assets never leave the source chain, we match buyers and sellers instead of wrapping tokens.',
+      'Unlike MetaMask, users never see a seed phrase - recovery is handled through social accounts they already trust.',
+      'We’re the first bridge where assets never leave the source chain - we match buyers and sellers instead of wrapping tokens.',
     ],
   },
   {
@@ -138,7 +138,7 @@ const STEPS: Step[] = [
   {
     id: 'strongest_proof',
     title: 'What’s your strongest proof point right now?',
-    subtitle: 'Select all that apply, press Enter when you’re done.',
+    subtitle: 'Select all that apply - press Enter when you’re done.',
     type: 'multi',
     columns: 2,
     options: [
@@ -182,7 +182,7 @@ const STEPS: Step[] = [
   {
     id: 'target_valuation',
     title: 'What valuation are you targeting?',
-    subtitle: 'Pick the closest range or “Not sure yet”, that’s a valid answer.',
+    subtitle: 'Pick the closest range or “Not sure yet” - that’s a valid answer.',
     type: 'single',
     columns: 4,
     options: [
@@ -207,14 +207,14 @@ const STEPS: Step[] = [
   {
     id: 'biggest_blocker',
     title: 'What’s the single biggest thing blocking your raise right now?',
-    subtitle: 'Pick the most honest answer, this is how we prioritise what to surface for you.',
+    subtitle: 'Pick the most honest answer - this is how we prioritise what to surface for you.',
     type: 'single',
     columns: 3,
     options: [
       'I don’t know how much to raise or at what valuation',
       'I don’t have a deck yet',
       'My deck isn’t converting meetings into interest',
-      'I can’t get meetings, nobody replies to outreach',
+      'I can’t get meetings - nobody replies to outreach',
       'I’m getting meetings but no commits',
       'I had soft commits and they went cold',
       'My tokenomics isn’t clear',
@@ -906,7 +906,7 @@ function OnboardingExperience() {
       {/* Welcome */}
       {step === -1 && renderWelcome()}
 
-      {/* Questions, full-screen centered single-column */}
+      {/* Questions - full-screen centered single-column */}
       {step >= 0 && step < TOTAL && currentQ && (
         <div className="relative h-full overflow-y-auto">
           {/* Top chrome */}

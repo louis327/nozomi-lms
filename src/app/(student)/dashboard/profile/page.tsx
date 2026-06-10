@@ -5,7 +5,7 @@ import { FileText, ArrowRight } from 'lucide-react'
 import { ProfileForm } from '@/components/profile/profile-form'
 import { RestartTourButton } from '@/components/profile/restart-tour-button'
 
-export const metadata = { title: 'Profile, Nozomi' }
+export const metadata = { title: 'Profile - Nozomi' }
 
 export default async function ProfilePage() {
   const supabase = await createClient()
