@@ -67,7 +67,6 @@ export default async function HomePage() {
           <div className="relative pb-14 pt-12 lg:pl-[74px]">
             {/* Vertical spine — desktop only */}
             <div className="absolute left-[14px] top-1/2 hidden -translate-y-1/2 flex-col items-center gap-[18px] lg:flex">
-              <span className="h-[11px] w-[11px] rounded-[3px] bg-accent" />
               <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.26em] text-ink-muted [writing-mode:vertical-rl] [transform:rotate(180deg)]">
                 Nozomi Learn
               </span>
