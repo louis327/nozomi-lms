@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Download, ArrowLeft } from 'lucide-react'
-import { PageTopbar } from '@/components/layout/page-topbar'
 import { WorkbookAnswers } from '@/components/course/workbook-answers'
 import { extractSectionAnswers, type WorkbookData } from '@/lib/answer-extract'
 import type { ContentBlock } from '@/lib/types'
@@ -102,84 +101,54 @@ export default async function WorkbookOnlinePage({
     : null
 
   return (
-    <div className="px-6 lg:px-10 pb-24">
-      <PageTopbar
-        breadcrumb={[
-          { label: 'Nozomi', href: '/dashboard' },
-          { label: 'Courses', href: '/courses' },
-          { label: (course as any).title, href: `/courses/${courseId}` },
-          { label: 'Workbook' },
-        ]}
-      />
-
+    <div className="px-6 pb-24 pt-8 lg:px-10">
       {/* Top toolbar */}
-      <div className="flex items-center justify-between mt-4 mb-12 max-w-[640px] mx-auto">
+      <div className="mx-auto mb-10 flex max-w-[620px] items-center justify-between">
         <Link
           href={`/courses/${courseId}`}
-          className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:text-ink"
         >
-          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
           Back to course
         </Link>
         <a
           href={`/api/courses/${courseId}/export`}
-          className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:text-ink"
         >
-          <Download className="w-3.5 h-3.5" strokeWidth={2} />
+          <Download className="h-3.5 w-3.5" strokeWidth={2} />
           Download PDF
         </a>
       </div>
 
       {/* Title */}
-      <article className="max-w-[640px] mx-auto">
-        <header className="mb-16 text-center">
-          <h1
-            className="text-ink"
-            style={{
-              fontFamily: 'var(--font-serif, Georgia, serif)',
-              fontWeight: 400,
-              fontStyle: 'italic',
-              fontSize: 'clamp(34px, 4.2cqi, 48px)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.02em',
-            }}
-          >
+      <article className="mx-auto max-w-[620px]">
+        <header className="mb-14 text-center">
+          <p className="eyebrow mb-3.5">Workbook</p>
+          <h1 className="text-[34px] font-bold leading-[1.05] tracking-[-0.035em] text-ink sm:text-[40px]">
             {(course as any).title}
           </h1>
           {completedOn && (
-            <p className="mt-5 text-[13px] text-ink-muted">
-              Completed {completedOn}
-            </p>
+            <p className="mt-4 text-[13px] text-ink-muted">Completed {completedOn}</p>
           )}
         </header>
 
-        <div className="space-y-20">
+        <div className="flex flex-col gap-16">
           {modules.map((mod: any, mi: number) => {
             const sections = [...(mod.sections ?? [])].sort(
               (a: any, b: any) => a.sort_order - b.sort_order,
             )
             return (
               <section key={mod.id}>
-                <h2
-                  className="text-ink mb-10"
-                  style={{
-                    fontFamily: 'var(--font-serif, Georgia, serif)',
-                    fontWeight: 400,
-                    fontStyle: 'italic',
-                    fontSize: 'clamp(24px, 2.8cqi, 30px)',
-                    lineHeight: 1.15,
-                    letterSpacing: '-0.015em',
-                  }}
-                >
-                  {mi + 1}. {mod.title}
+                <h2 className="mb-8 border-b border-line pb-3.5 text-[24px] font-bold leading-[1.15] tracking-[-0.025em] text-ink">
+                  <span className="text-accent">{mi + 1}.</span> {mod.title}
                 </h2>
 
                 {sections.length === 0 ? (
-                  <p className="text-[13.5px] text-ink-faint italic">
+                  <p className="text-[13.5px] italic text-ink-faint">
                     No sections in this module.
                   </p>
                 ) : (
-                  <div className="space-y-14">
+                  <div className="flex flex-col gap-11">
                     {sections.map((sec: any) => {
                       const blocks = [
                         ...((sec as any).content_blocks ?? []),
@@ -195,12 +164,12 @@ export default async function WorkbookOnlinePage({
 
                       return (
                         <div key={sec.id}>
-                          <h3 className="text-[17px] font-semibold text-ink mb-6">
+                          <h3 className="mb-5 text-[16.5px] font-bold tracking-[-0.01em] text-ink">
                             {sec.title}
                           </h3>
 
                           {answers.length === 0 ? (
-                            <p className="text-[13.5px] text-ink-faint italic">
+                            <p className="text-[13.5px] italic text-ink-faint">
                               No prompts in this section.
                             </p>
                           ) : (
