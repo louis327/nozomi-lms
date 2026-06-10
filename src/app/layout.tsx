@@ -29,13 +29,6 @@ export const metadata: Metadata = {
     template: '%s | Nozomi',
   },
   description: 'A quiet, focused learning platform. Courses built for clarity and progress.',
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico' },
-    ],
-    apple: '/icon.svg',
-  },
 }
 
 export default function RootLayout({
