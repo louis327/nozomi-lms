@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import type { Course } from '@/lib/types'
 
-export const metadata = { title: 'Nozomi — Master Web3 fundraising' }
+export const metadata = { title: 'Nozomi, Master Web3 fundraising' }
 
 // Deterministic swatch palette (cycled by course order).
 const PALETTE = [
@@ -65,7 +65,7 @@ export default async function HomePage() {
         />
         <div className="relative mx-auto max-w-[1140px] px-6 sm:px-11">
           <div className="relative pb-16 pt-20 sm:pt-28 lg:pl-[74px]">
-            {/* Vertical spine — desktop only */}
+            {/* Vertical spine, desktop only */}
             <div className="absolute left-[14px] top-1/2 hidden -translate-y-1/2 flex-col items-center gap-[18px] lg:flex">
               <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.26em] text-ink-muted [writing-mode:vertical-rl] [transform:rotate(180deg)]">
                 Nozomi Learn
@@ -86,7 +86,7 @@ export default async function HomePage() {
             <div className="mt-9 flex flex-wrap items-end justify-between gap-10">
               <p className="max-w-[46ch] text-[18px] leading-[1.6] text-ink-soft">
                 Learn from founders who&apos;ve raised and deployed capital across DeFi, infrastructure, and
-                consumer — actionable knowledge, not theory.
+                consumer, actionable knowledge, not theory.
               </p>
               <div className="flex shrink-0 items-center gap-3">
                 <Link
@@ -118,7 +118,7 @@ export default async function HomePage() {
 
           {coursesWithCount.length === 0 ? (
             <div className="border-t border-line py-20 text-center">
-              <p className="text-[15px] text-ink-soft">New courses are being prepared — check back soon.</p>
+              <p className="text-[15px] text-ink-soft">New courses are being prepared, check back soon.</p>
             </div>
           ) : (
             <div>

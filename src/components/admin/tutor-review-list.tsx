@@ -143,7 +143,7 @@ function TurnCard({
         </div>
         <div className="flex items-center gap-2 text-[11px] text-[#aaa]">
           <Badge tone={turn.verdict === 'pass' ? 'good' : turn.verdict === 'wrong' ? 'bad' : 'warn'}>
-            {turn.intent || 'unknown'} → {turn.verdict || '—'}
+            {turn.intent || 'unknown'} → {turn.verdict || '-'}
           </Badge>
           {turn.flagged_for_review && <Badge tone="bad">flagged</Badge>}
         </div>

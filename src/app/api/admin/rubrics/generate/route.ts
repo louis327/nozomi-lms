@@ -16,7 +16,7 @@ FORBIDDEN: rubric must not enable the tutor to say "Good question", "Great answe
 PRAISE STYLE (for pass criteria): praise must name the specific concept by name, not generic encouragement.
 `.trim()
 
-// Hand-authored exemplar — this is what we're calibrating new rubrics toward.
+// Hand-authored exemplar, this is what we're calibrating new rubrics toward.
 const EXEMPLAR_SECTION_TITLE = 'The Problem With Guessing How Much to Raise'
 const EXEMPLAR_SECTION_TEXT = `
 Most founders guess their raise amount. Investors notice immediately.
@@ -36,11 +36,11 @@ const EXEMPLAR_RUBRIC = {
     { id: 'structure', criterion: 'A position has three parts', description: 'Identifies milestone + operating plan + specific allocation as the three components.' }
   ],
   shallow_patterns: [
-    { id: 'specificity_only', pattern: "Says 'investors want more specifics' without naming WHY specificity matters.", probe: "Specifics matter — but specifics of what? What is the investor actually using the numbers to infer about you?" },
-    { id: 'use_of_funds', pattern: "Says 'show your use of funds' — generic, doesn't capture milestone-anchoring.", probe: "The founder in the example did give a use of funds — product, growth, ops. What turned that answer into a guess instead of a position?" }
+    { id: 'specificity_only', pattern: "Says 'investors want more specifics' without naming WHY specificity matters.", probe: "Specifics matter, but specifics of what? What is the investor actually using the numbers to infer about you?" },
+    { id: 'use_of_funds', pattern: "Says 'show your use of funds', generic, doesn't capture milestone-anchoring.", probe: "The founder in the example did give a use of funds, product, growth, ops. What turned that answer into a guess instead of a position?" }
   ],
   wrong_patterns: [
-    { id: 'smaller_number', pattern: "Says investors prefer a smaller raise amount.", leading_question: "The position founder is raising $2.4M against the number founder's $3M — pretty similar. If dollar amount isn't the differentiator, what is?" },
+    { id: 'smaller_number', pattern: "Says investors prefer a smaller raise amount.", leading_question: "The position founder is raising $2.4M against the number founder's $3M, pretty similar. If dollar amount isn't the differentiator, what is?" },
     { id: 'pitch_deck', pattern: "Says it's about having a better pitch deck.", leading_question: "The meeting ends at the question, before any deck is shown. Where does that locate the actual problem?" }
   ],
   off_scope_hint:
@@ -112,11 +112,11 @@ export async function POST(request: NextRequest) {
 ${VOICE_NOTES}
 
 A rubric has FIVE parts:
-1. question — the checkpoint question the student answers. Open-ended, asks them to reason in their own words. Tests the section's core concept.
-2. pass_criteria — 3 items (rarely 4). Each is { id, criterion, description }. ALL must be addressed (loosely paraphrased counts) for a "pass" verdict. Together they define mastery.
-3. shallow_patterns — 3 to 5 items. Each is { id, pattern, probe }. "pattern" describes a common shallow-correct answer; "probe" is a ONE-question Socratic push that exposes the gap. Probe must NOT reveal the answer.
-4. wrong_patterns — 2 to 4 items. Each is { id, pattern, leading_question }. "pattern" describes a common wrong framing; "leading_question" gently brings them toward the right framing without correcting them directly.
-5. off_scope_hint — one or two sentences for when the student goes off-topic. Must NOT use sycophancy bigrams.
+1. question, the checkpoint question the student answers. Open-ended, asks them to reason in their own words. Tests the section's core concept.
+2. pass_criteria, 3 items (rarely 4). Each is { id, criterion, description }. ALL must be addressed (loosely paraphrased counts) for a "pass" verdict. Together they define mastery.
+3. shallow_patterns, 3 to 5 items. Each is { id, pattern, probe }. "pattern" describes a common shallow-correct answer; "probe" is a ONE-question Socratic push that exposes the gap. Probe must NOT reveal the answer.
+4. wrong_patterns, 2 to 4 items. Each is { id, pattern, leading_question }. "pattern" describes a common wrong framing; "leading_question" gently brings them toward the right framing without correcting them directly.
+5. off_scope_hint, one or two sentences for when the student goes off-topic. Must NOT use sycophancy bigrams.
 
 Quality bar:
 - Every probe and leading_question is ONE question. No "X? And Y?" stacks.

@@ -292,7 +292,7 @@ export function AiChat({ rightOffset = 24 }: { rightOffset?: number } = {}) {
                       {toolLabels[event.tool] || event.tool}
                     </span>
                     {event.detail && (
-                      <span className="text-nz-error text-[10px]">— {event.detail}</span>
+                      <span className="text-nz-error text-[10px]">- {event.detail}</span>
                     )}
                   </div>
                 ))}

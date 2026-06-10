@@ -52,7 +52,7 @@ export default async function CourseLearnLayout({
   if (!course) redirect('/dashboard')
 
   // Hide draft sections from non-admins (RLS already does this for them, but
-  // admins fetch everything — students see only published sections).
+  // admins fetch everything, students see only published sections).
   if (!isAdmin) {
     for (const mod of (course.modules ?? []) as any[]) {
       mod.sections = (mod.sections ?? []).filter((s: any) => s.status === 'published')

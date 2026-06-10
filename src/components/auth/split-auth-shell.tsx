@@ -122,7 +122,7 @@ export function SplitAuthShell({ tagline, children }: Props) {
           </p>
         </div>
 
-        {/* Center: floating course-preview card — what Nozomi actually looks like */}
+        {/* Center: floating course-preview card, what Nozomi actually looks like */}
         <div className="relative flex-1 flex items-center justify-center py-12 lg:py-8">
           <div
             className="relative w-full max-w-[420px] rounded-2xl border border-white/10 p-7 lg:p-8 animate-[fadeUp_900ms_cubic-bezier(0.2,0.8,0.2,1)_400ms_both]"

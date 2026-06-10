@@ -12,7 +12,7 @@ const sizeMap = {
   xl: { box: 'w-32 h-32 rounded-2xl', text: 'text-[40px]' },
 } as const
 
-// Deterministic pastel tone from title — gives each course a unique but calm colour
+// Deterministic pastel tone from title, gives each course a unique but calm colour
 function toneFromTitle(title: string) {
   let hash = 0
   for (let i = 0; i < title.length; i++) hash = (hash * 31 + title.charCodeAt(i)) | 0

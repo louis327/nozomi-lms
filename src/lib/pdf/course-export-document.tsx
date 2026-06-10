@@ -400,7 +400,7 @@ function renderAnswerBody(answer: ExtractedAnswer) {
             <View key={i} style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>{f.label}</Text>
               <Text style={styles.fieldValue}>
-                {f.value || '—'}
+                {f.value || '-'}
               </Text>
             </View>
           ))}
@@ -429,7 +429,7 @@ function renderAnswerBody(answer: ExtractedAnswer) {
                     !cell.editable ? styles.tableCellLabel : {},
                   ]}
                 >
-                  {cell.value || (cell.editable ? '—' : '')}
+                  {cell.value || (cell.editable ? '-' : '')}
                 </Text>
               ))}
             </View>
@@ -518,7 +518,7 @@ export function CourseExportDocument({ data }: { data: ExportData }) {
 
   return (
     <Document
-      title={`${courseTitle} — Nozomi workbook`}
+      title={`${courseTitle}, Nozomi workbook`}
       author={founderName}
       creator="Nozomi"
       producer="Nozomi"

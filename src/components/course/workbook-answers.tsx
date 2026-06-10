@@ -54,7 +54,7 @@ function renderAnswerBody(answer: ExtractedAnswer) {
                 {f.label}
               </dt>
               <dd className="flex-1 text-[14.5px] text-ink">
-                {f.value || <span className="text-ink-faint italic">—</span>}
+                {f.value || <span className="text-ink-faint italic">-</span>}
               </dd>
             </div>
           ))}
@@ -96,7 +96,7 @@ function renderAnswerBody(answer: ExtractedAnswer) {
                           : 'text-ink-soft'
                       }`}
                     >
-                      {cell.value || (cell.editable ? '—' : '')}
+                      {cell.value || (cell.editable ? '-' : '')}
                     </td>
                   ))}
                 </tr>

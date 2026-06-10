@@ -59,7 +59,7 @@ function AnswerBlock({ a }: { a: ExtractedAnswer }) {
           {a.fields.map((f, i) => (
             <li key={i} className="text-[13px] text-[#222]">
               <span className="text-[#999] mr-1.5">{f.label}:</span>
-              {f.value || <span className="italic text-[#bbb]">—</span>}
+              {f.value || <span className="italic text-[#bbb]">-</span>}
             </li>
           ))}
         </ul>
@@ -136,7 +136,7 @@ function AnswerBlock({ a }: { a: ExtractedAnswer }) {
               <tr key={ri} className="border-t border-[#f0f0f0]">
                 {row.map((cell, ci) => (
                   <td key={ci} className="px-2 py-1 text-[#222]">
-                    {cell.value || <span className="italic text-[#bbb]">—</span>}
+                    {cell.value || <span className="italic text-[#bbb]">-</span>}
                   </td>
                 ))}
               </tr>
@@ -195,7 +195,7 @@ export function ResponsesView({
               }}
               className="w-full appearance-none px-3 py-2 pr-9 rounded-lg border border-[#e8e8e8] bg-white text-[13px] text-[#111] focus:outline-none focus:border-nz-sakura/50 cursor-pointer"
             >
-              <option value="">— Select course —</option>
+              <option value="">- Select course -</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -224,7 +224,7 @@ export function ResponsesView({
               }}
               className="w-full appearance-none px-3 py-2 pr-9 rounded-lg border border-[#e8e8e8] bg-white text-[13px] text-[#111] focus:outline-none focus:border-nz-sakura/50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <option value="">— Select section —</option>
+              <option value="">- Select section -</option>
               {sectionsFlat.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}

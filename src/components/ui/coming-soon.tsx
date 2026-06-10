@@ -27,7 +27,7 @@ export function ComingSoon({ eyebrow, title, titleAccent, description, icon }: C
             <h2 className="font-serif text-[20px] text-ink mb-2">In the works.</h2>
             <p className="text-[13.5px] text-ink-soft leading-relaxed mb-5">
               We&apos;re building this out for a future release. In the meantime, stay focused on your current
-              module — the rest will come online as you progress.
+              module, the rest will come online as you progress.
             </p>
             <Link
               href="/dashboard"

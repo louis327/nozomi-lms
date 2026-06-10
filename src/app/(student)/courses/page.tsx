@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { ArrowRight, Clock } from 'lucide-react'
 
-export const metadata = { title: 'My Courses — Nozomi' }
+export const metadata = { title: 'My Courses, Nozomi' }
 
 const PANEL =
   'rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
@@ -81,7 +81,7 @@ export default async function CoursesPage() {
   const completedCourses = enrolledCourses.filter((c) => c.sectionTotal > 0 && c.pct === 100)
   const otherCourses = coursesList.filter((c) => !c.isEnrolled)
 
-  // Resume banner — most recently touched in-progress section
+  // Resume banner, most recently touched in-progress section
   const { data: lastProg } = await supabase
     .from('section_progress')
     .select('section_id, completed, updated_at')
@@ -201,7 +201,7 @@ export default async function CoursesPage() {
         </Link>
       )}
 
-      {/* Enrolled — full-width rows */}
+      {/* Enrolled, full-width rows */}
       {enrolledCourses.length > 0 && (
         <Section title="Enrolled" count={enrolledCourses.length}>
           <div className="flex flex-col gap-3">
@@ -212,7 +212,7 @@ export default async function CoursesPage() {
         </Section>
       )}
 
-      {/* Explore — card grid */}
+      {/* Explore, card grid */}
       {otherCourses.length > 0 && (
         <Section title="Explore more" count={otherCourses.length}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

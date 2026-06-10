@@ -78,7 +78,7 @@ export function SectionHighlights({ sectionId }: { sectionId: string }) {
         setToolbar(null)
         return
       }
-      // Avoid editor-selection (admin tiptap) — its container has [contenteditable]
+      // Avoid editor-selection (admin tiptap), its container has [contenteditable]
       let node: Node | null = container
       while (node) {
         if (node instanceof HTMLElement && node.isContentEditable) {

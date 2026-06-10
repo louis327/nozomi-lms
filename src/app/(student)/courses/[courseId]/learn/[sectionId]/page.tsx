@@ -52,7 +52,7 @@ export default async function SectionPage({
     .single()
 
   // Module position within the course (1-based). Derived from actual ordering,
-  // not sort_order — gaps from deleted modules used to throw the numbering off.
+  // not sort_order, gaps from deleted modules used to throw the numbering off.
   let modulePosition = 1
   if (moduleMeta) {
     const { data: courseModules } = await supabase
@@ -65,7 +65,7 @@ export default async function SectionPage({
     modulePosition = idx >= 0 ? idx + 1 : 1
   }
 
-  // Next section — non-admins skip drafts
+  // Next section, non-admins skip drafts
   let nextSiblingsQuery = supabase
     .from('sections')
     .select('id, sort_order, status')
@@ -96,7 +96,7 @@ export default async function SectionPage({
     }
   }
 
-  // Prev section — non-admins skip drafts
+  // Prev section, non-admins skip drafts
   let prevSiblingsQuery = supabase
     .from('sections')
     .select('id, sort_order, status')

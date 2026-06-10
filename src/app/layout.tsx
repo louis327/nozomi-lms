@@ -25,7 +25,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Nozomi — Learn with intention',
+    default: 'Nozomi, Learn with intention',
     template: '%s | Nozomi',
   },
   description: 'A quiet, focused learning platform. Courses built for clarity and progress.',

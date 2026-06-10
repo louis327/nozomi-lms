@@ -422,7 +422,7 @@ export function StructureEditorPanel({ open, onClose, course, courseId }: Struct
       const res = await fetch(`/api/admin/sections/${sectionId}`, { method: 'DELETE' })
       // If no DELETE handler, delete via blocks then section
       if (res.status === 405) {
-        // Use admin blocks cleanup — for now just delete the section directly
+        // Use admin blocks cleanup, for now just delete the section directly
         // The DB cascade should handle it if FK constraints are set
       }
       setModules((prev) => prev.map((m) =>
@@ -677,7 +677,7 @@ export function StructureEditorPanel({ open, onClose, course, courseId }: Struct
           )}
         </div>
 
-        {/* Footer — add module */}
+        {/* Footer, add module */}
         <div className="px-5 py-4 border-t border-nz-border">
           <button
             onClick={handleAddModule}

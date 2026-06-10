@@ -51,7 +51,7 @@ function tokenize(input: string): Token[] {
       i++
       continue
     }
-    // Cell ref or range — must precede number/ident checks because A1 looks like ident
+    // Cell ref or range, must precede number/ident checks because A1 looks like ident
     const upRest = s.slice(i).toUpperCase()
     const cellMatch = RE_CELL.exec(upRest)
     if (cellMatch) {
@@ -331,7 +331,7 @@ export function evaluateCell(rows: string[][], rowIdx: number, colIdx: number): 
 }
 
 export function formatNumber(n: number): string {
-  if (!Number.isFinite(n)) return '—'
+  if (!Number.isFinite(n)) return '-'
   // Integer-friendly formatting, otherwise up to 2 decimals
   const rounded = Math.round(n * 100) / 100
   if (Math.abs(rounded - Math.trunc(rounded)) < 1e-9) {

@@ -155,7 +155,7 @@ export function ImportCourseModal({
       payload.pdfFileName = pdfFile?.name || 'document.pdf'
     }
 
-    // Fire and forget — don't wait for n8n response
+    // Fire and forget, don't wait for n8n response
     fetch('https://n8n.textflow.com.au/webhook/nozomi-import-course', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -164,14 +164,14 @@ export function ImportCourseModal({
       try {
         const data: ImportResult = await res.json()
         if (data.success && importingRef.current) {
-          // Don't finish immediately — store it so polling can show progress first
+          // Don't finish immediately, store it so polling can show progress first
           pendingFinishRef.current = data
         }
       } catch {
         // Response parse failed, polling will handle it
       }
     }).catch(() => {
-      // Network timeout is expected for long imports — polling handles it
+      // Network timeout is expected for long imports, polling handles it
     })
 
     // After 2 seconds, switch to waiting phase and start polling
@@ -189,7 +189,7 @@ export function ImportCourseModal({
       setPhaseSync('error')
       setResult({
         success: false,
-        error: 'Import timed out after 10 minutes. The course may still be building — check your courses list in a moment.',
+        error: 'Import timed out after 10 minutes. The course may still be building, check your courses list in a moment.',
       })
     }, 600000)
   }
@@ -284,7 +284,7 @@ export function ImportCourseModal({
           stableCount = 0
         }
       } catch {
-        // Polling error — continue trying
+        // Polling error, continue trying
       }
     }, 3000)
   }
@@ -306,7 +306,7 @@ export function ImportCourseModal({
           .limit(1)
 
         if (!courses || courses.length === 0) {
-          // No course yet — if n8n already responded with success, use that
+          // No course yet, if n8n already responded with success, use that
           if (pendingFinishRef.current) {
             finishSuccess(pendingFinishRef.current)
           }
@@ -394,7 +394,7 @@ export function ImportCourseModal({
           stableCount = 0
         }
       } catch {
-        // Polling error — continue trying
+        // Polling error, continue trying
       }
     }, 3000)
   }
@@ -441,7 +441,7 @@ export function ImportCourseModal({
 
         {/* Body */}
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* Form fields — hidden during import */}
+          {/* Form fields, hidden during import */}
           {!isImporting && phase !== 'done' && (
             <>
               {mode === 'course' && (
@@ -502,8 +502,8 @@ export function ImportCourseModal({
                     onChange={(e) => setContent(e.target.value)}
                     placeholder={
                       mode === 'module'
-                        ? 'Paste the new module content here — sections, tables, exercises. If the doc contains multiple module headings, each will become a separate module appended to the course.'
-                        : 'Paste your full course content here — modules, sections, tables, exercises, everything. The AI will parse it into the correct block types automatically.'
+                        ? 'Paste the new module content here, sections, tables, exercises. If the doc contains multiple module headings, each will become a separate module appended to the course.'
+                        : 'Paste your full course content here, modules, sections, tables, exercises, everything. The AI will parse it into the correct block types automatically.'
                     }
                     rows={10}
                     className="w-full px-4 py-3 rounded-xl bg-nz-bg-tertiary border border-nz-border text-sm text-nz-text-primary placeholder:text-nz-text-muted focus:outline-none focus:border-nz-sakura/40 resize-none transition-colors font-mono leading-relaxed"
@@ -615,10 +615,10 @@ export function ImportCourseModal({
               {/* Live stats grid */}
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { icon: BookOpen, label: 'Course', value: progress.courseId ? '1' : '—', active: !!progress.courseId },
-                  { icon: Layers, label: 'Modules', value: progress.modules > 0 ? String(progress.modules) : '—', active: progress.modules > 0 },
-                  { icon: LayoutList, label: 'Sections', value: progress.sections > 0 ? String(progress.sections) : '—', active: progress.sections > 0 },
-                  { icon: Blocks, label: 'Blocks', value: progress.blocks > 0 ? String(progress.blocks) : '—', active: progress.blocks > 0 },
+                  { icon: BookOpen, label: 'Course', value: progress.courseId ? '1' : '-', active: !!progress.courseId },
+                  { icon: Layers, label: 'Modules', value: progress.modules > 0 ? String(progress.modules) : '-', active: progress.modules > 0 },
+                  { icon: LayoutList, label: 'Sections', value: progress.sections > 0 ? String(progress.sections) : '-', active: progress.sections > 0 },
+                  { icon: Blocks, label: 'Blocks', value: progress.blocks > 0 ? String(progress.blocks) : '-', active: progress.blocks > 0 },
                 ].map((stat) => {
                   const Icon = stat.icon
                   return (
@@ -643,12 +643,12 @@ export function ImportCourseModal({
               {/* Contextual tips */}
               <p className="text-xs text-nz-text-muted text-center">
                 {elapsed < 15
-                  ? 'Claude Opus is the most capable AI model — it takes time but produces elite results.'
+                  ? 'Claude Opus is the most capable AI model, it takes time but produces elite results.'
                   : elapsed < 60
                     ? 'Analyzing document structure, identifying key concepts...'
                     : elapsed < 180
                       ? 'Building out modules with rich content blocks, callouts, and exercises...'
-                      : 'Finalizing — large courses can take up to 5 minutes. Your content is being preserved in full.'}
+                      : 'Finalizing, large courses can take up to 5 minutes. Your content is being preserved in full.'}
               </p>
             </div>
           )}

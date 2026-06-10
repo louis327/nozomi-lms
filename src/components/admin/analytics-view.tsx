@@ -43,7 +43,7 @@ export function AnalyticsView({
             }}
             className="w-full appearance-none px-3 py-2 pr-9 rounded-lg border border-[#e8e8e8] bg-white text-[13px] text-[#111] focus:outline-none focus:border-nz-sakura/50 cursor-pointer"
           >
-            <option value="">— Select course —</option>
+            <option value="">- Select course -</option>
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}

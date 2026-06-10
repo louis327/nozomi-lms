@@ -5,7 +5,7 @@ import { buildRaiseSnapshot, type OnboardingData } from '@/lib/raise-context'
 import type { Course } from '@/lib/types'
 import { ArrowUpRight, Check, ArrowRight, BookOpen } from 'lucide-react'
 
-export const metadata = { title: 'Dashboard — Nozomi' }
+export const metadata = { title: 'Dashboard, Nozomi' }
 
 const PANEL =
   'rounded-[14px] border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
@@ -165,9 +165,9 @@ export default async function DashboardPage() {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi label="Target raise" value={snap.raiseAmount ?? '—'} sub="This round" />
-        <Kpi label="Valuation" value={snap.targetValuation ?? '—'} sub="Post-money target" />
-        <Kpi label="Days to close" value={snap.daysToClose !== null ? String(snap.daysToClose) : '—'} sub={snap.targetCloseText ?? 'No close date set'} accent />
+        <Kpi label="Target raise" value={snap.raiseAmount ?? '-'} sub="This round" />
+        <Kpi label="Valuation" value={snap.targetValuation ?? '-'} sub="Post-money target" />
+        <Kpi label="Days to close" value={snap.daysToClose !== null ? String(snap.daysToClose) : '-'} sub={snap.targetCloseText ?? 'No close date set'} accent />
         <Kpi label="Course progress" value={`${pct}%`} sub={totalSections ? `${completedSections} of ${totalSections} sections` : 'Not started'} />
       </div>
 
