@@ -4,27 +4,28 @@
   /* Surfaces */
   --nz-canvas: #ffffff;
   --nz-surface: #ffffff;
-  --nz-surface-muted: #f4efe8;
+  --nz-surface-muted: #f6f6f5;
+  --nz-track: #edeceb;
   --nz-surface-dark: #0d0d0e;
   --nz-surface-inverted: #151517;
 
   /* Accent */
   --nz-accent: #e91e63;
-  --nz-accent-soft: #f9d6e2;
+  --nz-accent-soft: #fce4ec;
   --nz-accent-deep: #c2185b;
 
   /* Text */
-  --nz-ink: #141414;
-  --nz-ink-soft: #5a5956;
-  --nz-ink-muted: #9a9892;
-  --nz-ink-faint: #c2bfb8;
+  --nz-ink: #16181d;
+  --nz-ink-soft: #5b616e;
+  --nz-ink-muted: #8a909c;
+  --nz-ink-faint: #b6bbc4;
   --nz-ink-inverted: #fafafa;
   --nz-ink-inverted-soft: #a3a3a3;
 
   /* Borders */
-  --nz-border: #e8e2d8;
-  --nz-border-soft: #efeae0;
-  --nz-border-strong: #d4cdc0;
+  --nz-border: #ececeb;
+  --nz-border-soft: #f1f1f0;
+  --nz-border-strong: #e2e2e0;
   --nz-border-dark: #26262a;
 
   /* Status */
@@ -44,24 +45,25 @@
 @theme inline {
   --color-canvas: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-muted: #f4efe8;
+  --color-surface-muted: #f6f6f5;
+  --color-track: #edeceb;
   --color-surface-dark: #0d0d0e;
   --color-surface-inverted: #151517;
 
   --color-accent: #e91e63;
-  --color-accent-soft: #f9d6e2;
+  --color-accent-soft: #fce4ec;
   --color-accent-deep: #c2185b;
 
-  --color-ink: #141414;
-  --color-ink-soft: #5a5956;
-  --color-ink-muted: #9a9892;
-  --color-ink-faint: #c2bfb8;
+  --color-ink: #16181d;
+  --color-ink-soft: #5b616e;
+  --color-ink-muted: #8a909c;
+  --color-ink-faint: #b6bbc4;
   --color-ink-inverted: #fafafa;
   --color-ink-inverted-soft: #a3a3a3;
 
-  --color-line: #e8e2d8;
-  --color-line-soft: #efeae0;
-  --color-line-strong: #d4cdc0;
+  --color-line: #ececeb;
+  --color-line-soft: #f1f1f0;
+  --color-line-strong: #e2e2e0;
   --color-line-dark: #26262a;
 
   --color-success: #16a34a;
@@ -69,9 +71,9 @@
   --color-error: #dc2626;
   --color-info: #2563eb;
 
-  --font-sans: var(--font-open-sans), 'Open Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-open-sans), 'Open Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-open-sans), 'Open Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-schibsted), 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-schibsted), 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-schibsted), 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
 
   /* Legacy aliases — admin code still references nz-* classes */

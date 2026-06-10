@@ -68,7 +68,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         firstSectionHref={firstSectionHref}
       >
         <div className="min-h-screen bg-canvas">
-          <StudentLayoutShell userName={userName} isAdmin={isAdmin}>
+          <StudentLayoutShell userName={userName} userEmail={profile?.email ?? undefined} isAdmin={isAdmin}>
             {children}
           </StudentLayoutShell>
         </div>

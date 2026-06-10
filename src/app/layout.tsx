@@ -1,6 +1,13 @@
 import type { Metadata } from 'next'
-import { Open_Sans, JetBrains_Mono } from 'next/font/google'
+import { Schibsted_Grotesk, Open_Sans, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+
+const schibsted = Schibsted_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  variable: '--font-schibsted',
+  display: 'swap',
+})
 
 const openSans = Open_Sans({
   subsets: ['latin'],
@@ -31,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${openSans.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${schibsted.variable} ${openSans.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen bg-canvas text-ink font-sans antialiased">
         {children}
       </body>
