@@ -1,8 +1,31 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import type { Course } from '@/lib/types'
-import { CourseThumb } from '@/components/ui/course-thumb'
+
+export const metadata = { title: 'Nozomi — Master Web3 fundraising' }
+
+// Deterministic swatch palette (cycled by course order).
+const PALETTE = [
+  { c: '#e91e63', deep: '#c2185b', tint: '#fdf1f5', grad: 'linear-gradient(140deg,#f0356f,#c2185b)' },
+  { c: '#7c3aed', deep: '#6d28d9', tint: '#f5f1fe', grad: 'linear-gradient(140deg,#8b5cf6,#6d28d9)' },
+  { c: '#16a06b', deep: '#13855a', tint: '#eefaf4', grad: 'linear-gradient(140deg,#22b07d,#13855a)' },
+  { c: '#2563eb', deep: '#1d4ed8', tint: '#eef3fe', grad: 'linear-gradient(140deg,#3b82f6,#1d4ed8)' },
+  { c: '#d97706', deep: '#b45309', tint: '#fef6ec', grad: 'linear-gradient(140deg,#f59e0b,#b45309)' },
+]
+
+function initials(title: string) {
+  return (
+    title
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || 'N'
+  )
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -21,105 +44,155 @@ export default async function HomePage() {
     moduleCount: course.modules?.length ?? 0,
   }))
 
-  return (
-    <div>
-      {/* Hero */}
-      <section className="px-6 lg:px-10 pt-16 pb-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="eyebrow-accent mb-6">Raise Web3 — the program</p>
-          <h1 className="display text-[52px] sm:text-[64px] lg:text-[80px] leading-[1.02] mb-8">
-            Master Web3 <em>fundraising,</em>
-            <br />taught by operators.
-          </h1>
-          <p className="text-[17px] text-ink-soft max-w-2xl mx-auto leading-relaxed">
-            Nozomi is the YC for Web3. Learn from founders who&apos;ve raised and deployed capital
-            across DeFi, infrastructure, and consumer — actionable knowledge, not theory.
-          </p>
+  const year = new Date().getFullYear()
 
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <a
-              href="#courses"
-              className="inline-flex items-center px-6 py-3 text-[13.5px] font-medium bg-ink text-white rounded-full hover:bg-black transition-colors"
-            >
-              Explore courses
-              <svg className="ml-2 w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </a>
-            <Link
-              href="/signup"
-              className="inline-flex items-center px-6 py-3 text-[13.5px] font-medium border border-line text-ink rounded-full hover:border-line-strong transition-colors"
-            >
-              Get started
-            </Link>
+  return (
+    <>
+      <style>{`
+        .lr-swatch, .lr-arr { transition: all .25s ease; }
+        .lr-row:hover { background: var(--tint); }
+        .lr-row:hover .lr-swatch { transform: scale(1.06) rotate(-2deg); }
+        .lr-row:hover h3 { color: var(--c-deep); }
+        .lr-row:hover .lr-arr { border-color: var(--c); background: var(--c); color: #fff; transform: translateX(4px); }
+      `}</style>
+
+      {/* Hero */}
+      <header className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-[120px] -top-[160px] h-[560px] w-[620px] rounded-full"
+          style={{ background: 'radial-gradient(circle, var(--nz-accent-soft), transparent 64%)', opacity: 0.85 }}
+        />
+        <div className="relative mx-auto max-w-[1140px] px-6 sm:px-11">
+          <div className="relative pb-14 pt-12 lg:pl-[74px]">
+            {/* Vertical spine — desktop only */}
+            <div className="absolute left-[14px] top-1/2 hidden -translate-y-1/2 flex-col items-center gap-[18px] lg:flex">
+              <span className="h-[11px] w-[11px] rounded-[3px] bg-accent" />
+              <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.26em] text-ink-muted [writing-mode:vertical-rl] [transform:rotate(180deg)]">
+                Nozomi Learn
+              </span>
+              <span className="h-16 w-px bg-line-strong" />
+            </div>
+
+            <div className="mb-11 inline-flex items-center text-[18px] font-bold tracking-[-0.02em] text-ink">
+              Nozomi <span className="ml-1.5 font-semibold text-ink-muted">Learn</span>
+            </div>
+
+            <p className="mb-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-accent">
+              The YC for Web3 fundraising
+            </p>
+
+            <h1 className="max-w-[15ch] text-[clamp(44px,6.6vw,84px)] font-bold leading-[0.98] tracking-[-0.045em] text-ink">
+              Master fundraising,
+              <br />
+              taught by <span className="text-accent">operators.</span>
+            </h1>
+
+            <div className="mt-9 flex flex-wrap items-end justify-between gap-10">
+              <p className="max-w-[46ch] text-[18px] leading-[1.6] text-ink-soft">
+                Learn from founders who&apos;ve raised and deployed capital across DeFi, infrastructure, and
+                consumer — actionable knowledge, not theory.
+              </p>
+              <div className="flex shrink-0 items-center gap-3">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-[10px] border border-line-strong px-6 py-[13px] text-[14.5px] font-semibold text-ink transition-colors hover:border-ink-faint hover:bg-surface-muted"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="group inline-flex items-center justify-center gap-2 rounded-[10px] bg-ink px-6 py-[13px] text-[14.5px] font-semibold text-white transition-[filter] hover:brightness-110"
+                >
+                  Get started
+                  <ArrowRight size={15} strokeWidth={2.2} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Courses */}
-      <section id="courses" className="px-6 lg:px-10 pb-24">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-baseline justify-between mb-8">
-            <div>
-              <p className="eyebrow mb-2">Catalog</p>
-              <h2 className="display text-[32px] sm:text-[36px]">
-                Available <em>courses</em>
-              </h2>
-            </div>
-            <span className="text-[12px] text-ink-muted">
-              {coursesWithCount.length} {coursesWithCount.length === 1 ? 'course' : 'courses'}
-            </span>
+      {/* Curriculum index */}
+      <section id="courses" className="pb-24 pt-10">
+        <div className="mx-auto max-w-[1140px] px-6 sm:px-11">
+          <div className="flex items-baseline justify-between gap-5 pb-2">
+            <span className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Courses</span>
+            <span className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Self-paced</span>
           </div>
 
           {coursesWithCount.length === 0 ? (
-            <div className="p-16 text-center rounded-2xl bg-surface border border-line">
-              <p className="text-ink-muted text-[14px]">No courses available yet. Check back soon.</p>
+            <div className="border-t border-line py-20 text-center">
+              <p className="text-[15px] text-ink-soft">New courses are being prepared — check back soon.</p>
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {coursesWithCount.map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/courses/${course.id}`}
-                  className="group rounded-2xl overflow-hidden bg-surface border border-line hover:border-line-strong transition-colors flex flex-col"
-                >
-                  <div className="aspect-[16/10] overflow-hidden bg-surface-muted">
-                    <CourseThumb
-                      title={course.title}
-                      coverImage={course.cover_image}
-                      className="w-full h-full rounded-none"
-                    />
-                  </div>
-
-                  <div className="flex flex-col flex-1 p-5">
-                    <h3 className="font-serif text-[20px] leading-[1.2] text-ink mb-2 line-clamp-2 group-hover:text-accent-deep transition-colors">
-                      {course.title}
-                    </h3>
-
-                    {course.description && (
-                      <p className="text-[13px] text-ink-soft leading-relaxed line-clamp-3 mb-5">
-                        {course.description}
-                      </p>
-                    )}
-
-                    <div className="mt-auto pt-4 border-t border-line-soft flex items-center justify-between">
-                      <span className="text-[11px] uppercase tracking-[0.12em] text-ink-muted font-medium">
+            <div>
+              {coursesWithCount.map((course, i) => {
+                const p = PALETTE[i % PALETTE.length]
+                return (
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}`}
+                    className="lr-row group grid items-center gap-5 border-t border-line px-2 py-[26px] last:border-b sm:gap-[30px] sm:px-[18px] sm:py-[34px] [grid-template-columns:1fr_auto] sm:[grid-template-columns:76px_1fr_auto]"
+                    style={{ '--c': p.c, '--c-deep': p.deep, '--tint': p.tint } as React.CSSProperties}
+                  >
+                    <span
+                      className="lr-swatch hidden h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[18px] text-[24px] font-bold tracking-[-0.03em] text-white shadow-[0_8px_22px_-10px_rgba(16,24,40,0.4)] sm:flex"
+                      style={{ background: p.grad }}
+                    >
+                      {initials(course.title)}
+                    </span>
+                    <span className="min-w-0">
+                      <h3 className="mb-[7px] text-[clamp(22px,2.6vw,32px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink transition-colors">
+                        {course.title}
+                      </h3>
+                      {course.description && (
+                        <p className="line-clamp-2 max-w-[54ch] text-[14.5px] leading-[1.55] text-ink-soft">
+                          {course.description}
+                        </p>
+                      )}
+                    </span>
+                    <span className="flex items-center gap-5 sm:gap-7">
+                      <span className="hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-muted sm:inline">
                         {course.moduleCount} {course.moduleCount === 1 ? 'module' : 'modules'}
                       </span>
-                      <span className="text-[12px] font-medium text-accent inline-flex items-center gap-1 group-hover:gap-1.5 transition-all">
-                        View
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                      <span className="lr-arr flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full border border-line-strong text-ink-muted">
+                        <ArrowRight size={18} strokeWidth={2} />
                       </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                    </span>
+                  </Link>
+                )
+              })}
             </div>
           )}
         </div>
       </section>
-    </div>
+
+      {/* Footer */}
+      <footer className="border-t border-line bg-surface-muted">
+        <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-5 px-6 py-[30px] sm:px-11">
+          <span className="text-[18px] font-bold tracking-[-0.02em] text-ink">
+            Nozomi <span className="font-semibold text-ink-muted">Learn</span>
+          </span>
+          <div className="flex items-center gap-6">
+            <a href="#courses" className="text-[13px] text-ink-muted transition-colors hover:text-ink">
+              Courses
+            </a>
+            <Link href="/login" className="text-[13px] text-ink-muted transition-colors hover:text-ink">
+              Log in
+            </Link>
+            <a
+              href="https://nozomi.network"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[13px] text-ink-muted transition-colors hover:text-ink"
+            >
+              nozomi.network
+            </a>
+          </div>
+          <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">© {year} Nozomi</p>
+        </div>
+      </footer>
+    </>
   )
 }
