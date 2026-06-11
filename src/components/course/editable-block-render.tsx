@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useRef, useState } from 'react'
 import { Callout } from '@/components/ui/callout'
 import { VideoEmbed } from '@/components/course/video-embed'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   Download,
+  ImagePlus,
   Pencil,
   Plus,
   X,
@@ -27,6 +28,76 @@ type Props = {
   block: ContentBlock
   onChange: (content: Record<string, unknown>) => void
   onSlashInsert?: (type: ContentBlock['type']) => void
+}
+
+// Robust image uploader: a ref-triggered file input (works reliably inside the
+// editor, unlike a <label>+hidden-input which can get swallowed by selection),
+// plus drag-and-drop. select-none stops the double-click text highlight.
+function ImageDropZone({ onFile }: { onFile: (file: File) => Promise<void> | void }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  const handle = async (file: File | undefined) => {
+    if (!file) return
+    setBusy(true)
+    try {
+      await onFile(file)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          inputRef.current?.click()
+        }
+      }}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setDragOver(true)
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDragOver(false)
+        handle(e.dataTransfer.files?.[0])
+      }}
+      className={`flex aspect-[16/9] cursor-pointer select-none items-center justify-center rounded-lg border border-dashed transition-colors ${
+        dragOver
+          ? 'border-accent bg-accent-soft/40'
+          : 'border-line bg-surface-muted/60 hover:bg-surface-muted'
+      }`}
+    >
+      <div className="pointer-events-none text-center">
+        <ImagePlus className="mx-auto mb-2 h-6 w-6 text-ink-muted" strokeWidth={1.6} />
+        {busy ? (
+          <p className="text-[13px] font-medium text-ink-soft">Uploading…</p>
+        ) : (
+          <>
+            <p className="text-[13px] font-medium text-ink-soft">Click or drop an image to upload</p>
+            <p className="mt-1 text-[11px] text-ink-muted">PNG, JPG, GIF, WebP, or SVG - up to 50MB</p>
+          </>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          handle(e.target.files?.[0])
+          e.target.value = ''
+        }}
+      />
+    </div>
+  )
 }
 
 const inheritStyle: React.CSSProperties = {
@@ -851,25 +922,7 @@ export function EditableBlockRender({ block, onChange, onSlashInsert }: Props) {
               </div>
             </div>
           ) : (
-            <label className="block aspect-[16/9] rounded-lg border border-dashed border-line bg-surface-muted/60 flex items-center justify-center cursor-pointer hover:bg-surface-muted transition-colors">
-              <div className="text-center">
-                <p className="text-[13px] font-medium text-ink-soft">
-                  Click to upload an image
-                </p>
-                <p className="text-[11px] text-ink-muted mt-1">
-                  PNG, JPG, GIF, WebP, or SVG - up to 50MB
-                </p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) handleFile(f)
-                }}
-              />
-            </label>
+            <ImageDropZone onFile={handleFile} />
           )}
           {url && (
             <div className="flex flex-wrap items-center gap-3 text-[11px]">
